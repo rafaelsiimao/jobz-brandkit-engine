@@ -1,24 +1,9 @@
-import fs from 'fs';
-import path from 'path';
 import { chromium } from 'playwright';
 import { Resvg } from '@resvg/resvg-js';
 import { CopyData } from './types';
+import { FONT_PLUS_JAKARTA_SANS_BOLD_BASE64 } from './font-data';
 
-let cachedFontBuffer: Buffer | null = null;
-
-function getFontBuffer(): Buffer | null {
-  if (cachedFontBuffer) return cachedFontBuffer;
-  try {
-    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'PlusJakartaSans-Bold.ttf');
-    if (fs.existsSync(fontPath)) {
-      cachedFontBuffer = fs.readFileSync(fontPath);
-      return cachedFontBuffer;
-    }
-  } catch (err) {
-    console.error('Erro ao carregar fonte TTF para Resvg:', err);
-  }
-  return null;
-}
+const fontBuffer = Buffer.from(FONT_PLUS_JAKARTA_SANS_BOLD_BASE64, 'base64');
 
 export function generateFeedHtml(copy: CopyData): string {
   const highlights = copy.highlights || [];
@@ -436,6 +421,16 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
   const cardW = Math.floor(width / 2 - 70);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <defs>
+      <style>
+        @font-face {
+          font-family: 'Plus Jakarta Sans';
+          src: url('data:font/ttf;base64,${FONT_PLUS_JAKARTA_SANS_BOLD_BASE64}') format('truetype');
+          font-weight: bold;
+          font-style: normal;
+        }
+      </style>
+    </defs>
     <rect width="100%" height="100%" fill="#F2F5F8"/>
     
     <!-- Category Badge Header -->
@@ -480,17 +475,13 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
   </svg>`;
 
   try {
-    const fontBuf = getFontBuffer();
     const resvgOptions: any = {
       fitTo: { mode: 'width', value: width },
-    };
-
-    if (fontBuf) {
-      resvgOptions.font = {
-        fontBuffers: [fontBuf],
+      font: {
+        fontBuffers: [fontBuffer],
         defaultFontFamily: 'Plus Jakarta Sans',
-      };
-    }
+      }
+    };
 
     const resvg = new Resvg(svg, resvgOptions);
     return resvg.render().asPng();
