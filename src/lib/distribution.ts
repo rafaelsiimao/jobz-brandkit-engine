@@ -48,10 +48,15 @@ export async function uploadAssetsAndSendEmail(
   const storyPath = `jobs/${jobId}/story.png`;
   const linkedinPath = `jobs/${jobId}/linkedin.png`;
 
-  await supabase.storage.from('brandkit-arts').upload(feedPath, buffers.feed, { contentType: 'image/png', upsert: true });
-  await supabase.storage.from('brandkit-arts').upload(whatsappPath, buffers.whatsapp, { contentType: 'image/png', upsert: true });
-  await supabase.storage.from('brandkit-arts').upload(storyPath, buffers.story, { contentType: 'image/png', upsert: true });
-  await supabase.storage.from('brandkit-arts').upload(linkedinPath, buffers.linkedin, { contentType: 'image/png', upsert: true });
+  // Upload artes para o Supabase Storage
+  try {
+    await supabase.storage.from('brandkit-arts').upload(feedPath, buffers.feed, { contentType: 'image/png', upsert: true });
+    await supabase.storage.from('brandkit-arts').upload(whatsappPath, buffers.whatsapp, { contentType: 'image/png', upsert: true });
+    await supabase.storage.from('brandkit-arts').upload(storyPath, buffers.story, { contentType: 'image/png', upsert: true });
+    await supabase.storage.from('brandkit-arts').upload(linkedinPath, buffers.linkedin, { contentType: 'image/png', upsert: true });
+  } catch (err: any) {
+    console.error('Aviso no upload de assets para o Storage:', err?.message);
+  }
 
   const getPublicUrl = (path: string) => supabase.storage.from('brandkit-arts').getPublicUrl(path).data.publicUrl;
 
@@ -62,13 +67,18 @@ export async function uploadAssetsAndSendEmail(
     linkedin: getPublicUrl(linkedinPath),
   };
 
+  // Envio de e-mail via Resend com tratamento de exceção seguro
   if (process.env.RESEND_API_KEY) {
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'recrutamento@jobz.com.br',
-      to: recipientEmail,
-      subject: `🎯 BrandKit Pronto: ${copy.headline}`,
-      html: generateEmailHtml(copy, sourcing, urls),
-    });
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+        to: recipientEmail,
+        subject: `🎯 BrandKit Pronto: ${copy.headline}`,
+        html: generateEmailHtml(copy, sourcing, urls),
+      });
+    } catch (emailErr: any) {
+      console.warn('Aviso: E-mail não pôde ser disparado via Resend (restrintivo no plano gratuito):', emailErr?.message);
+    }
   }
 
   return urls;
