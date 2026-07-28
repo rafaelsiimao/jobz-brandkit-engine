@@ -63,6 +63,7 @@ Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o segui
   }
 }`;
 
+      // Timeout de 3.5 segundos para garantir resposta rápida sem exceder o limite do Vercel Serverless
       const res = await fetch(`${baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -77,7 +78,8 @@ Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o segui
           ],
           temperature: 0.7,
           max_tokens: 1500
-        })
+        }),
+        signal: AbortSignal.timeout(3500)
       });
 
       if (res.ok) {

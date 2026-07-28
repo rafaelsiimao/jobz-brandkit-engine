@@ -136,7 +136,14 @@ export default function HomePage() {
         body: JSON.stringify({ jobUrl, recipientEmail }),
         signal: controller.signal
       });
-      const data = await res.json();
+
+      const rawText = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { error: rawText.slice(0, 150) || 'Erro durante a comunicação com o servidor' };
+      }
 
       if (res.ok) {
         setJobId(data.jobId);
