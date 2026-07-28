@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { generateObject } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { ExtractedJobData, SourcingProfile, CopyData } from './types';
 
 export const sourcingProfileSchema = z.object({
@@ -20,9 +22,48 @@ export const copyDataSchema = z.object({
   socialCaption: z.string(),
 });
 
+export const brandKitResponseSchema = z.object({
+  sourcing: sourcingProfileSchema,
+  copy: copyDataSchema,
+});
+
 export async function generateBrandKitAI(extractedData: ExtractedJobData): Promise<{ sourcing: SourcingProfile; copy: CopyData }> {
-  // In production environment, calls generateObject via Vercel AI SDK
-  // We provide high quality default strategy structuring for Jobz
+  // If OPENAI_API_KEY is provided (supports NVIDIA Nim API or OpenAI compatible endpoints)
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const customOpenAI = createOpenAI({
+        baseURL: process.env.OPENAI_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const modelName = process.env.OPENAI_MODEL || 'openai/gpt-oss-120b';
+
+      const prompt = `Você é um especialista em Recruitment Marketing e Sourcing Intelligence para a empresa Jobz no Brasil.
+Analise os dados desta vaga extraída da Abler e gere o perfil de sourcing e copywriting de alto impacto para divulgação:
+
+Vaga: ${extractedData.title}
+Localização: ${extractedData.location}
+Modalidade: ${extractedData.modality}
+Salário/Bolsa: ${extractedData.salary}
+Benefícios: ${extractedData.benefits.join(', ')}
+Requisitos: ${extractedData.requirements.join(', ')}
+Atividades: ${extractedData.activities.join(', ')}
+
+Gere os textos das artes mantendo headline curta (máx 8 palavras), 4 diferenciais marcantes em tópicos, CTA da Jobz e legenda completa para redes sociais.`;
+
+      const { object } = await generateObject({
+        model: customOpenAI(modelName),
+        schema: brandKitResponseSchema,
+        prompt,
+      });
+
+      return object;
+    } catch (err: any) {
+      console.warn('Falha na chamada da API de IA, usando fallback estruturado da Jobz:', err?.message);
+    }
+  }
+
+  // Fallback estruturado garantido para a Jobz
   const sourcing: SourcingProfile = {
     idealCandidate: `Profissional focado em ${extractedData.title}, com experiência técnica e perfil colaborativo.`,
     recommendedUniversities: ['UFES', 'UVV', 'FAESA', 'PUC'],
