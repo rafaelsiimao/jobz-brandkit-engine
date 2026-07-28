@@ -43,27 +43,34 @@ export default function HomePage() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchJobs = async () => {
-    setLoadingJobs(true);
     try {
       const res = await fetch('/api/jobs');
       const data = await res.json();
-      if (data.jobs) {
+      if (data.jobs && data.jobs.length > 0) {
         setJobs(data.jobs);
         
-        // If we are tracking an active job, find its status
-        if (jobId) {
-          const currentJob = data.jobs.find((j: BrandKitJob) => j.id === jobId);
-          if (currentJob) {
-            setActiveJobStatus(currentJob.status);
-            if (currentJob.status === 'completed') {
+        // Find the active job being processed or the latest job
+        const targetJob = jobId 
+          ? data.jobs.find((j: BrandKitJob) => j.id === jobId)
+          : data.jobs[0];
+
+        if (targetJob) {
+          if (!jobId && (targetJob.status !== 'completed' && targetJob.status !== 'failed')) {
+            setJobId(targetJob.id);
+          }
+          
+          if (targetJob.id === jobId || loading) {
+            setActiveJobStatus(targetJob.status);
+
+            if (targetJob.status === 'completed') {
               setStatus('completed');
               setLoading(false);
               setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
               if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            } else if (currentJob.status === 'failed') {
+            } else if (targetJob.status === 'failed') {
               setStatus('error');
               setLoading(false);
-              setMessage(currentJob.error_message || 'Ocorreu um erro no processamento.');
+              setMessage(targetJob.error_message || 'Ocorreu um erro no processamento.');
               if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
             }
           }
@@ -71,8 +78,6 @@ export default function HomePage() {
       }
     } catch (err) {
       console.error('Erro ao buscar histórico de vagas:', err);
-    } finally {
-      setLoadingJobs(false);
     }
   };
 
@@ -84,11 +89,12 @@ export default function HomePage() {
     };
   }, []);
 
-  const startPolling = (targetJobId: string) => {
+  const startPolling = () => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    // Poll every 800ms for instant real-time step transitions
     pollIntervalRef.current = setInterval(() => {
       fetchJobs();
-    }, 2000);
+    }, 800);
   };
 
   const handleCancel = () => {
@@ -120,6 +126,9 @@ export default function HomePage() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    // Start polling IMMEDIATELY when form is submitted so step updates appear in real-time
+    startPolling();
+
     try {
       const res = await fetch('/api/generate-brandkit', {
         method: 'POST',
@@ -131,16 +140,11 @@ export default function HomePage() {
 
       if (res.ok) {
         setJobId(data.jobId);
-        setActiveJobStatus(data.status || 'scraping');
-        
-        if (data.status === 'completed') {
-          setStatus('completed');
-          setLoading(false);
-          setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
-          fetchJobs();
-        } else {
-          startPolling(data.jobId);
-        }
+        setActiveJobStatus(data.status || 'completed');
+        setStatus('completed');
+        setLoading(false);
+        setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
+        fetchJobs();
       } else {
         setStatus('error');
         setLoading(false);
@@ -156,6 +160,8 @@ export default function HomePage() {
         setLoading(false);
         setMessage(err.message || 'Erro de conexão com o servidor.');
       }
+    } finally {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     }
   };
 
