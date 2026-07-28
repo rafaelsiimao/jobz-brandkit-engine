@@ -2,22 +2,68 @@ import { chromium } from 'playwright';
 import { ExtractedJobData } from './types';
 
 export function parseAblerHtml(html: string): ExtractedJobData {
+  // Title extraction
   const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const rawTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Vaga de Emprego';
   const title = rawTitle.split('|')[0].split('-')[0].trim() || 'Vaga de Emprego';
 
-  const location = html.includes('Vitória') ? 'Vitória - ES' : 'Remoto / Brasil';
-  const modality = html.includes('Híbrido') ? 'Híbrido' : html.includes('Presencial') ? 'Presencial' : 'Remoto';
+  // Location extraction
+  let location = 'Vitória / ES';
+  if (html.includes('Vila Velha')) location = 'Vila Velha / ES';
+  else if (html.includes('Serra')) location = 'Serra / ES';
+  else if (html.includes('Cariacica')) location = 'Cariacica / ES';
+  else if (html.includes('Remoto') || html.includes('Home Office')) location = 'Remoto / Brasil';
+
+  // Modality extraction
+  let modality = 'Presencial';
+  if (html.includes('Híbrido') || html.includes('hibrido')) modality = 'Híbrido';
+  else if (html.includes('Remoto') || html.includes('Home Office')) modality = 'Remoto';
+
+  // Salary / Bolsa extraction
+  let salary = 'Compatível com o mercado';
+  const salaryMatch = html.match(/(R\$\s*[\d\.\,]+(?:\s*\+\s*R\$\s*[\d\.\,]+)?(?:\s*\([^\)]+\))?)/i);
+  if (salaryMatch) {
+    salary = salaryMatch[1].trim();
+  } else if (html.includes('Bolsa') || html.includes('Estágio')) {
+    salary = 'Bolsa Auxílio + VT';
+  }
+
+  // Schedule extraction
+  let schedule = 'Segunda a Sexta-feira';
+  if (html.includes('08:00') || html.includes('08h')) schedule = '08h às 12h (Seg a Sex)';
+  else if (html.includes('44h')) schedule = '44h semanais';
+  else if (html.includes('40h')) schedule = '40h semanais';
+
+  // Requirements extraction
+  const requirements: string[] = [];
+  const reqMatch = html.match(/(?:Requisitos|Exigências|Perfil)([\s\S]*?)(?:Benefícios|Atividades|Sobre|$)/i);
+  if (reqMatch) {
+    const listItems = reqMatch[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+    if (listItems) {
+      listItems.slice(0, 3).forEach((item) => {
+        const text = item.replace(/<[^>]+>/g, '').trim();
+        if (text) requirements.push(text);
+      });
+    }
+  }
+  if (requirements.length === 0) {
+    requirements.push('Experiência ou formação na área de atuação');
+    requirements.push('Boa comunicação interpessoal e organização');
+  }
+
+  // Benefits & Activities
+  const benefits = ['Vale Transporte / Alimentação', 'Plano de Saúde', 'Desenvolvimento profissional'];
+  const activities = ['Executar atividades operacionais do cargo', 'Acompanhar rotinas do setor', 'Colaborar com a equipe'];
 
   return {
     title,
     location,
     modality,
-    salary: 'A combinar / Compatível com mercado',
-    benefits: ['Vale Refeição / Alimentação', 'Plano de Saúde e Odontológico', 'Bônus por Desempenho'],
-    schedule: '40h semanais (Segunda a Sexta-feira)',
-    requirements: ['Experiência técnica na área de atuação', 'Boa comunicação interpessoal', 'Proatividade e organização'],
-    activities: ['Desenvolver atividades estratégicas do cargo', 'Acompanhar métricas de desempenho', 'Colaborar com a equipe de RH']
+    salary,
+    benefits,
+    schedule,
+    requirements,
+    activities,
   };
 }
 

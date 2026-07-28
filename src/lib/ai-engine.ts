@@ -1,6 +1,4 @@
 import { z } from 'zod';
-import { generateObject } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
 import { ExtractedJobData, SourcingProfile, CopyData } from './types';
 
 export const sourcingProfileSchema = z.object({
@@ -22,74 +20,117 @@ export const copyDataSchema = z.object({
   socialCaption: z.string(),
 });
 
-export const brandKitResponseSchema = z.object({
-  sourcing: sourcingProfileSchema,
-  copy: copyDataSchema,
-});
-
 export async function generateBrandKitAI(extractedData: ExtractedJobData): Promise<{ sourcing: SourcingProfile; copy: CopyData }> {
   // If OPENAI_API_KEY is provided (supports NVIDIA Nim API or OpenAI compatible endpoints)
   if (process.env.OPENAI_API_KEY) {
     try {
-      const customOpenAI = createOpenAI({
-        baseURL: process.env.OPENAI_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-
+      const apiKey = process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || 'https://integrate.api.nvidia.com/v1';
       const modelName = process.env.OPENAI_MODEL || 'openai/gpt-oss-120b';
 
-      const prompt = `Você é um especialista em Recruitment Marketing e Sourcing Intelligence para a empresa Jobz no Brasil.
-Analise os dados desta vaga extraída da Abler e gere o perfil de sourcing e copywriting de alto impacto para divulgação:
+      const prompt = `Você é um especialista em Recruitment Marketing e Sourcing Intelligence para a Jobz no Brasil.
+Analise esta vaga da Abler:
+- Vaga: ${extractedData.title}
+- Localização: ${extractedData.location}
+- Modalidade: ${extractedData.modality}
+- Salário/Bolsa: ${extractedData.salary}
+- Horário: ${extractedData.schedule}
+- Requisitos: ${extractedData.requirements.join(', ')}
 
-Vaga: ${extractedData.title}
-Localização: ${extractedData.location}
-Modalidade: ${extractedData.modality}
-Salário/Bolsa: ${extractedData.salary}
-Benefícios: ${extractedData.benefits.join(', ')}
-Requisitos: ${extractedData.requirements.join(', ')}
-Atividades: ${extractedData.activities.join(', ')}
+Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o seguinte objeto:
+{
+  "sourcing": {
+    "idealCandidate": "descrição curta do perfil ideal",
+    "recommendedUniversities": ["UFES", "UVV", "FAESA", "PUC"],
+    "linkedinHashtags": ["#Jobz", "#Vagas", "#Recrutamento"],
+    "coldOutreachTemplates": {
+      "linkedinInmail": "mensagem para linkedin",
+      "whatsappDirect": "mensagem para whatsapp"
+    },
+    "screeningQuestions": ["pergunta 1", "pergunta 2", "pergunta 3"]
+  },
+  "copy": {
+    "headline": "${extractedData.title}",
+    "subheadline": "Excelente oportunidade em ${extractedData.location}",
+    "highlights": [
+      "${extractedData.location}",
+      "${extractedData.modality} | ${extractedData.schedule}",
+      "${extractedData.salary}",
+      "${extractedData.requirements[0] || 'Cursando área relacionada'}"
+    ],
+    "ctaText": "Inscreva-se na Jobz",
+    "socialCaption": "🚀 Nova vaga aberta na Jobz! Estamos contratando ${extractedData.title}... Inscreva-se!"
+  }
+}`;
 
-Gere os textos das artes mantendo headline curta (máx 8 palavras), 4 diferenciais marcantes em tópicos, CTA da Jobz e legenda completa para redes sociais.`;
-
-      const { object } = await generateObject({
-        model: customOpenAI(modelName),
-        schema: brandKitResponseSchema,
-        prompt,
+      const res = await fetch(`${baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: 'system', content: 'Você é uma IA de recrutamento que responde EXCLUSIVAMENTE em JSON válido.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
+        })
       });
 
-      return object;
+      if (res.ok) {
+        const jsonRes = await res.json();
+        const rawContent = jsonRes?.choices?.[0]?.message?.content || '';
+        
+        // Match JSON substring
+        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.sourcing && parsed.copy && Array.isArray(parsed.copy.highlights)) {
+            return {
+              sourcing: parsed.sourcing,
+              copy: parsed.copy
+            };
+          }
+        }
+      } else {
+        const errText = await res.text();
+        console.warn('Resposta com erro da API de IA (usando fallback seguro):', errText.slice(0, 150));
+      }
     } catch (err: any) {
       console.warn('Falha na chamada da API de IA, usando fallback estruturado da Jobz:', err?.message);
     }
   }
 
-  // Fallback estruturado garantido para a Jobz
+  // Fallback estruturado garantido com os dados extraídos da vaga
   const sourcing: SourcingProfile = {
-    idealCandidate: `Profissional focado em ${extractedData.title}, com experiência técnica e perfil colaborativo.`,
-    recommendedUniversities: ['UFES', 'UVV', 'FAESA', 'PUC'],
-    linkedinHashtags: ['#Jobz', '#Recrutamento', `#${extractedData.title.replace(/\s+/g, '')}`, '#VagasCapixabas'],
+    idealCandidate: `Profissional focado em ${extractedData.title}, com perfil proativo e excelente comunicação.`,
+    recommendedUniversities: ['UFES', 'UVV', 'FAESA', 'PUC', 'MULTIVIX'],
+    linkedinHashtags: ['#Jobz', '#Recrutamento', `#${extractedData.title.replace(/[^a-zA-Z0-9]/g, '')}`, '#VagasCapixabas'],
     coldOutreachTemplates: {
-      linkedinInmail: `Olá! Vi seu perfil e achei excelente para a vaga de ${extractedData.title} na Jobz. Teria 5 min para conversar?`,
-      whatsappDirect: `Olá! Sou da Jobz e temos uma oportunidade incrível de ${extractedData.title} (${extractedData.modality}). Vamos conversar?`
+      linkedinInmail: `Olá! Vi seu perfil no LinkedIn e achei excelente para a vaga de ${extractedData.title} na Jobz. Teria 5 minutos para conversar?`,
+      whatsappDirect: `Olá! Sou da Jobz e temos uma oportunidade incrível para ${extractedData.title} (${extractedData.location}). Gostaria de saber mais detalhes?`
     },
     screeningQuestions: [
-      'Quais foram seus principais projetos recentes na área?',
-      'Qual sua experiência com metodologias ágeis e ferramentas de mercado?',
-      'Qual sua disponibilidade de início e pretensão salarial?'
+      'Quais são seus principais projetos ou experiências recentes na área?',
+      'Qual sua disponibilidade de horários e início imediato?',
+      'Qual sua pretensão salarial e modelo de atuação preferido?'
     ]
   };
 
   const copy: CopyData = {
-    headline: `Vaga: ${extractedData.title}`,
-    subheadline: `${extractedData.location} | Modalidade ${extractedData.modality}`,
+    headline: extractedData.title,
+    subheadline: `Desenvolva sua carreira com a Jobz em ${extractedData.location}`,
     highlights: [
-      `Modelo: ${extractedData.modality}`,
-      `Remuneração: ${extractedData.salary}`,
-      `Benefícios: ${extractedData.benefits[0] || 'Completo'}`,
-      `Jornada: ${extractedData.schedule}`
+      extractedData.location,
+      `${extractedData.modality} (${extractedData.schedule})`,
+      extractedData.salary,
+      extractedData.requirements[0] || 'Formação ou cursando área relacionada'
     ],
-    ctaText: 'Cadastre-se na Jobz!',
-    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${extractedData.title}.\n📍 ${extractedData.location} (${extractedData.modality})\n\nVenha fazer parte do nosso time. Inscreva-se pelo link oficial!\n\n#Vagas #Jobz #Recrutamento #Carreira`
+    ctaText: 'Inscreva-se',
+    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${extractedData.title}.\n📍 ${extractedData.location} (${extractedData.modality})\n⏰ ${extractedData.schedule}\n💰 ${extractedData.salary}\n\nVenha fazer parte do nosso time. Inscreva-se pelo link oficial na bio!\n\n#Vagas #Jobz #Recrutamento #Capixaba`
   };
 
   return { sourcing, copy };
