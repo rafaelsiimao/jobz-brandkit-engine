@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { Resvg } from '@resvg/resvg-js';
 import { CopyData } from './types';
 
 export function generateFeedHtml(copy: CopyData): string {
@@ -141,17 +142,38 @@ export function generateLinkedinHtml(copy: CopyData): string {
 </html>`;
 }
 
-function createSvgBuffer(width: number, height: number, copy: CopyData, formatLabel: string): Buffer {
+function createRealPngBuffer(width: number, height: number, copy: CopyData, formatLabel: string): Buffer {
+  const highlightsSvg = (copy.highlights || [])
+    .slice(0, 4)
+    .map(
+      (h, idx) => `
+      <rect x="60" y="${320 + idx * 70}" width="${width - 120}" height="56" rx="14" fill="#FFFFFF"/>
+      <circle cx="90" cy="${348 + idx * 70}" r="8" fill="#1E81FE"/>
+      <text x="110" y="${355 + idx * 70}" font-family="sans-serif" font-size="20" font-weight="600" fill="#111317">${h.slice(0, 50)}</text>
+    `
+    )
+    .join('');
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <rect width="100%" height="100%" fill="#F2F5F8"/>
-    <rect x="60" y="60" width="300" height="48" rx="24" fill="#1E81FE"/>
-    <text x="80" y="92" font-family="sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">JOBZ RECRUTAMENTO</text>
-    <text x="60" y="180" font-family="sans-serif" font-size="44" font-weight="bold" fill="#111317">${copy.headline.slice(0, 35)}</text>
-    <text x="60" y="230" font-family="sans-serif" font-size="24" font-weight="bold" fill="#1E81FE">${copy.subheadline.slice(0, 45)}</text>
-    <rect x="60" y="${height - 120}" width="${width - 120}" height="60" rx="16" fill="#111317"/>
-    <text x="${width / 2}" y="${height - 82}" font-family="sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${copy.ctaText}</text>
+    <rect x="60" y="60" width="280" height="48" rx="24" fill="#1E81FE"/>
+    <text x="80" y="92" font-family="sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">JOBZ RECRUTAMENTO</text>
+    <text x="60" y="180" font-family="sans-serif" font-size="44" font-weight="bold" fill="#111317">${copy.headline.slice(0, 32)}</text>
+    <text x="60" y="230" font-family="sans-serif" font-size="24" font-weight="bold" fill="#1E81FE">${copy.subheadline.slice(0, 40)}</text>
+    <g>${highlightsSvg}</g>
+    <rect x="60" y="${height - 120}" width="${width - 120}" height="64" rx="18" fill="#111317"/>
+    <text x="${width / 2}" y="${height - 80}" font-family="sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${copy.ctaText}</text>
   </svg>`;
-  return Buffer.from(svg);
+
+  try {
+    const resvg = new Resvg(svg, {
+      fitTo: { mode: 'width', value: width },
+    });
+    return resvg.render().asPng();
+  } catch (err) {
+    console.error('Erro na renderizacao Resvg:', err);
+    return Buffer.from(svg);
+  }
 }
 
 export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer }> {
@@ -185,12 +207,12 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       await browser.close();
     }
   } catch (err: any) {
-    console.warn('Playwright não disponível para renderização PNG no servidor, gerando buffers SVG de fallback:', err?.message);
+    console.warn('Playwright nao disponivel no servidor, gerando PNGs reais com Resvg:', err?.message);
     return {
-      feed: createSvgBuffer(1080, 1350, copy, 'Feed'),
-      whatsapp: createSvgBuffer(1080, 1080, copy, 'WhatsApp'),
-      story: createSvgBuffer(1080, 1920, copy, 'Story'),
-      linkedin: createSvgBuffer(1200, 627, copy, 'LinkedIn')
+      feed: createRealPngBuffer(1080, 1350, copy, 'Feed'),
+      whatsapp: createRealPngBuffer(1080, 1080, copy, 'WhatsApp'),
+      story: createRealPngBuffer(1080, 1920, copy, 'Story'),
+      linkedin: createRealPngBuffer(1200, 627, copy, 'LinkedIn')
     };
   }
 }

@@ -12,6 +12,7 @@
   "dependencies": {
     "@ai-sdk/google": "^1.1.0",
     "@ai-sdk/openai": "^1.1.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@supabase/supabase-js": "^2.48.0",
     "ai": "^4.1.0",
     "clsx": "^2.1.1",
