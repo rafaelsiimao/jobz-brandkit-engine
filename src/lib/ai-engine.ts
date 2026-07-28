@@ -1,15 +1,27 @@
 import { z } from 'zod';
-import { ExtractedJobData, SourcingProfile, CopyData } from './types';
+import { ExtractedJobData, SourcingProfile, CopyData, SourcingChannels } from './types';
+
+export const sourcingChannelsSchema = z.object({
+  universities: z.array(z.string()),
+  facebookGroups: z.array(z.string()),
+  whatsappTelegramCommunities: z.array(z.string()),
+  linkedinSearchQueries: z.array(z.string()),
+  specializedPlatforms: z.array(z.string()),
+});
 
 export const sourcingProfileSchema = z.object({
   idealCandidate: z.string(),
-  recommendedUniversities: z.array(z.string()),
-  linkedinHashtags: z.array(z.string()),
+  hardSkills: z.array(z.string()),
+  softSkills: z.array(z.string()),
+  companyExpectations: z.string(),
+  sourcingChannels: sourcingChannelsSchema,
   coldOutreachTemplates: z.object({
     linkedinInmail: z.string(),
     whatsappDirect: z.string(),
   }),
   screeningQuestions: z.array(z.string()),
+  recommendedUniversities: z.array(z.string()),
+  linkedinHashtags: z.array(z.string()),
 });
 
 export const copyDataSchema = z.object({
@@ -20,6 +32,12 @@ export const copyDataSchema = z.object({
   socialCaption: z.string(),
 });
 
+function getContractLabel(ct: string): string {
+  if (ct === 'ESTAGIO') return 'Estágio';
+  if (ct === 'PJ') return 'PJ / Prestador de Serviço';
+  return 'CLT (Carteira Assinada)';
+}
+
 export async function generateBrandKitAI(extractedData: ExtractedJobData): Promise<{ sourcing: SourcingProfile; copy: CopyData }> {
   // If OPENAI_API_KEY is provided (supports NVIDIA Nim API or OpenAI compatible endpoints)
   if (process.env.OPENAI_API_KEY) {
@@ -28,42 +46,72 @@ export async function generateBrandKitAI(extractedData: ExtractedJobData): Promi
       const baseURL = process.env.OPENAI_BASE_URL || 'https://integrate.api.nvidia.com/v1';
       const modelName = process.env.OPENAI_MODEL || 'openai/gpt-oss-120b';
 
-      const prompt = `Você é um especialista em Recruitment Marketing e Sourcing Intelligence para a Jobz no Brasil.
-Analise esta vaga da Abler:
-- Vaga: ${extractedData.title}
+      const prompt = `Você é um especialista em Recruitment Marketing, Sourcing Intelligence e Talent Acquisition para a Jobz, no Brasil.
+
+Analise esta vaga extraída da plataforma Abler ATS e gere um Dossier de Inteligência de Recrutamento COMPLETO:
+
+## Dados da Vaga
+- Título: ${extractedData.title}
+- Tipo de Contrato: ${getContractLabel(extractedData.contractType)}
+- Nível: ${extractedData.seniorityLevel}
 - Localização: ${extractedData.location}
 - Modalidade: ${extractedData.modality}
 - Salário/Bolsa: ${extractedData.salary}
 - Horário: ${extractedData.schedule}
-- Requisitos: ${extractedData.requirements.join(', ')}
+- Requisitos: ${extractedData.requirements.join('; ')}
+- Atividades: ${extractedData.activities.join('; ')}
+- Benefícios: ${extractedData.benefits.join('; ')}
+- Descrição Completa: ${extractedData.rawDescription.slice(0, 1500)}
 
-Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o seguinte objeto:
+## Instruções IMPORTANTES
+1. **hardSkills**: Liste as 5 a 8 competências TÉCNICAS mais relevantes (ferramentas, tecnologias, softwares, certificações, linguagens de programação, metodologias técnicas).
+2. **softSkills**: Liste as 4 a 6 competências COMPORTAMENTAIS mais relevantes (comunicação, liderança, proatividade, organização, trabalho em equipe, etc.).
+3. **companyExpectations**: Descreva em 2-3 frases o que a empresa espera do candidato em termos de postura, atitude e entregas.
+4. **sourcingChannels**: Forneça canais REAIS e específicos para encontrar candidatos:
+   ${extractedData.contractType === 'ESTAGIO' ? '- **universities**: Liste faculdades relevantes da região (ex: UFES, UVV, FAESA, PUC, Multivix, IFES, etc.).' : '- **universities**: Lista vazia [] pois não se aplica a vagas CLT/PJ.'}
+   - **facebookGroups**: Liste 3-5 nomes de grupos reais do Facebook para a área/região (ex: "Vagas de TI Vitória ES", "Vagas Espírito Santo").
+   - **whatsappTelegramCommunities**: Liste 2-3 tipos de comunidades de WhatsApp/Telegram relevantes.
+   - **linkedinSearchQueries**: Forneça 2-3 strings de busca booleana para o LinkedIn Recruiter (ex: "desenvolvedor AND react AND (vitória OR remoto)").
+   - **specializedPlatforms**: Liste plataformas específicas onde encontrar candidatos (ex: GitHub, Behance, 99designs, Catho, Indeed, Vagas.com, etc.).
+5. **screeningQuestions**: Crie 4-5 perguntas eliminatórias de triagem rápida e específicas para esta vaga.
+6. **coldOutreachTemplates**: Scripts de abordagem realistas e persuasivos para LinkedIn InMail e WhatsApp.
+
+Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o seguinte objeto:
 {
   "sourcing": {
-    "idealCandidate": "descrição curta do perfil ideal",
-    "recommendedUniversities": ["UFES", "UVV", "FAESA", "PUC"],
-    "linkedinHashtags": ["#Jobz", "#Vagas", "#Recrutamento"],
-    "coldOutreachTemplates": {
-      "linkedinInmail": "mensagem para linkedin",
-      "whatsappDirect": "mensagem para whatsapp"
+    "idealCandidate": "descrição completa do perfil ideal em 2-3 frases",
+    "hardSkills": ["skill1", "skill2", ...],
+    "softSkills": ["skill1", "skill2", ...],
+    "companyExpectations": "texto descritivo do que a empresa espera",
+    "sourcingChannels": {
+      "universities": ["faculdade1", "faculdade2", ...],
+      "facebookGroups": ["grupo1", "grupo2", ...],
+      "whatsappTelegramCommunities": ["comunidade1", ...],
+      "linkedinSearchQueries": ["query booleana 1", ...],
+      "specializedPlatforms": ["plataforma1", ...]
     },
-    "screeningQuestions": ["pergunta 1", "pergunta 2", "pergunta 3"]
+    "coldOutreachTemplates": {
+      "linkedinInmail": "mensagem completa",
+      "whatsappDirect": "mensagem completa"
+    },
+    "screeningQuestions": ["pergunta 1", "pergunta 2", ...],
+    "recommendedUniversities": ["UFES", "UVV", ...],
+    "linkedinHashtags": ["#Jobz", "#Vagas", ...]
   },
   "copy": {
     "headline": "${extractedData.title}",
-    "subheadline": "Excelente oportunidade em ${extractedData.location}",
+    "subheadline": "frase atrativa sobre a oportunidade",
     "highlights": [
       "${extractedData.location}",
       "${extractedData.modality} | ${extractedData.schedule}",
       "${extractedData.salary}",
-      "${extractedData.requirements[0] || 'Cursando área relacionada'}"
+      "${extractedData.requirements[0] || 'Formação na área'}"
     ],
     "ctaText": "Inscreva-se na Jobz",
-    "socialCaption": "🚀 Nova vaga aberta na Jobz! Estamos contratando ${extractedData.title}... Inscreva-se!"
+    "socialCaption": "legenda completa para redes sociais com emojis e hashtags"
   }
 }`;
 
-      // Timeout de 3.5 segundos para garantir resposta rápida sem exceder o limite do Vercel Serverless
       const res = await fetch(`${baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -73,13 +121,13 @@ Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o segui
         body: JSON.stringify({
           model: modelName,
           messages: [
-            { role: 'system', content: 'Você é uma IA de recrutamento que responde EXCLUSIVAMENTE em JSON válido.' },
+            { role: 'system', content: 'Você é uma IA de recrutamento que responde EXCLUSIVAMENTE em JSON válido. Nunca use markdown, nunca use crases. Apenas JSON puro.' },
             { role: 'user', content: prompt }
           ],
           temperature: 0.7,
-          max_tokens: 1500
+          max_tokens: 2500
         }),
-        signal: AbortSignal.timeout(3500)
+        signal: AbortSignal.timeout(8000)
       });
 
       if (res.ok) {
@@ -91,10 +139,29 @@ Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o segui
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           if (parsed.sourcing && parsed.copy && Array.isArray(parsed.copy.highlights)) {
-            return {
-              sourcing: parsed.sourcing,
-              copy: parsed.copy
+            // Ensure all new fields exist with fallbacks
+            const sourcing: SourcingProfile = {
+              idealCandidate: parsed.sourcing.idealCandidate || '',
+              hardSkills: parsed.sourcing.hardSkills || [],
+              softSkills: parsed.sourcing.softSkills || [],
+              companyExpectations: parsed.sourcing.companyExpectations || '',
+              sourcingChannels: {
+                universities: parsed.sourcing.sourcingChannels?.universities || parsed.sourcing.recommendedUniversities || [],
+                facebookGroups: parsed.sourcing.sourcingChannels?.facebookGroups || [],
+                whatsappTelegramCommunities: parsed.sourcing.sourcingChannels?.whatsappTelegramCommunities || [],
+                linkedinSearchQueries: parsed.sourcing.sourcingChannels?.linkedinSearchQueries || [],
+                specializedPlatforms: parsed.sourcing.sourcingChannels?.specializedPlatforms || [],
+              },
+              coldOutreachTemplates: parsed.sourcing.coldOutreachTemplates || {
+                linkedinInmail: '',
+                whatsappDirect: '',
+              },
+              screeningQuestions: parsed.sourcing.screeningQuestions || [],
+              recommendedUniversities: parsed.sourcing.recommendedUniversities || parsed.sourcing.sourcingChannels?.universities || [],
+              linkedinHashtags: parsed.sourcing.linkedinHashtags || ['#Jobz', '#Vagas'],
             };
+
+            return { sourcing, copy: parsed.copy };
           }
         }
       } else {
@@ -106,25 +173,50 @@ Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o segui
     }
   }
 
-  // Fallback estruturado garantido com os dados extraídos da vaga
+  // ─── Fallback Estruturado Inteligente (sem IA) ──────────────────────────
+  const isEstagio = extractedData.contractType === 'ESTAGIO';
+  const isPJ = extractedData.contractType === 'PJ';
+
+  const sourcingChannels: SourcingChannels = {
+    universities: isEstagio
+      ? ['UFES', 'UVV', 'FAESA', 'PUC', 'Multivix', 'IFES', 'UCL']
+      : [],
+    facebookGroups: [
+      `Vagas em ${extractedData.location.split('/')[0]?.trim() || 'Vitória'}`,
+      `Vagas de ${extractedData.title.split(' ')[0]} - ES`,
+      'Vagas Espírito Santo',
+    ],
+    whatsappTelegramCommunities: [
+      `Grupo de Vagas ${extractedData.title.split(' ')[0]}`,
+      `Oportunidades ${extractedData.location.split('/')[0]?.trim() || 'ES'}`,
+    ],
+    linkedinSearchQueries: [
+      `"${extractedData.title}" AND ("${extractedData.location.split('/')[0]?.trim()}" OR remoto)`,
+      `${extractedData.requirements.slice(0, 2).join(' AND ')} AND (${extractedData.location.split('/')[1]?.trim() || 'ES'})`,
+    ],
+    specializedPlatforms: detectSpecializedPlatforms(extractedData),
+  };
+
   const sourcing: SourcingProfile = {
-    idealCandidate: `Profissional focado em ${extractedData.title}, com perfil proativo e excelente comunicação.`,
-    recommendedUniversities: ['UFES', 'UVV', 'FAESA', 'PUC', 'MULTIVIX'],
-    linkedinHashtags: ['#Jobz', '#Recrutamento', `#${extractedData.title.replace(/[^a-zA-Z0-9]/g, '')}`, '#VagasCapixabas'],
+    idealCandidate: `Profissional de nível ${extractedData.seniorityLevel} focado em ${extractedData.title}, com perfil proativo e excelente comunicação. ${isEstagio ? 'Estudante cursando graduação na área.' : isPJ ? 'Profissional autônomo com experiência comprovada e CNPJ ativo.' : 'Profissional com experiência sólida e carteira CLT.'}`,
+    hardSkills: extractHardSkills(extractedData),
+    softSkills: ['Comunicação interpessoal', 'Proatividade', 'Organização', 'Trabalho em equipe', 'Resolução de problemas'],
+    companyExpectations: `A empresa busca um profissional comprometido com resultados, que demonstre autonomia e capacidade de aprender rapidamente. Espera-se postura colaborativa e orientação para metas.`,
+    sourcingChannels,
     coldOutreachTemplates: {
-      linkedinInmail: `Olá! Vi seu perfil no LinkedIn e achei excelente para a vaga de ${extractedData.title} na Jobz. Teria 5 minutos para conversar?`,
-      whatsappDirect: `Olá! Sou da Jobz e temos uma oportunidade incrível para ${extractedData.title} (${extractedData.location}). Gostaria de saber mais detalhes?`
+      linkedinInmail: `Olá! Vi seu perfil no LinkedIn e ele se encaixa perfeitamente na vaga de ${extractedData.title} na Jobz (${extractedData.location}). ${isEstagio ? 'É uma ótima oportunidade de estágio para iniciar sua carreira!' : 'Temos uma proposta muito competitiva.'} Teria 5 minutos para conversar?`,
+      whatsappDirect: `Olá! Sou recrutadora da Jobz e temos uma oportunidade incrível para ${extractedData.title} (${extractedData.location} - ${extractedData.modality}). ${isEstagio ? 'Bolsa ' : ''}${extractedData.salary}. Gostaria de saber mais detalhes? 😊`
     },
-    screeningQuestions: [
-      'Quais são seus principais projetos ou experiências recentes na área?',
-      'Qual sua disponibilidade de horários e início imediato?',
-      'Qual sua pretensão salarial e modelo de atuação preferido?'
-    ]
+    screeningQuestions: generateScreeningQuestions(extractedData),
+    recommendedUniversities: isEstagio ? ['UFES', 'UVV', 'FAESA', 'PUC', 'Multivix'] : [],
+    linkedinHashtags: ['#Jobz', '#Recrutamento', `#${extractedData.title.replace(/[^a-zA-Z0-9]/g, '')}`, '#VagasCapixabas'],
   };
 
   const copy: CopyData = {
     headline: extractedData.title,
-    subheadline: `Desenvolva sua carreira com a Jobz em ${extractedData.location}`,
+    subheadline: isEstagio
+      ? `Oportunidade de Estágio em ${extractedData.location}`
+      : `${getContractLabel(extractedData.contractType)} em ${extractedData.location}`,
     highlights: [
       extractedData.location,
       `${extractedData.modality} (${extractedData.schedule})`,
@@ -132,8 +224,99 @@ Responda ESTRITAMENTE em formato JSON (sem markdown de código) contendo o segui
       extractedData.requirements[0] || 'Formação ou cursando área relacionada'
     ],
     ctaText: 'Inscreva-se',
-    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${extractedData.title}.\n📍 ${extractedData.location} (${extractedData.modality})\n⏰ ${extractedData.schedule}\n💰 ${extractedData.salary}\n\nVenha fazer parte do nosso time. Inscreva-se pelo link oficial na bio!\n\n#Vagas #Jobz #Recrutamento #Capixaba`
+    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${extractedData.title}.\n📍 ${extractedData.location} (${extractedData.modality})\n⏰ ${extractedData.schedule}\n💰 ${extractedData.salary}\n📋 ${getContractLabel(extractedData.contractType)}\n\nVenha fazer parte do nosso time. Inscreva-se pelo link oficial na bio!\n\n#Vagas #Jobz #Recrutamento #Capixaba`
   };
 
   return { sourcing, copy };
+}
+
+// ─── Helper: Detect specialized platforms based on job area ─────────────────
+function detectSpecializedPlatforms(data: ExtractedJobData): string[] {
+  const text = `${data.title} ${data.requirements.join(' ')} ${data.rawDescription}`.toLowerCase();
+  const platforms: string[] = [];
+
+  if (/desenvolv|programad|software|back.?end|front.?end|full.?stack|devops|ti\b|t\.i\./i.test(text)) {
+    platforms.push('GitHub', 'Stack Overflow Jobs', 'LinkedIn');
+  }
+  if (/design|ui|ux|gráfico|creative|criativo|diagramação/i.test(text)) {
+    platforms.push('Behance', 'Dribbble', '99designs');
+  }
+  if (/market|vendas|comercial|growth|sdr|bdr/i.test(text)) {
+    platforms.push('LinkedIn Sales Navigator', 'Vagas.com');
+  }
+  if (/cont[áa]bil|financeiro|fiscal|tribut/i.test(text)) {
+    platforms.push('Catho', 'Indeed', 'CRC-ES');
+  }
+  if (/jur[íi]dico|advogad|direito/i.test(text)) {
+    platforms.push('OAB-ES', 'LinkedIn', 'JusBrasil');
+  }
+  if (/engenh|civil|mec[âa]nic|el[ée]tric/i.test(text)) {
+    platforms.push('CREA-ES', 'LinkedIn', 'Vagas.com');
+  }
+
+  if (platforms.length === 0) {
+    platforms.push('LinkedIn', 'Catho', 'Indeed', 'Vagas.com');
+  }
+
+  return [...new Set(platforms)];
+}
+
+// ─── Helper: Extract hard skills from requirements and description ──────────
+function extractHardSkills(data: ExtractedJobData): string[] {
+  const skills = new Set<string>();
+  const allText = [...data.requirements, ...data.activities, data.rawDescription].join(' ');
+
+  // Known tech skills patterns
+  const knownSkills = [
+    'Excel', 'Word', 'PowerPoint', 'Power BI', 'Python', 'Java', 'JavaScript', 'TypeScript',
+    'React', 'Next.js', 'Node.js', 'SQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'AWS', 'Azure',
+    'Docker', 'Kubernetes', 'Git', 'Figma', 'Photoshop', 'Illustrator', 'SAP', 'TOTVS',
+    'ERP', 'CRM', 'Salesforce', 'HubSpot', 'Google Analytics', 'SEO', 'SEM', 'Scrum',
+    'Kanban', 'Agile', 'ITIL', 'AutoCAD', 'Revit', 'MATLAB', 'R', 'Tableau',
+    'Pack Office', 'Pacote Office',
+  ];
+
+  for (const skill of knownSkills) {
+    if (new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(allText)) {
+      skills.add(skill);
+    }
+  }
+
+  // Also include top requirements as skills
+  data.requirements.slice(0, 3).forEach(r => {
+    if (r.length < 60 && !skills.has(r)) skills.add(r);
+  });
+
+  if (skills.size === 0) {
+    skills.add('Conhecimentos específicos da área');
+    skills.add('Ferramentas de gestão');
+  }
+
+  return Array.from(skills).slice(0, 8);
+}
+
+// ─── Helper: Generate screening questions ──────────────────────────────────
+function generateScreeningQuestions(data: ExtractedJobData): string[] {
+  const questions: string[] = [];
+
+  if (data.contractType === 'ESTAGIO') {
+    questions.push('Em qual período/semestre do curso você está atualmente?');
+    questions.push('Qual sua disponibilidade de horários para o estágio?');
+    questions.push(`Você tem experiência ou conhecimento em ${data.requirements[0] || 'na área'}?`);
+    questions.push('Tem interesse em ser efetivado após o período de estágio?');
+  } else if (data.contractType === 'PJ') {
+    questions.push('Você possui CNPJ ativo e regular?');
+    questions.push(`Qual sua experiência comprovada em ${data.requirements[0] || 'na área'}?`);
+    questions.push('Qual sua disponibilidade de horas mensais para dedicação ao projeto?');
+    questions.push('Qual sua pretensão de valor mensal (PJ)?');
+    questions.push('Possui portfólio ou cases de sucesso para compartilhar?');
+  } else {
+    questions.push('Quais são seus principais projetos ou experiências recentes na área?');
+    questions.push('Qual sua disponibilidade de horários e data de início?');
+    questions.push('Qual sua pretensão salarial (CLT)?');
+    questions.push(`Qual seu nível de proficiência em ${data.requirements[0] || 'nas ferramentas da vaga'}?`);
+    questions.push('Qual modelo de trabalho você prefere (presencial, híbrido, remoto)?');
+  }
+
+  return questions;
 }

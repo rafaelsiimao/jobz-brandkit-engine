@@ -1,3 +1,6 @@
+export type ContractType = 'ESTAGIO' | 'CLT' | 'PJ';
+export type SeniorityLevel = 'Estágio' | 'Júnior' | 'Pleno' | 'Sênior' | 'Especialista';
+
 export interface ExtractedJobData {
   title: string;
   location: string;
@@ -7,17 +10,33 @@ export interface ExtractedJobData {
   schedule: string;
   requirements: string[];
   activities: string[];
+  contractType: ContractType;
+  seniorityLevel: SeniorityLevel;
+  rawDescription: string;
+}
+
+export interface SourcingChannels {
+  universities: string[];
+  facebookGroups: string[];
+  whatsappTelegramCommunities: string[];
+  linkedinSearchQueries: string[];
+  specializedPlatforms: string[];
 }
 
 export interface SourcingProfile {
   idealCandidate: string;
-  recommendedUniversities: string[];
-  linkedinHashtags: string[];
+  hardSkills: string[];
+  softSkills: string[];
+  companyExpectations: string;
+  sourcingChannels: SourcingChannels;
   coldOutreachTemplates: {
     linkedinInmail: string;
     whatsappDirect: string;
   };
   screeningQuestions: string[];
+  // Legacy compat fields
+  recommendedUniversities: string[];
+  linkedinHashtags: string[];
 }
 
 export interface CopyData {

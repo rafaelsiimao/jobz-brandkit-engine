@@ -35,12 +35,12 @@ export async function POST(request: Request) {
 
     // Execute pipeline step-by-step with pacing for clear UI progress transitions
     
-    // Etapa 1: Extração da Vaga (Scraper)
+    // Etapa 1: Extração da Vaga (Scraper Multi-Camada 2.0)
     await supabase.from('brandkit_jobs').update({ status: 'scraping' }).eq('id', jobId);
     const extractedData = await extractJobFromAbler(jobUrl);
     await delay(400);
 
-    // Etapa 2: Inteligência de Recrutamento & Copy (IA)
+    // Etapa 2: Inteligência de Recrutamento & Copy (IA Profiler 2.0)
     await supabase
       .from('brandkit_jobs')
       .update({ status: 'generating_ai', extracted_data: extractedData })
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const pngBuffers = await renderBrandKitPNGs(copy);
     await delay(400);
 
-    // Etapa 4: Upload para Storage & Envio por E-mail
+    // Etapa 4: Upload para Storage & Envio do Dossier por E-mail
     await supabase.from('brandkit_jobs').update({ status: 'uploading_and_mailing' }).eq('id', jobId);
 
     const assetUrls = await uploadAssetsAndSendEmail(
@@ -66,7 +66,8 @@ export async function POST(request: Request) {
       recipientEmail,
       pngBuffers,
       sourcing,
-      copy
+      copy,
+      extractedData  // Passando extractedData para o e-mail inteligente
     );
     await delay(300);
 
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
       jobId,
       status: 'completed',
       assetUrls,
-      message: 'BrandKit gerado e enviado com sucesso!'
+      message: 'Dossier de Sourcing gerado e enviado com sucesso!'
     });
 
   } catch (err: any) {
