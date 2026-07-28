@@ -1,5 +1,55 @@
 import { ExtractedJobData, ContractType, SeniorityLevel } from './types';
 
+// ─── Unicode & HTML Sanitizer ──────────────────────────────────────────────
+export function decodeUnicodeEscapes(str: string): string {
+  if (!str) return '';
+  let decoded = str.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16))
+  );
+  decoded = decoded.replace(/\\n/g, ' ').replace(/\\t/g, ' ').replace(/\\r/g, ' ');
+  return decoded;
+}
+
+export function sanitizeText(text: string): string {
+  if (!text) return '';
+  let str = decodeUnicodeEscapes(text);
+
+  // Cut off at raw JS payload metadata keys if present in Next.js payload dumps
+  const jsPayloadCutoffs = [
+    ',allDescriptions:',
+    'allDescriptions:',
+    ',educationalLevel:',
+    'educationalLevel:',
+    'educationalLevelStatus:',
+    'locationToMatch:',
+    'hideCompany:',
+    'publishedAt:',
+    'levelOfInterests:',
+    ',slug:',
+    'statusKey:',
+    'vacancyBenefits:',
+    'exclusivePcd:'
+  ];
+
+  for (const cutoff of jsPayloadCutoffs) {
+    const idx = str.indexOf(cutoff);
+    if (idx !== -1) {
+      str = str.slice(0, idx);
+    }
+  }
+
+  // Strip HTML tags
+  str = str.replace(/<[^>]+>/g, ' ');
+  // Strip HTML entities
+  str = str.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+  // Strip leftover quotes/slashes from JSON stringification
+  str = str.replace(/^["']+|["']+$/g, '');
+  // Collapse whitespace
+  str = str.replace(/\s+/g, ' ').trim();
+
+  return str;
+}
+
 // ─── Camada 1: JSON-LD Schema.org/JobPosting ──────────────────────────────
 function parseJsonLd(html: string): Partial<ExtractedJobData> | null {
   try {
@@ -16,8 +66,8 @@ function parseJsonLd(html: string): Partial<ExtractedJobData> | null {
 
         if (!jobPosting) continue;
 
-        const title = jobPosting.title || jobPosting.name || '';
-        const description = jobPosting.description || '';
+        const title = sanitizeText(jobPosting.title || jobPosting.name || '');
+        const description = sanitizeText(jobPosting.description || '');
 
         // Location
         let location = '';
@@ -25,8 +75,8 @@ function parseJsonLd(html: string): Partial<ExtractedJobData> | null {
           const loc = Array.isArray(jobPosting.jobLocation) ? jobPosting.jobLocation[0] : jobPosting.jobLocation;
           if (loc?.address) {
             const addr = loc.address;
-            const city = addr.addressLocality || '';
-            const state = addr.addressRegion || '';
+            const city = sanitizeText(addr.addressLocality || '');
+            const state = sanitizeText(addr.addressRegion || '');
             location = city && state ? `${city} / ${state}` : city || state || '';
           }
         }
@@ -50,14 +100,11 @@ function parseJsonLd(html: string): Partial<ExtractedJobData> | null {
           }
         }
 
-        // Employment type
-        const employmentType = jobPosting.employmentType || '';
-
         return {
-          title: title.trim(),
+          title: title || undefined,
           location: location || undefined,
           salary: salary || undefined,
-          rawDescription: stripHtml(description),
+          rawDescription: description,
         };
       } catch {
         continue;
@@ -83,17 +130,17 @@ function parseNextData(html: string): Partial<ExtractedJobData> | null {
     const job = props.job || props.vacancy || props.vaga || props.data || props;
 
     if (job && (job.title || job.name || job.titulo)) {
-      const title = job.title || job.name || job.titulo || '';
-      const location = job.location || job.city || job.cidade || '';
-      const state = job.state || job.estado || job.uf || '';
-      const salary = job.salary || job.salario || job.remuneration || '';
-      const description = job.description || job.descricao || job.full_description || '';
+      const title = sanitizeText(job.title || job.name || job.titulo || '');
+      const location = sanitizeText(job.location || job.city || job.cidade || '');
+      const state = sanitizeText(job.state || job.estado || job.uf || '');
+      const salary = sanitizeText(String(job.salary || job.salario || job.remuneration || ''));
+      const description = sanitizeText(String(job.description || job.descricao || job.full_description || ''));
 
       return {
-        title: title.trim(),
+        title: title || undefined,
         location: location && state ? `${location} / ${state}` : location || undefined,
-        salary: salary ? String(salary).trim() : undefined,
-        rawDescription: stripHtml(String(description)),
+        salary: salary || undefined,
+        rawDescription: description,
       };
     }
   } catch {
@@ -108,26 +155,27 @@ function parseMetaTags(html: string): { title?: string; description?: string } {
 
   const ogTitle = html.match(/<meta[^>]*property\s*=\s*["']og:title["'][^>]*content\s*=\s*["']([^"']+)["']/i)
     || html.match(/<meta[^>]*content\s*=\s*["']([^"']+)["'][^>]*property\s*=\s*["']og:title["']/i);
-  if (ogTitle) result.title = ogTitle[1].trim();
+  if (ogTitle) result.title = sanitizeText(ogTitle[1]);
 
   const ogDesc = html.match(/<meta[^>]*property\s*=\s*["']og:description["'][^>]*content\s*=\s*["']([^"']+)["']/i)
     || html.match(/<meta[^>]*content\s*=\s*["']([^"']+)["'][^>]*property\s*=\s*["']og:description["']/i);
-  if (ogDesc) result.description = ogDesc[1].trim();
+  if (ogDesc) result.description = sanitizeText(ogDesc[1]);
 
   return result;
 }
 
 // ─── Camada 4: Parser HTML Semântico (Regex Fallback) ───────────────────────
 function parseHtmlSemantic(html: string): Partial<ExtractedJobData> {
+  const decodedHtml = decodeUnicodeEscapes(html);
+
   // Title extraction
-  const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const rawTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Vaga de Emprego';
+  const titleMatch = decodedHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || decodedHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const rawTitle = titleMatch ? sanitizeText(titleMatch[1]) : 'Vaga de Emprego';
   const title = rawTitle.split('|')[0].split('-')[0].trim() || 'Vaga de Emprego';
 
-  // Location extraction (expandido para mais cidades/estados do Brasil)
+  // Location extraction
   let location = '';
   const locationPatterns = [
-    // ES
     { pattern: /Vit[óo]ria/i, value: 'Vitória / ES' },
     { pattern: /Vila\s*Velha/i, value: 'Vila Velha / ES' },
     { pattern: /Serra\b/i, value: 'Serra / ES' },
@@ -135,76 +183,69 @@ function parseHtmlSemantic(html: string): Partial<ExtractedJobData> {
     { pattern: /Guarapari/i, value: 'Guarapari / ES' },
     { pattern: /Cachoeiro/i, value: 'Cachoeiro de Itapemirim / ES' },
     { pattern: /Linhares/i, value: 'Linhares / ES' },
-    // SP
     { pattern: /S[ãa]o\s*Paulo/i, value: 'São Paulo / SP' },
     { pattern: /Campinas/i, value: 'Campinas / SP' },
-    // RJ
     { pattern: /Rio\s*de\s*Janeiro/i, value: 'Rio de Janeiro / RJ' },
-    // MG
     { pattern: /Belo\s*Horizonte/i, value: 'Belo Horizonte / MG' },
-    // PR
     { pattern: /Curitiba/i, value: 'Curitiba / PR' },
-    // SC
     { pattern: /Florian[óo]polis/i, value: 'Florianópolis / SC' },
-    // BA
     { pattern: /Salvador/i, value: 'Salvador / BA' },
-    // DF
     { pattern: /Bras[íi]lia/i, value: 'Brasília / DF' },
   ];
 
   for (const lp of locationPatterns) {
-    if (lp.pattern.test(html)) { location = lp.value; break; }
+    if (lp.pattern.test(decodedHtml)) { location = lp.value; break; }
   }
 
-  // Try extracting state from HTML (e.g. "ES", "SP", "RJ")
   if (!location) {
-    const stateMatch = html.match(/(?:UF|Estado|State)[:\s]*([A-Z]{2})/i);
+    const stateMatch = decodedHtml.match(/(?:UF|Estado|State)[:\s]*([A-Z]{2})/i);
     if (stateMatch) location = stateMatch[1];
   }
 
-  if (!location && (html.includes('Remoto') || html.includes('Home Office') || html.includes('remoto'))) {
+  if (!location && (decodedHtml.includes('Remoto') || decodedHtml.includes('Home Office') || /remoto/i.test(decodedHtml))) {
     location = 'Remoto / Brasil';
   }
   if (!location) location = 'A definir';
 
   // Modality
   let modality = 'Presencial';
-  if (/h[ií]brido/i.test(html)) modality = 'Híbrido';
-  else if (/remoto|home\s*office|teletrabalho/i.test(html)) modality = 'Remoto';
+  if (/h[ií]brido/i.test(decodedHtml)) modality = 'Híbrido';
+  else if (/remoto|home\s*office|teletrabalho/i.test(decodedHtml)) modality = 'Remoto';
 
   // Salary
   let salary = 'Compatível com o mercado';
-  const salaryMatch = html.match(/(R\$\s*[\d\.]+(?:,\d{2})?(?:\s*(?:a|até|-)\s*R\$\s*[\d\.]+(?:,\d{2})?)?)/i);
+  const salaryMatch = decodedHtml.match(/(R\$\s*[\d\.]+(?:,\d{2})?(?:\s*(?:a|até|-)\s*R\$\s*[\d\.]+(?:,\d{2})?)?)/i);
   if (salaryMatch) {
     salary = salaryMatch[1].trim();
-  } else if (/bolsa\s*(?:aux[íi]lio|est[áa]gio)/i.test(html)) {
+  } else if (/bolsa\s*(?:aux[íi]lio|est[áa]gio)/i.test(decodedHtml)) {
     salary = 'Bolsa Auxílio';
-  } else if (/a\s*combinar/i.test(html)) {
+  } else if (/a\s*combinar/i.test(decodedHtml)) {
     salary = 'A combinar';
   }
 
   // Schedule
   let schedule = 'Horário comercial';
-  if (/6\s*horas|30\s*h|6h/i.test(html)) schedule = '6h diárias (30h semanais)';
-  else if (/8\s*horas|44\s*h|8h/i.test(html)) schedule = '8h diárias (44h semanais)';
-  else if (/40\s*h/i.test(html)) schedule = '40h semanais';
+  if (/6\s*horas|30\s*h|6h/i.test(decodedHtml)) schedule = '6h diárias (30h semanais)';
+  else if (/8\s*horas|44\s*h|8h/i.test(decodedHtml)) schedule = '8h diárias (44h semanais)';
+  else if (/40\s*h/i.test(decodedHtml)) schedule = '40h semanais';
 
-  // Requirements extraction (improved)
+  // Requirements extraction
   const requirements: string[] = [];
   const reqPattern = new RegExp('(?:Requisitos|Exig[êe]ncias|Perfil|Qualifica[çc][õo]es|Compet[êe]ncias|Pr[ée]-requisitos)([\\s\\S]*?)(?:Benef[íi]cios|Atividades|Responsabilidades|Sobre|Remunera[çc][ãa]o|Local|Informa[çc][õo]es|<\\/div>|<\\/section>|$)', 'i');
-  const reqSections = html.match(reqPattern);
+  const reqSections = decodedHtml.match(reqPattern);
   if (reqSections) {
     const liPattern = new RegExp('<li[^>]*>([\\s\\S]*?)<\\/li>', 'gi');
     const listItems = reqSections[1].match(liPattern);
     if (listItems) {
       listItems.forEach((item) => {
-        const text = item.replace(/<[^>]+>/g, '').trim();
-        if (text && text.length > 3) requirements.push(text);
+        const text = sanitizeText(item);
+        if (text && text.length > 3 && text.length < 120) requirements.push(text);
       });
     }
     if (requirements.length === 0) {
-      const lines = reqSections[1].replace(/<[^>]+>/g, '\n').split('\n').filter(l => l.trim().length > 5);
-      lines.slice(0, 8).forEach(l => requirements.push(l.trim()));
+      const cleanSection = sanitizeText(reqSections[1]);
+      const sentences = cleanSection.split(/(?:\. |; |\n)/).map(s => sanitizeText(s)).filter(s => s.length > 5 && s.length < 120);
+      sentences.slice(0, 5).forEach(s => requirements.push(s));
     }
   }
   if (requirements.length === 0) {
@@ -215,14 +256,14 @@ function parseHtmlSemantic(html: string): Partial<ExtractedJobData> {
   // Benefits extraction
   const benefits: string[] = [];
   const benefitPattern = new RegExp('(?:Benef[íi]cios|Oferecemos|O\\s*que\\s*oferecemos)([\\s\\S]*?)(?:Requisitos|Atividades|Sobre|Local|Contato|<\\/div>|<\\/section>|$)', 'i');
-  const benefitSections = html.match(benefitPattern);
+  const benefitSections = decodedHtml.match(benefitPattern);
   if (benefitSections) {
     const liPattern2 = new RegExp('<li[^>]*>([\\s\\S]*?)<\\/li>', 'gi');
     const listItems = benefitSections[1].match(liPattern2);
     if (listItems) {
       listItems.forEach((item) => {
-        const text = item.replace(/<[^>]+>/g, '').trim();
-        if (text && text.length > 2) benefits.push(text);
+        const text = sanitizeText(item);
+        if (text && text.length > 2 && text.length < 120) benefits.push(text);
       });
     }
   }
@@ -235,14 +276,14 @@ function parseHtmlSemantic(html: string): Partial<ExtractedJobData> {
   // Activities extraction
   const activities: string[] = [];
   const actPattern = new RegExp('(?:Atividades|Responsabilidades|Atribui[çc][õo]es|O\\s*que\\s*voc[êe]\\s*vai\\s*fazer)([\\s\\S]*?)(?:Requisitos|Benef[íi]cios|Sobre|Local|<\\/div>|<\\/section>|$)', 'i');
-  const actSections = html.match(actPattern);
+  const actSections = decodedHtml.match(actPattern);
   if (actSections) {
     const liPattern3 = new RegExp('<li[^>]*>([\\s\\S]*?)<\\/li>', 'gi');
     const listItems = actSections[1].match(liPattern3);
     if (listItems) {
       listItems.forEach((item) => {
-        const text = item.replace(/<[^>]+>/g, '').trim();
-        if (text && text.length > 3) activities.push(text);
+        const text = sanitizeText(item);
+        if (text && text.length > 3 && text.length < 120) activities.push(text);
       });
     }
   }
@@ -259,8 +300,8 @@ function parseHtmlSemantic(html: string): Partial<ExtractedJobData> {
     salary,
     benefits,
     schedule,
-    requirements,
-    activities,
+    requirements: requirements.map(r => sanitizeText(r)),
+    activities: activities.map(a => sanitizeText(a)),
   };
 }
 
@@ -288,11 +329,6 @@ function classifySeniority(title: string, description: string): SeniorityLevel {
   return 'Pleno';
 }
 
-// ─── Utilities ──────────────────────────────────────────────────────────────
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
 // ─── Função Principal de Extração Multi-Camada ──────────────────────────────
 export function parseAblerHtml(html: string): ExtractedJobData {
   // Layer 1: JSON-LD
@@ -308,18 +344,18 @@ export function parseAblerHtml(html: string): ExtractedJobData {
   const semanticData = parseHtmlSemantic(html);
 
   // Merge layers with priority: JSON-LD > __NEXT_DATA__ > Meta Tags > Semantic
-  const title = jsonLdData?.title || nextData?.title || metaTags?.title || semanticData.title || 'Vaga de Emprego';
-  const rawDescription = jsonLdData?.rawDescription || nextData?.rawDescription || metaTags?.description || stripHtml(html).slice(0, 3000);
+  const title = sanitizeText(jsonLdData?.title || nextData?.title || metaTags?.title || semanticData.title || 'Vaga de Emprego');
+  const rawDescription = sanitizeText(jsonLdData?.rawDescription || nextData?.rawDescription || metaTags?.description || sanitizeText(html).slice(0, 2000));
 
   const merged: ExtractedJobData = {
     title,
-    location: jsonLdData?.location || nextData?.location || semanticData.location || 'A definir',
-    modality: semanticData.modality || 'Presencial',
-    salary: jsonLdData?.salary || nextData?.salary || semanticData.salary || 'Compatível com o mercado',
-    benefits: semanticData.benefits || ['Vale Transporte / Alimentação', 'Plano de Saúde'],
-    schedule: semanticData.schedule || 'Horário comercial',
-    requirements: semanticData.requirements || ['Experiência na área'],
-    activities: semanticData.activities || ['Executar atividades do cargo'],
+    location: sanitizeText(jsonLdData?.location || nextData?.location || semanticData.location || 'A definir'),
+    modality: sanitizeText(semanticData.modality || 'Presencial'),
+    salary: sanitizeText(jsonLdData?.salary || nextData?.salary || semanticData.salary || 'Compatível com o mercado'),
+    benefits: (semanticData.benefits || ['Vale Transporte / Alimentação']).map(b => sanitizeText(b)),
+    schedule: sanitizeText(semanticData.schedule || 'Horário comercial'),
+    requirements: (semanticData.requirements || ['Experiência na área']).map(r => sanitizeText(r)).filter(r => r.length > 2 && r.length < 150),
+    activities: (semanticData.activities || ['Executar atividades do cargo']).map(a => sanitizeText(a)).filter(a => a.length > 2 && a.length < 150),
     contractType: classifyContract(title, rawDescription),
     seniorityLevel: classifySeniority(title, rawDescription),
     rawDescription,
@@ -339,7 +375,6 @@ export async function extractJobFromAbler(jobUrl: string): Promise<ExtractedJobD
     return parseAblerHtml(htmlText);
   };
 
-  // No ambiente Vercel Serverless, usa HTTP fetch direto instantaneo (evita timeouts do Playwright)
   if (process.env.VERCEL === '1') {
     return fetchDirectly();
   }
