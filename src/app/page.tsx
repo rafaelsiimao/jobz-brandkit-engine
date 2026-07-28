@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles, 
   Link as LinkIcon, 
@@ -27,6 +27,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'pending' | 'completed' | 'error'>('idle');
+  const [activeJobStatus, setActiveJobStatus] = useState<string>('pending');
   const [message, setMessage] = useState<string | null>(null);
 
   // History & Resend States
@@ -37,6 +38,8 @@ export default function HomePage() {
   const [resendStatus, setResendStatus] = useState<Record<string, { success?: boolean; message?: string }>>({});
   const [copiedCaptionId, setCopiedCaptionId] = useState<string | null>(null);
 
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const fetchJobs = async () => {
     setLoadingJobs(true);
     try {
@@ -44,6 +47,25 @@ export default function HomePage() {
       const data = await res.json();
       if (data.jobs) {
         setJobs(data.jobs);
+        
+        // If we are tracking an active job, find its status
+        if (jobId) {
+          const currentJob = data.jobs.find((j: BrandKitJob) => j.id === jobId);
+          if (currentJob) {
+            setActiveJobStatus(currentJob.status);
+            if (currentJob.status === 'completed') {
+              setStatus('completed');
+              setLoading(false);
+              setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
+              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            } else if (currentJob.status === 'failed') {
+              setStatus('error');
+              setLoading(false);
+              setMessage(currentJob.error_message || 'Ocorreu um erro no processamento.');
+              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Erro ao buscar histórico de vagas:', err);
@@ -54,12 +76,23 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchJobs();
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
   }, []);
+
+  const startPolling = (targetJobId: string) => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    pollIntervalRef.current = setInterval(() => {
+      fetchJobs();
+    }, 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setStatus('pending');
+    setActiveJobStatus('pending');
     setMessage(null);
     setJobId(null);
 
@@ -73,18 +106,26 @@ export default function HomePage() {
 
       if (res.ok) {
         setJobId(data.jobId);
-        setStatus('completed');
-        setMessage('Solicitação enviada com sucesso! O BrandKit está em processamento e os materiais serão enviados para o seu e-mail.');
-        fetchJobs();
+        setActiveJobStatus(data.status || 'scraping');
+        
+        if (data.status === 'completed') {
+          setStatus('completed');
+          setLoading(false);
+          setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
+          fetchJobs();
+        } else {
+          // Poll every 2s for step updates
+          startPolling(data.jobId);
+        }
       } else {
         setStatus('error');
+        setLoading(false);
         setMessage(data.error || 'Ocorreu um erro ao processar a requisição.');
       }
     } catch (err: any) {
       setStatus('error');
-      setMessage(err.message || 'Erro de conexão com o servidor.');
-    } finally {
       setLoading(false);
+      setMessage(err.message || 'Erro de conexão com o servidor.');
     }
   };
 
@@ -129,6 +170,18 @@ export default function HomePage() {
     navigator.clipboard.writeText(text);
     setCopiedCaptionId(id);
     setTimeout(() => setCopiedCaptionId(null), 2500);
+  };
+
+  // Helper to determine step completion in stepper
+  const getStepState = (stepKey: string) => {
+    const order = ['pending', 'scraping', 'generating_ai', 'rendering_arts', 'uploading_and_mailing', 'completed'];
+    const currentIndex = order.indexOf(activeJobStatus);
+    const stepIndex = order.indexOf(stepKey);
+
+    if (activeJobStatus === 'completed') return 'completed';
+    if (currentIndex === stepIndex) return 'active';
+    if (currentIndex > stepIndex) return 'completed';
+    return 'upcoming';
   };
 
   return (
@@ -216,7 +269,7 @@ export default function HomePage() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processando BrandKit...</span>
+                  <span>Processando Pipeline...</span>
                 </>
               ) : (
                 <>
@@ -227,14 +280,14 @@ export default function HomePage() {
             </button>
           </form>
 
-          {/* Status Alert */}
+          {/* Status Alert & Live Stepper Screen */}
           {status !== 'idle' && (
             <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
               {status === 'completed' && (
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/60 text-emerald-900 text-sm flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-emerald-950 mb-1">Solicitação Confirmada</h4>
+                    <h4 className="font-bold text-emerald-950 mb-1">Solicitação Concluída!</h4>
                     <p className="text-emerald-800 leading-relaxed text-xs sm:text-sm">{message}</p>
                     {jobId && (
                       <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-emerald-200 text-xs font-mono text-emerald-700">
@@ -256,27 +309,109 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Pipeline Indicators */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
-                  Pipeline de Execução
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200/60">
-                    <Briefcase className="w-4 h-4 text-[#1E81FE]" />
-                    <span className="font-semibold text-gray-700">1. Scraping</span>
+              {/* Live Pipeline Stepper Screen */}
+              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#111317] flex items-center gap-2">
+                    {loading && <Loader2 className="w-4 h-4 text-[#1E81FE] animate-spin" />}
+                    <span>Acompanhamento da Pipeline em Tempo Real</span>
+                  </h4>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[#1E81FE]/10 text-[#1E81FE] uppercase">
+                    {activeJobStatus}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  {/* Step 1 */}
+                  <div
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
+                      getStepState('scraping') === 'active'
+                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
+                        : getStepState('scraping') === 'completed'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
+                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
+                    }`}
+                  >
+                    {getStepState('scraping') === 'active' ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
+                    ) : getStepState('scraping') === 'completed' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <Briefcase className="w-4 h-4 shrink-0" />
+                    )}
+                    <div>
+                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 1</div>
+                      <div className="text-xs truncate">1. Scraping Abler</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200/60">
-                    <Layers className="w-4 h-4 text-[#1E81FE]" />
-                    <span className="font-semibold text-gray-700">2. IA Strategy</span>
+
+                  {/* Step 2 */}
+                  <div
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
+                      getStepState('generating_ai') === 'active'
+                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
+                        : getStepState('generating_ai') === 'completed'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
+                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
+                    }`}
+                  >
+                    {getStepState('generating_ai') === 'active' ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
+                    ) : getStepState('generating_ai') === 'completed' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <Layers className="w-4 h-4 shrink-0" />
+                    )}
+                    <div>
+                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 2</div>
+                      <div className="text-xs truncate">2. IA Sourcing</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200/60">
-                    <ImageIcon className="w-4 h-4 text-[#1E81FE]" />
-                    <span className="font-semibold text-gray-700">3. Render 4 Artes</span>
+
+                  {/* Step 3 */}
+                  <div
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
+                      getStepState('rendering_arts') === 'active'
+                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
+                        : getStepState('rendering_arts') === 'completed'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
+                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
+                    }`}
+                  >
+                    {getStepState('rendering_arts') === 'active' ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
+                    ) : getStepState('rendering_arts') === 'completed' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <ImageIcon className="w-4 h-4 shrink-0" />
+                    )}
+                    <div>
+                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 3</div>
+                      <div className="text-xs truncate">3. Render 4 Artes</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200/60">
-                    <Send className="w-4 h-4 text-[#1E81FE]" />
-                    <span className="font-semibold text-gray-700">4. Disparo E-mail</span>
+
+                  {/* Step 4 */}
+                  <div
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
+                      getStepState('uploading_and_mailing') === 'active'
+                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
+                        : getStepState('uploading_and_mailing') === 'completed'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
+                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
+                    }`}
+                  >
+                    {getStepState('uploading_and_mailing') === 'active' ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
+                    ) : getStepState('uploading_and_mailing') === 'completed' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <Send className="w-4 h-4 shrink-0" />
+                    )}
+                    <div>
+                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 4</div>
+                      <div className="text-xs truncate">4. Envio E-mail</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -351,20 +486,24 @@ export default function HomePage() {
                         className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                           job.status === 'completed'
                             ? 'bg-emerald-100 text-emerald-800'
-                            : job.status === 'processing'
-                            ? 'bg-amber-100 text-amber-800'
                             : job.status === 'failed'
                             ? 'bg-rose-100 text-rose-800'
-                            : 'bg-slate-200 text-slate-700'
+                            : 'bg-amber-100 text-amber-800 animate-pulse'
                         }`}
                       >
                         {job.status === 'completed'
                           ? 'Concluído'
-                          : job.status === 'processing'
-                          ? 'Processando'
+                          : job.status === 'scraping'
+                          ? '🔍 Extraindo Vaga'
+                          : job.status === 'generating_ai'
+                          ? '🧠 Gerando IA'
+                          : job.status === 'rendering_arts'
+                          ? '🎨 Desenhando Artes'
+                          : job.status === 'uploading_and_mailing'
+                          ? '📧 Enviando E-mail'
                           : job.status === 'failed'
                           ? 'Falhou'
-                          : 'Pendente'}
+                          : 'Processando'}
                       </span>
                     </div>
                   </div>

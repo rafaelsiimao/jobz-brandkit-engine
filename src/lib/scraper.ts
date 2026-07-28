@@ -22,18 +22,7 @@ export function parseAblerHtml(html: string): ExtractedJobData {
 }
 
 export async function extractJobFromAbler(jobUrl: string): Promise<ExtractedJobData> {
-  try {
-    const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    try {
-      const page = await browser.newPage();
-      await page.goto(jobUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      const content = await page.content();
-      return parseAblerHtml(content);
-    } finally {
-      await browser.close();
-    }
-  } catch (err: any) {
-    console.warn('Playwright não disponível ou com falha, usando fallback HTTP fetch:', err?.message);
+  const fetchDirectly = async () => {
     const res = await fetch(jobUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -41,5 +30,25 @@ export async function extractJobFromAbler(jobUrl: string): Promise<ExtractedJobD
     });
     const htmlText = await res.text();
     return parseAblerHtml(htmlText);
+  };
+
+  // No ambiente Vercel Serverless, usa HTTP fetch direto instantaneo (evita timeouts do Playwright)
+  if (process.env.VERCEL === '1') {
+    return fetchDirectly();
+  }
+
+  try {
+    const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    try {
+      const page = await browser.newPage();
+      await page.goto(jobUrl, { waitUntil: 'domcontentloaded', timeout: 8000 });
+      const content = await page.content();
+      return parseAblerHtml(content);
+    } finally {
+      await browser.close();
+    }
+  } catch (err: any) {
+    console.warn('Playwright não disponível ou com falha, usando fallback HTTP fetch:', err?.message);
+    return fetchDirectly();
   }
 }

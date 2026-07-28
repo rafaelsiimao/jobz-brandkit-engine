@@ -142,27 +142,50 @@ export function generateLinkedinHtml(copy: CopyData): string {
 </html>`;
 }
 
+function escapeXml(str: string): string {
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 function createRealPngBuffer(width: number, height: number, copy: CopyData, formatLabel: string): Buffer {
+  const safeHeadline = escapeXml(copy.headline || 'Oportunidade de Emprego');
+  const safeSubheadline = escapeXml(copy.subheadline || 'Venha fazer parte do time Jobz');
+  const safeCta = escapeXml(copy.ctaText || 'Cadastre-se na Jobz');
+
   const highlightsSvg = (copy.highlights || [])
     .slice(0, 4)
-    .map(
-      (h, idx) => `
-      <rect x="60" y="${320 + idx * 70}" width="${width - 120}" height="56" rx="14" fill="#FFFFFF"/>
-      <circle cx="90" cy="${348 + idx * 70}" r="8" fill="#1E81FE"/>
-      <text x="110" y="${355 + idx * 70}" font-family="sans-serif" font-size="20" font-weight="600" fill="#111317">${h.slice(0, 50)}</text>
-    `
-    )
+    .map((h, idx) => {
+      const safeH = escapeXml(h);
+      const boxY = 320 + idx * 75;
+      return `
+        <rect x="60" y="${boxY}" width="${width - 120}" height="60" rx="14" fill="#FFFFFF"/>
+        <circle cx="95" cy="${boxY + 30}" r="9" fill="#1E81FE"/>
+        <text x="120" y="${boxY + 37}" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#111317">${safeH}</text>
+      `;
+    })
     .join('');
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <rect width="100%" height="100%" fill="#F2F5F8"/>
-    <rect x="60" y="60" width="280" height="48" rx="24" fill="#1E81FE"/>
-    <text x="80" y="92" font-family="sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">JOBZ RECRUTAMENTO</text>
-    <text x="60" y="180" font-family="sans-serif" font-size="44" font-weight="bold" fill="#111317">${copy.headline.slice(0, 32)}</text>
-    <text x="60" y="230" font-family="sans-serif" font-size="24" font-weight="bold" fill="#1E81FE">${copy.subheadline.slice(0, 40)}</text>
+    
+    <!-- Badge Header -->
+    <rect x="60" y="60" width="300" height="48" rx="24" fill="#1E81FE"/>
+    <text x="80" y="91" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">JOBZ RECRUTAMENTO</text>
+    
+    <!-- Title and Subtitle -->
+    <text x="60" y="180" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="44" font-weight="bold" fill="#111317">${safeHeadline}</text>
+    <text x="60" y="240" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#1E81FE">${safeSubheadline}</text>
+    
+    <!-- Highlights List -->
     <g>${highlightsSvg}</g>
-    <rect x="60" y="${height - 120}" width="${width - 120}" height="64" rx="18" fill="#111317"/>
-    <text x="${width / 2}" y="${height - 80}" font-family="sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${copy.ctaText}</text>
+    
+    <!-- CTA Button -->
+    <rect x="60" y="${height - 130}" width="${width - 120}" height="70" rx="20" fill="#111317"/>
+    <text x="${width / 2}" y="${height - 86}" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
   </svg>`;
 
   try {
@@ -171,12 +194,22 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
     });
     return resvg.render().asPng();
   } catch (err) {
-    console.error('Erro na renderizacao Resvg:', err);
+    console.error('Erro na renderização Resvg:', err);
     return Buffer.from(svg);
   }
 }
 
 export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer }> {
+  // No ambiente Vercel Serverless, utiliza o renderizador ultra-rapido Resvg PNG direto (evita timeouts)
+  if (process.env.VERCEL === '1') {
+    return {
+      feed: createRealPngBuffer(1080, 1350, copy, 'Feed'),
+      whatsapp: createRealPngBuffer(1080, 1080, copy, 'WhatsApp'),
+      story: createRealPngBuffer(1080, 1920, copy, 'Story'),
+      linkedin: createRealPngBuffer(1200, 627, copy, 'LinkedIn')
+    };
+  }
+
   try {
     const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     try {

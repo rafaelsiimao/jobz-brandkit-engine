@@ -39,7 +39,7 @@ export interface BrandKitJob {
   id: string;
   job_url: string;
   recipient_email: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'scraping' | 'generating_ai' | 'rendering_arts' | 'uploading_and_mailing' | 'completed' | 'failed' | string;
   extracted_data?: ExtractedJobData;
   sourcing_profile?: SourcingProfile;
   copy_data?: CopyData;
