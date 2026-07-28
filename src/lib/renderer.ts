@@ -8,7 +8,7 @@ const fontBuffer = Buffer.from(FONT_PLUS_JAKARTA_SANS_BOLD_BASE64, 'base64');
 function cleanText(str: string): string {
   if (!str) return '';
   // Remove emojis and non-standard symbols that can break font rendering
-  const textWithoutEmoji = str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+  const textWithoutEmoji = str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
   
   return textWithoutEmoji
     .replace(/&/g, '&amp;')
@@ -405,7 +405,7 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
 
   const cardW = Math.floor(width / 2 - 70);
 
-  // SVG using native SVG vector icons instead of unicode emojis for 100% reliable font rendering
+  // Clean SVG with exact single font-family name without fallback commas so Resvg fontdb matches embedded font
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <rect width="100%" height="100%" fill="#F2F5F8"/>
     
@@ -413,52 +413,52 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
     <rect x="60" y="50" width="120" height="8" rx="4" fill="#1E81FE"/>
 
     <!-- Category Badge Header -->
-    <text x="60" y="95" font-family="Plus Jakarta Sans, sans-serif" font-size="24" font-weight="bold" fill="#1E81FE">OPORTUNIDADE DE EMPREGO</text>
+    <text x="60" y="95" font-family="Plus Jakarta Sans" font-size="24" font-weight="bold" fill="#1E81FE">OPORTUNIDADE DE EMPREGO</text>
     
     <!-- Headline & Subheadline -->
-    <text x="60" y="170" font-family="Plus Jakarta Sans, sans-serif" font-size="46" font-weight="bold" fill="#111317">${safeHeadline}</text>
-    <text x="60" y="230" font-family="Plus Jakarta Sans, sans-serif" font-size="24" font-weight="bold" fill="#4A5568">${safeSubheadline}</text>
+    <text x="60" y="170" font-family="Plus Jakarta Sans" font-size="46" font-weight="bold" fill="#111317">${safeHeadline}</text>
+    <text x="60" y="230" font-family="Plus Jakarta Sans" font-size="24" font-weight="bold" fill="#4A5568">${safeSubheadline}</text>
     
     <!-- 2x2 Info Cards -->
     <!-- Card 1: Localização -->
     <g transform="translate(60, 310)">
       <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#1E81FE" transform="translate(24, 24) scale(1.4)"/>
-      <text x="70" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="14" font-weight="bold" fill="#718096">LOCALIZAÇÃO</text>
-      <text x="70" y="74" font-family="Plus Jakarta Sans, sans-serif" font-size="22" font-weight="bold" fill="#111317">${loc.slice(0, 24)}</text>
+      <text x="70" y="42" font-family="Plus Jakarta Sans" font-size="14" font-weight="bold" fill="#718096">LOCALIZAÇÃO</text>
+      <text x="70" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${loc.slice(0, 24)}</text>
     </g>
 
     <!-- Card 2: Modelo / Horário -->
     <g transform="translate(${width / 2 + 10}, 310)">
       <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
       <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="#1E81FE" transform="translate(24, 24) scale(1.4)"/>
-      <text x="70" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="14" font-weight="bold" fill="#718096">MODELO / HORÁRIO</text>
-      <text x="70" y="74" font-family="Plus Jakarta Sans, sans-serif" font-size="22" font-weight="bold" fill="#111317">${mod.slice(0, 24)}</text>
+      <text x="70" y="42" font-family="Plus Jakarta Sans" font-size="14" font-weight="bold" fill="#718096">MODELO / HORÁRIO</text>
+      <text x="70" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${mod.slice(0, 24)}</text>
     </g>
 
     <!-- Card 3: Remuneração -->
     <g transform="translate(60, 440)">
       <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
       <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" fill="#1E81FE" transform="translate(24, 24) scale(1.4)"/>
-      <text x="70" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="14" font-weight="bold" fill="#718096">REMUNERAÇÃO</text>
-      <text x="70" y="74" font-family="Plus Jakarta Sans, sans-serif" font-size="22" font-weight="bold" fill="#111317">${sal.slice(0, 24)}</text>
+      <text x="70" y="42" font-family="Plus Jakarta Sans" font-size="14" font-weight="bold" fill="#718096">REMUNERAÇÃO</text>
+      <text x="70" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${sal.slice(0, 24)}</text>
     </g>
 
     <!-- Card 4: Requisito -->
     <g transform="translate(${width / 2 + 10}, 440)">
       <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
       <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="#1E81FE" transform="translate(24, 24) scale(1.4)"/>
-      <text x="70" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="14" font-weight="bold" fill="#718096">REQUISITO</text>
-      <text x="70" y="74" font-family="Plus Jakarta Sans, sans-serif" font-size="22" font-weight="bold" fill="#111317">${req.slice(0, 24)}</text>
+      <text x="70" y="42" font-family="Plus Jakarta Sans" font-size="14" font-weight="bold" fill="#718096">REQUISITO</text>
+      <text x="70" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${req.slice(0, 24)}</text>
     </g>
     
     <!-- Dark Footer Container -->
     <rect x="60" y="${height - 140}" width="${width - 120}" height="85" rx="22" fill="#111317"/>
-    <text x="95" y="${height - 87}" font-family="Plus Jakarta Sans, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">Candidate-se pelo link na bio!</text>
+    <text x="95" y="${height - 87}" font-family="Plus Jakarta Sans" font-size="24" font-weight="bold" fill="#FFFFFF">Candidate-se pelo link na bio!</text>
     
     <!-- Blue CTA Button -->
     <rect x="${width - 330}" y="${height - 125}" width="240" height="55" rx="14" fill="#1E81FE"/>
-    <text x="${width - 210}" y="${height - 90}" font-family="Plus Jakarta Sans, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
+    <text x="${width - 210}" y="${height - 90}" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
   </svg>`;
 
   try {
