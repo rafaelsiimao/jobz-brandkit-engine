@@ -141,33 +141,56 @@ export function generateLinkedinHtml(copy: CopyData): string {
 </html>`;
 }
 
+function createSvgBuffer(width: number, height: number, copy: CopyData, formatLabel: string): Buffer {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <rect width="100%" height="100%" fill="#F2F5F8"/>
+    <rect x="60" y="60" width="300" height="48" rx="24" fill="#1E81FE"/>
+    <text x="80" y="92" font-family="sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">JOBZ RECRUTAMENTO</text>
+    <text x="60" y="180" font-family="sans-serif" font-size="44" font-weight="bold" fill="#111317">${copy.headline.slice(0, 35)}</text>
+    <text x="60" y="230" font-family="sans-serif" font-size="24" font-weight="bold" fill="#1E81FE">${copy.subheadline.slice(0, 45)}</text>
+    <rect x="60" y="${height - 120}" width="${width - 120}" height="60" rx="16" fill="#111317"/>
+    <text x="${width / 2}" y="${height - 82}" font-family="sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${copy.ctaText}</text>
+  </svg>`;
+  return Buffer.from(svg);
+}
+
 export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer }> {
-  const browser = await chromium.launch({ headless: true });
   try {
-    const context = await browser.newContext();
+    const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    try {
+      const context = await browser.newContext();
 
-    const feedPage = await context.newPage();
-    await feedPage.setViewportSize({ width: 1080, height: 1350 });
-    await feedPage.setContent(generateFeedHtml(copy));
-    const feed = await feedPage.screenshot({ type: 'png' });
+      const feedPage = await context.newPage();
+      await feedPage.setViewportSize({ width: 1080, height: 1350 });
+      await feedPage.setContent(generateFeedHtml(copy));
+      const feed = await feedPage.screenshot({ type: 'png' });
 
-    const whatsappPage = await context.newPage();
-    await whatsappPage.setViewportSize({ width: 1080, height: 1080 });
-    await whatsappPage.setContent(generateWhatsappHtml(copy));
-    const whatsapp = await whatsappPage.screenshot({ type: 'png' });
+      const whatsappPage = await context.newPage();
+      await whatsappPage.setViewportSize({ width: 1080, height: 1080 });
+      await whatsappPage.setContent(generateWhatsappHtml(copy));
+      const whatsapp = await whatsappPage.screenshot({ type: 'png' });
 
-    const storyPage = await context.newPage();
-    await storyPage.setViewportSize({ width: 1080, height: 1920 });
-    await storyPage.setContent(generateStoryHtml(copy));
-    const story = await storyPage.screenshot({ type: 'png' });
+      const storyPage = await context.newPage();
+      await storyPage.setViewportSize({ width: 1080, height: 1920 });
+      await storyPage.setContent(generateStoryHtml(copy));
+      const story = await storyPage.screenshot({ type: 'png' });
 
-    const linkedinPage = await context.newPage();
-    await linkedinPage.setViewportSize({ width: 1200, height: 627 });
-    await linkedinPage.setContent(generateLinkedinHtml(copy));
-    const linkedin = await linkedinPage.screenshot({ type: 'png' });
+      const linkedinPage = await context.newPage();
+      await linkedinPage.setViewportSize({ width: 1200, height: 627 });
+      await linkedinPage.setContent(generateLinkedinHtml(copy));
+      const linkedin = await linkedinPage.screenshot({ type: 'png' });
 
-    return { feed, story, linkedin, whatsapp };
-  } finally {
-    await browser.close();
+      return { feed, story, linkedin, whatsapp };
+    } finally {
+      await browser.close();
+    }
+  } catch (err: any) {
+    console.warn('Playwright não disponível para renderização PNG no servidor, gerando buffers SVG de fallback:', err?.message);
+    return {
+      feed: createSvgBuffer(1080, 1350, copy, 'Feed'),
+      whatsapp: createSvgBuffer(1080, 1080, copy, 'WhatsApp'),
+      story: createSvgBuffer(1080, 1920, copy, 'Story'),
+      linkedin: createSvgBuffer(1200, 627, copy, 'LinkedIn')
+    };
   }
 }

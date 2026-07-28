@@ -5,8 +5,7 @@ import { generateBrandKitAI } from '@/lib/ai-engine';
 import { renderBrandKitPNGs } from '@/lib/renderer';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
 
-// Permite tempo estendido de execução na Vercel (até 60 segundos)
-export const maxDuration = 60;
+
 
 export async function POST(request: Request) {
   let jobId: string | null = null;
