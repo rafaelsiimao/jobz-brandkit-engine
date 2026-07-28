@@ -5,18 +5,23 @@ import { generateBrandKitAI } from '@/lib/ai-engine';
 import { renderBrandKitPNGs } from '@/lib/renderer';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
 
+// Permite tempo estendido de execução na Vercel (até 60 segundos)
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
+  let jobId: string | null = null;
+
   try {
     const { jobUrl, recipientEmail } = await request.json();
 
     if (!jobUrl || !recipientEmail) {
       return NextResponse.json(
-        { error: 'jobUrl and recipientEmail are required' },
+        { error: 'jobUrl e recipientEmail são obrigatórios' },
         { status: 400 }
       );
     }
 
-    // 1. Create DB record with pending status
+    // 1. Criar registro inicial com status 'pending'
     const { data: dbJob, error: dbError } = await supabase
       .from('brandkit_jobs')
       .insert([{ job_url: jobUrl, recipient_email: recipientEmail, status: 'pending' }])
@@ -24,49 +29,79 @@ export async function POST(request: Request) {
       .single();
 
     if (dbError || !dbJob) {
-      throw new Error(`Database error: ${dbError?.message || 'Failed to insert job'}`);
+      throw new Error(`Erro no Supabase DB: ${dbError?.message || 'Falha ao inserir job'}`);
     }
 
-    // Process asynchronously background pipeline
-    (async () => {
-      try {
-        await supabase.from('brandkit_jobs').update({ status: 'processing' }).eq('id', dbJob.id);
+    jobId = dbJob.id;
 
-        const extractedData = await extractJobFromAbler(jobUrl);
-        const { sourcing, copy } = await generateBrandKitAI(extractedData);
-        const pngBuffers = await renderBrandKitPNGs(copy);
-        const assetUrls = await uploadAssetsAndSendEmail(
-          dbJob.id,
-          recipientEmail,
-          pngBuffers,
-          sourcing,
-          copy
-        );
+    // Execute pipeline synchronously with step-by-step Supabase status tracking
+    
+    // Etapa 1: Extração da Vaga (Scraper)
+    await supabase.from('brandkit_jobs').update({ status: 'scraping' }).eq('id', jobId);
+    const extractedData = await extractJobFromAbler(jobUrl);
 
-        await supabase
-          .from('brandkit_jobs')
-          .update({
-            status: 'completed',
-            extracted_data: extractedData,
-            sourcing_profile: sourcing,
-            copy_data: copy,
-            asset_urls: assetUrls,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', dbJob.id);
-      } catch (procErr: any) {
-        await supabase
-          .from('brandkit_jobs')
-          .update({
-            status: 'failed',
-            error_message: procErr?.message || 'Processing failed',
-          })
-          .eq('id', dbJob.id);
-      }
-    })();
+    // Etapa 2: Inteligência de Recrutamento & Copy (IA)
+    await supabase
+      .from('brandkit_jobs')
+      .update({ status: 'generating_ai', extracted_data: extractedData })
+      .eq('id', jobId);
 
-    return NextResponse.json({ success: true, jobId: dbJob.id, status: 'pending' });
+    const { sourcing, copy } = await generateBrandKitAI(extractedData);
+
+    // Etapa 3: Renderização das Artes PNG
+    await supabase
+      .from('brandkit_jobs')
+      .update({ status: 'rendering_arts', sourcing_profile: sourcing, copy_data: copy })
+      .eq('id', jobId);
+
+    const pngBuffers = await renderBrandKitPNGs(copy);
+
+    // Etapa 4: Upload para Storage & Envio por E-mail
+    await supabase.from('brandkit_jobs').update({ status: 'uploading_and_mailing' }).eq('id', jobId);
+
+    const assetUrls = await uploadAssetsAndSendEmail(
+      jobId,
+      recipientEmail,
+      pngBuffers,
+      sourcing,
+      copy
+    );
+
+    // Etapa Concluída com Sucesso!
+    await supabase
+      .from('brandkit_jobs')
+      .update({
+        status: 'completed',
+        asset_urls: assetUrls,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', jobId);
+
+    return NextResponse.json({
+      success: true,
+      jobId,
+      status: 'completed',
+      assetUrls,
+      message: 'BrandKit gerado e enviado com sucesso!'
+    });
+
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500 });
+    const errorMsg = err?.message || 'Erro durante o processamento do pipeline';
+    console.error('Falha no pipeline BrandKit:', errorMsg);
+
+    if (jobId) {
+      await supabase
+        .from('brandkit_jobs')
+        .update({
+          status: 'failed',
+          error_message: errorMsg,
+        })
+        .eq('id', jobId);
+    }
+
+    return NextResponse.json(
+      { error: errorMsg, jobId, status: 'failed' },
+      { status: 500 }
+    );
   }
 }
