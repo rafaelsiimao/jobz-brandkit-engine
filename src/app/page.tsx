@@ -17,7 +17,8 @@ import {
   Download,
   Copy,
   Check,
-  RefreshCw
+  RefreshCw,
+  XCircle
 } from 'lucide-react';
 import { BrandKitJob } from '@/lib/types';
 
@@ -39,6 +40,7 @@ export default function HomePage() {
   const [copiedCaptionId, setCopiedCaptionId] = useState<string | null>(null);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchJobs = async () => {
     setLoadingJobs(true);
@@ -78,6 +80,7 @@ export default function HomePage() {
     fetchJobs();
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, []);
 
@@ -88,6 +91,21 @@ export default function HomePage() {
     }, 2000);
   };
 
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    setLoading(false);
+    setStatus('error');
+    setActiveJobStatus('canceled');
+    setMessage('Processamento cancelado pelo usuário.');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -96,11 +114,18 @@ export default function HomePage() {
     setMessage(null);
     setJobId(null);
 
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const res = await fetch('/api/generate-brandkit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobUrl, recipientEmail })
+        body: JSON.stringify({ jobUrl, recipientEmail }),
+        signal: controller.signal
       });
       const data = await res.json();
 
@@ -114,7 +139,6 @@ export default function HomePage() {
           setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
           fetchJobs();
         } else {
-          // Poll every 2s for step updates
           startPolling(data.jobId);
         }
       } else {
@@ -123,9 +147,15 @@ export default function HomePage() {
         setMessage(data.error || 'Ocorreu um erro ao processar a requisição.');
       }
     } catch (err: any) {
-      setStatus('error');
-      setLoading(false);
-      setMessage(err.message || 'Erro de conexão com o servidor.');
+      if (err.name === 'AbortError') {
+        setStatus('error');
+        setLoading(false);
+        setMessage('Processamento cancelado pelo usuário.');
+      } else {
+        setStatus('error');
+        setLoading(false);
+        setMessage(err.message || 'Erro de conexão com o servidor.');
+      }
     }
   };
 
@@ -261,23 +291,36 @@ export default function HomePage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 bg-[#1E81FE] hover:bg-[#196edb] active:scale-[0.99] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#1E81FE]/25 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processando Pipeline...</span>
-                </>
-              ) : (
-                <>
-                  <span>Gerar & Enviar BrandKit</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-[#1E81FE] hover:bg-[#196edb] active:scale-[0.99] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#1E81FE]/25 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Processando Pipeline...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Gerar & Enviar BrandKit</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+
+              {loading && (
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2"
+                >
+                  <XCircle className="w-5 h-5" />
+                  <span>Parar Processamento</span>
+                </button>
               )}
-            </button>
+            </div>
           </form>
 
           {/* Status Alert & Live Stepper Screen */}
@@ -303,7 +346,7 @@ export default function HomePage() {
                 <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200/60 text-rose-900 text-sm flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-rose-950 mb-1">Falha no Envio</h4>
+                    <h4 className="font-bold text-rose-950 mb-1">Status da Solicitação</h4>
                     <p className="text-rose-800 leading-relaxed text-xs sm:text-sm">{message}</p>
                   </div>
                 </div>
