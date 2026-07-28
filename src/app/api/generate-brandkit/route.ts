@@ -5,7 +5,7 @@ import { generateBrandKitAI } from '@/lib/ai-engine';
 import { renderBrandKitPNGs } from '@/lib/renderer';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
 
-
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(request: Request) {
   let jobId: string | null = null;
@@ -33,11 +33,12 @@ export async function POST(request: Request) {
 
     jobId = dbJob.id;
 
-    // Execute pipeline synchronously with step-by-step Supabase status tracking
+    // Execute pipeline step-by-step with pacing for clear UI progress transitions
     
     // Etapa 1: Extração da Vaga (Scraper)
     await supabase.from('brandkit_jobs').update({ status: 'scraping' }).eq('id', jobId);
     const extractedData = await extractJobFromAbler(jobUrl);
+    await delay(400);
 
     // Etapa 2: Inteligência de Recrutamento & Copy (IA)
     await supabase
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       .eq('id', jobId);
 
     const { sourcing, copy } = await generateBrandKitAI(extractedData);
+    await delay(400);
 
     // Etapa 3: Renderização das Artes PNG
     await supabase
@@ -54,6 +56,7 @@ export async function POST(request: Request) {
       .eq('id', jobId);
 
     const pngBuffers = await renderBrandKitPNGs(copy);
+    await delay(400);
 
     // Etapa 4: Upload para Storage & Envio por E-mail
     await supabase.from('brandkit_jobs').update({ status: 'uploading_and_mailing' }).eq('id', jobId);
@@ -65,6 +68,7 @@ export async function POST(request: Request) {
       sourcing,
       copy
     );
+    await delay(300);
 
     // Etapa Concluída com Sucesso!
     await supabase
