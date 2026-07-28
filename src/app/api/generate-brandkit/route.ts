@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     await supabase.from('brandkit_jobs').update({ status: 'uploading_and_mailing' }).eq('id', jobId);
 
     const assetUrls = await uploadAssetsAndSendEmail(
-      jobId,
+      dbJob.id,
       recipientEmail,
       pngBuffers,
       sourcing,
