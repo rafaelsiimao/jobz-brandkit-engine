@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      width: 1080px;
+      height: 1080px;
+      background-color: #F2F5F8;
+      color: #111317;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 80px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Elementos de Fundo / Decorativos */
+    .bg-circle-1 {
+      position: absolute;
+      top: -150px;
+      right: -150px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(30,129,254,0.12) 0%, rgba(242,245,248,0) 70%);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .bg-circle-2 {
+      position: absolute;
+      bottom: -100px;
+      left: -100px;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(140,0,255,0.08) 0%, rgba(242,245,248,0) 70%);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+    }
+
+    .logo {
+      height: 70px;
+      object-fit: contain;
+    }
+
+    .badge-afirmativa {
+      background-color: #8C00FF;
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(140, 0, 255, 0.25);
+    }
+
+    main {
+      z-index: 2;
+      margin-top: 20px;
+    }
+
+    .category {
+      color: #1E81FE;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1.1;
+      color: #111317;
+      margin-bottom: 24px;
+      letter-spacing: -1.5px;
+    }
+
+    .subtitle {
+      font-size: 34px;
+      font-weight: 500;
+      color: #4A5568;
+      margin-bottom: 48px;
+      line-height: 1.3;
+    }
+
+    .grid-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    .info-card {
+      background-color: #FFFFFF;
+      padding: 28px 36px;
+      border-radius: 20px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .info-icon {
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .info-text-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-size: 22px;
+      font-weight: 600;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #111317;
+    }
+
+    footer {
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #111317;
+      padding: 32px 48px;
+      border-radius: 24px;
+    }
+
+    .cta-text {
+      color: #FFFFFF;
+      font-size: 34px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-cta {
+      background-color: #1E81FE;
+      color: #FFFFFF;
+      font-size: 32px;
+      font-weight: 800;
+      padding: 18px 36px;
+      border-radius: 14px;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 8px 20px rgba(30, 129, 254, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-circle-1"></div>
+  <div class="bg-circle-2"></div>
+
+  <header>
+    <img class="logo" src="https://jobz.com.br/wp-content/uploads/2025/02/logocor01.png" alt="Jobz Logo">
+    <div class="badge-afirmativa">💜 Vaga Afirmativa para Mulheres</div>
+  </header>
+
+  <main>
+    <div class="category">OPORTUNIDADE DE ESTÁGIO</div>
+    <h1>Estágio em Odontologia</h1>
+    <div class="subtitle">Desenvolva sua prática clínica e biossegurança em clínica estruturada.</div>
+
+    <div class="grid-info">
+      <div class="info-card">
+        <span class="info-icon">📍</span>
+        <div class="info-text-group">
+          <span class="info-label">Localização</span>
+          <span class="info-value">Vila Velha / ES</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">⏰</span>
+        <div class="info-text-group">
+          <span class="info-label">Horário</span>
+          <span class="info-value">08h às 12h (Seg a Sex)</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">💰</span>
+        <div class="info-text-group">
+          <span class="info-label">Bolsa + Auxílio</span>
+          <span class="info-value">R$ 1.000 + R$ 200 VT</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">🎓</span>
+        <div class="info-text-group">
+          <span class="info-label">Requisito</span>
+          <span class="info-value">Cursando Odontologia</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="cta-text">
+      👉 Candidate-se pelo link na bio!
+    </div>
+    <div class="btn-cta">Inscreva-se</div>
+  </footer>
+</body>
+</html>

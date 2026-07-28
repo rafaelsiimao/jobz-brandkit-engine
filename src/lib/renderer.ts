@@ -3,141 +3,394 @@ import { Resvg } from '@resvg/resvg-js';
 import { CopyData } from './types';
 
 export function generateFeedHtml(copy: CopyData): string {
-  const highlightsHtml = (copy.highlights || [])
-    .map(
-      (h) =>
-        `<li style="background: #ffffff; padding: 18px 26px; border-radius: 14px; margin-bottom: 16px; font-weight: 600; color: #111317; box-shadow: 0 4px 12px rgba(0,0,0,0.04); font-size: 24px;">🔹 ${h}</li>`
-    )
-    .join('');
+  const highlights = copy.highlights || [];
+  const loc = highlights[0] || 'Vitória / ES';
+  const mod = highlights[1] || 'Presencial / Híbrido';
+  const sal = highlights[2] || 'A combinar';
+  const req = highlights[3] || 'Requisitos da Vaga';
 
   return `<!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { width: 1080px; height: 1350px; background-color: #F2F5F8; padding: 80px 70px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
-    .badge { background: #1E81FE; color: #ffffff; padding: 12px 24px; border-radius: 30px; display: inline-block; font-weight: 700; font-size: 20px; text-transform: uppercase; width: fit-content; }
-    .title { color: #111317; font-size: 56px; font-weight: 800; line-height: 1.15; margin-top: 28px; }
-    .subtitle { color: #1E81FE; font-size: 30px; font-weight: 700; margin-top: 14px; }
-    .highlights-list { list-style: none; margin-top: 40px; }
-    .cta-button { background: #111317; color: #ffffff; padding: 26px; border-radius: 18px; text-align: center; font-size: 26px; font-weight: 700; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      width: 1080px;
+      height: 1350px;
+      background-color: #F2F5F8;
+      color: #111317;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 80px 70px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bg-circle-1 {
+      position: absolute; top: -150px; right: -150px; width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(30,129,254,0.14) 0%, rgba(242,245,248,0) 70%);
+      border-radius: 50%; z-index: 1;
+    }
+    .bg-circle-2 {
+      position: absolute; bottom: -100px; left: -100px; width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(30,129,254,0.08) 0%, rgba(242,245,248,0) 70%);
+      border-radius: 50%; z-index: 1;
+    }
+    header { display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+    .logo { height: 70px; object-fit: contain; }
+    main { z-index: 2; margin-top: 20px; }
+    .category { color: #1E81FE; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+    h1 { font-size: 58px; font-weight: 800; line-height: 1.1; color: #111317; margin-bottom: 20px; letter-spacing: -1.5px; }
+    .subtitle { font-size: 30px; font-weight: 500; color: #4A5568; margin-bottom: 40px; line-height: 1.3; }
+    .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+    .info-card {
+      background-color: #FFFFFF; padding: 24px 30px; border-radius: 20px;
+      border: 1px solid #E2E8F0; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex; align-items: center; gap: 18px;
+    }
+    .info-icon { font-size: 34px; line-height: 1; }
+    .info-text-group { display: flex; flex-direction: column; }
+    .info-label { font-size: 18px; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-value { font-size: 26px; font-weight: 700; color: #111317; }
+    footer {
+      z-index: 2; display: flex; justify-content: space-between; align-items: center;
+      background-color: #111317; padding: 32px 48px; border-radius: 24px;
+    }
+    .cta-text { color: #FFFFFF; font-size: 32px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+    .btn-cta {
+      background-color: #1E81FE; color: #FFFFFF; font-size: 28px; font-weight: 800;
+      padding: 16px 32px; border-radius: 14px; text-decoration: none; display: inline-block;
+      box-shadow: 0 8px 20px rgba(30, 129, 254, 0.4);
+    }
   </style>
 </head>
 <body>
-  <div>
-    <div class="badge">JOBZ RECRUTAMENTO</div>
-    <h1 class="title">${copy.headline}</h1>
-    <p class="subtitle">${copy.subheadline}</p>
-    <ul class="highlights-list">${highlightsHtml}</ul>
-  </div>
-  <div class="cta-button">${copy.ctaText}</div>
+  <div class="bg-circle-1"></div>
+  <div class="bg-circle-2"></div>
+  <header>
+    <img class="logo" src="https://jobz.com.br/wp-content/uploads/2025/02/logocor01.png" alt="Jobz Logo">
+  </header>
+  <main>
+    <div class="category">OPORTUNIDADE DE EMPREGO</div>
+    <h1>${copy.headline}</h1>
+    <div class="subtitle">${copy.subheadline}</div>
+    <div class="grid-info">
+      <div class="info-card">
+        <span class="info-icon">📍</span>
+        <div class="info-text-group">
+          <span class="info-label">Localização</span>
+          <span class="info-value">${loc}</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">⏰</span>
+        <div class="info-text-group">
+          <span class="info-label">Modelo / Horário</span>
+          <span class="info-value">${mod}</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">💰</span>
+        <div class="info-text-group">
+          <span class="info-label">Remuneração</span>
+          <span class="info-value">${sal}</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">🎓</span>
+        <div class="info-text-group">
+          <span class="info-label">Requisito</span>
+          <span class="info-value">${req}</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="cta-text">👉 Candidate-se pelo link na bio!</div>
+    <div class="btn-cta">${copy.ctaText || 'Inscreva-se'}</div>
+  </footer>
 </body>
 </html>`;
 }
 
 export function generateWhatsappHtml(copy: CopyData): string {
-  const highlightsHtml = (copy.highlights || [])
-    .map(
-      (h) =>
-        `<li style="background: #ffffff; padding: 16px 24px; border-radius: 14px; margin-bottom: 14px; font-weight: 600; color: #111317; box-shadow: 0 4px 12px rgba(0,0,0,0.04); font-size: 22px;">🔹 ${h}</li>`
-    )
-    .join('');
+  const highlights = copy.highlights || [];
+  const loc = highlights[0] || 'Vitória / ES';
+  const mod = highlights[1] || 'Presencial / Híbrido';
+  const sal = highlights[2] || 'A combinar';
+  const req = highlights[3] || 'Requisitos da Vaga';
 
   return `<!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { width: 1080px; height: 1080px; background-color: #F2F5F8; padding: 70px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
-    .badge { background: #1E81FE; color: #ffffff; padding: 12px 24px; border-radius: 30px; display: inline-block; font-weight: 700; font-size: 20px; text-transform: uppercase; width: fit-content; }
-    .title { color: #111317; font-size: 54px; font-weight: 800; line-height: 1.15; margin-top: 24px; }
-    .subtitle { color: #1E81FE; font-size: 28px; font-weight: 700; margin-top: 12px; }
-    .highlights-list { list-style: none; margin-top: 36px; }
-    .cta-button { background: #111317; color: #ffffff; padding: 24px; border-radius: 16px; text-align: center; font-size: 26px; font-weight: 700; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      background-color: #F2F5F8;
+      color: #111317;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 60px 70px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bg-circle-1 {
+      position: absolute; top: -150px; right: -150px; width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(30,129,254,0.14) 0%, rgba(242,245,248,0) 70%);
+      border-radius: 50%; z-index: 1;
+    }
+    header { display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+    .logo { height: 60px; object-fit: contain; }
+    main { z-index: 2; margin-top: 10px; }
+    .category { color: #1E81FE; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+    h1 { font-size: 50px; font-weight: 800; line-height: 1.1; color: #111317; margin-bottom: 16px; letter-spacing: -1.5px; }
+    .subtitle { font-size: 26px; font-weight: 500; color: #4A5568; margin-bottom: 30px; line-height: 1.3; }
+    .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .info-card {
+      background-color: #FFFFFF; padding: 20px 24px; border-radius: 18px;
+      border: 1px solid #E2E8F0; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .info-icon { font-size: 30px; line-height: 1; }
+    .info-text-group { display: flex; flex-direction: column; }
+    .info-label { font-size: 16px; font-weight: 600; color: #718096; text-transform: uppercase; }
+    .info-value { font-size: 22px; font-weight: 700; color: #111317; }
+    footer {
+      z-index: 2; display: flex; justify-content: space-between; align-items: center;
+      background-color: #111317; padding: 24px 40px; border-radius: 20px;
+    }
+    .cta-text { color: #FFFFFF; font-size: 26px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .btn-cta {
+      background-color: #1E81FE; color: #FFFFFF; font-size: 24px; font-weight: 800;
+      padding: 12px 28px; border-radius: 12px; text-decoration: none; display: inline-block;
+      box-shadow: 0 6px 16px rgba(30, 129, 254, 0.4);
+    }
   </style>
 </head>
 <body>
-  <div>
-    <div class="badge">JOBZ RECRUTAMENTO</div>
-    <h1 class="title">${copy.headline}</h1>
-    <p class="subtitle">${copy.subheadline}</p>
-    <ul class="highlights-list">${highlightsHtml}</ul>
-  </div>
-  <div class="cta-button">${copy.ctaText}</div>
+  <div class="bg-circle-1"></div>
+  <header>
+    <img class="logo" src="https://jobz.com.br/wp-content/uploads/2025/02/logocor01.png" alt="Jobz Logo">
+  </header>
+  <main>
+    <div class="category">OPORTUNIDADE DE EMPREGO</div>
+    <h1>${copy.headline}</h1>
+    <div class="subtitle">${copy.subheadline}</div>
+    <div class="grid-info">
+      <div class="info-card">
+        <span class="info-icon">📍</span>
+        <div class="info-text-group">
+          <span class="info-label">Localização</span>
+          <span class="info-value">${loc}</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">⏰</span>
+        <div class="info-text-group">
+          <span class="info-label">Modelo</span>
+          <span class="info-value">${mod}</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">💰</span>
+        <div class="info-text-group">
+          <span class="info-label">Remuneração</span>
+          <span class="info-value">${sal}</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="info-icon">🎓</span>
+        <div class="info-text-group">
+          <span class="info-label">Requisito</span>
+          <span class="info-value">${req}</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="cta-text">👉 Clique no link e candidate-se!</div>
+    <div class="btn-cta">${copy.ctaText || 'Inscreva-se'}</div>
+  </footer>
 </body>
 </html>`;
 }
 
 export function generateStoryHtml(copy: CopyData): string {
-  const highlightsHtml = (copy.highlights || [])
-    .map(
-      (h) =>
-        `<li style="background: #ffffff; padding: 20px 28px; border-radius: 16px; margin-bottom: 18px; font-weight: 600; color: #111317; box-shadow: 0 4px 12px rgba(0,0,0,0.04); font-size: 26px;">🔹 ${h}</li>`
-    )
-    .join('');
+  const highlights = copy.highlights || [];
+  const loc = highlights[0] || 'Vitória / ES';
+  const mod = highlights[1] || 'Presencial / Híbrido';
+  const sal = highlights[2] || 'A combinar';
+  const req = highlights[3] || 'Requisitos da Vaga';
 
   return `<!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { width: 1080px; height: 1920px; background-color: #F2F5F8; padding: 120px 70px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
-    .badge { background: #1E81FE; color: #ffffff; padding: 14px 28px; border-radius: 30px; display: inline-block; font-weight: 700; font-size: 22px; text-transform: uppercase; width: fit-content; }
-    .title { color: #111317; font-size: 60px; font-weight: 800; line-height: 1.15; margin-top: 32px; }
-    .subtitle { color: #1E81FE; font-size: 32px; font-weight: 700; margin-top: 16px; }
-    .highlights-list { list-style: none; margin-top: 48px; }
-    .cta-button { background: #111317; color: #ffffff; padding: 28px; border-radius: 20px; text-align: center; font-size: 28px; font-weight: 700; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      background-color: #F2F5F8;
+      color: #111317;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 120px 80px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bg-shape-1 {
+      position: absolute; top: -200px; right: -200px; width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(30,129,254,0.15) 0%, rgba(242,245,248,0) 70%);
+      border-radius: 50%; z-index: 1;
+    }
+    header { z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 30px; }
+    .logo { height: 80px; object-fit: contain; }
+    main { z-index: 2; display: flex; flex-direction: column; gap: 36px; }
+    .category { color: #1E81FE; font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
+    h1 { font-size: 80px; font-weight: 800; line-height: 1.05; color: #111317; letter-spacing: -2px; }
+    .subtitle { font-size: 38px; font-weight: 500; color: #4A5568; line-height: 1.35; }
+    .info-list { display: flex; flex-direction: column; gap: 24px; margin-top: 20px; }
+    .info-item {
+      background: #FFFFFF; padding: 32px 40px; border-radius: 24px;
+      border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(0,0,0,0.04);
+      display: flex; align-items: center; gap: 28px;
+    }
+    .info-icon { font-size: 48px; }
+    .info-content { display: flex; flex-direction: column; }
+    .info-title { font-size: 24px; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 1px; }
+    .info-detail { font-size: 36px; font-weight: 700; color: #111317; }
+    footer { z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+    .cta-box {
+      width: 100%; background-color: #111317; color: #FFFFFF; padding: 40px;
+      border-radius: 28px; text-align: center; box-shadow: 0 16px 40px rgba(17, 19, 23, 0.25);
+    }
+    .cta-heading { font-size: 40px; font-weight: 800; color: #1E81FE; margin-bottom: 8px; }
+    .cta-sub { font-size: 32px; font-weight: 600; color: #E2E8F0; }
   </style>
 </head>
 <body>
-  <div>
-    <div class="badge">JOBZ RECRUTAMENTO</div>
-    <h1 class="title">${copy.headline}</h1>
-    <p class="subtitle">${copy.subheadline}</p>
-    <ul class="highlights-list">${highlightsHtml}</ul>
-  </div>
-  <div class="cta-button">${copy.ctaText}</div>
+  <div class="bg-shape-1"></div>
+  <header>
+    <img class="logo" src="https://jobz.com.br/wp-content/uploads/2025/02/logocor01.png" alt="Jobz Logo">
+  </header>
+  <main>
+    <div class="category">OPORTUNIDADE DE EMPREGO 🚀</div>
+    <h1>${copy.headline}</h1>
+    <div class="subtitle">${copy.subheadline}</div>
+    <div class="info-list">
+      <div class="info-item">
+        <span class="info-icon">📍</span>
+        <div class="info-content">
+          <span class="info-title">Localização</span>
+          <span class="info-detail">${loc}</span>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">⏰</span>
+        <div class="info-content">
+          <span class="info-title">Modelo / Jornada</span>
+          <span class="info-detail">${mod}</span>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">💰</span>
+        <div class="info-content">
+          <span class="info-title">Remuneração</span>
+          <span class="info-detail">${sal}</span>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🎓</span>
+        <div class="info-content">
+          <span class="info-title">Requisitos</span>
+          <span class="info-detail">${req}</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="cta-box">
+      <div class="cta-heading">👉 Candidate-se pelo link na bio!</div>
+      <div class="cta-sub">Inscreva-se em menos de 1 minuto</div>
+    </div>
+  </footer>
 </body>
 </html>`;
 }
 
 export function generateLinkedinHtml(copy: CopyData): string {
-  const highlightsHtml = (copy.highlights || [])
-    .map(
-      (h) =>
-        `<span style="background: #ffffff; padding: 10px 18px; border-radius: 10px; margin-right: 12px; margin-bottom: 10px; font-weight: 600; color: #111317; font-size: 18px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">🔹 ${h}</span>`
-    )
-    .join('');
+  const highlights = copy.highlights || [];
+  const loc = highlights[0] || 'Vitória / ES';
+  const mod = highlights[1] || 'Presencial / Híbrido';
+  const sal = highlights[2] || 'A combinar';
+  const req = highlights[3] || 'Requisitos da Vaga';
 
   return `<!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { width: 1200px; height: 627px; background-color: #F2F5F8; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
-    .badge { background: #1E81FE; color: #ffffff; padding: 10px 20px; border-radius: 20px; display: inline-block; font-weight: 700; font-size: 16px; text-transform: uppercase; width: fit-content; }
-    .title { color: #111317; font-size: 40px; font-weight: 800; line-height: 1.15; margin-top: 16px; }
-    .subtitle { color: #1E81FE; font-size: 22px; font-weight: 700; margin-top: 8px; }
-    .highlights-container { margin-top: 24px; }
-    .cta-button { background: #111317; color: #ffffff; padding: 18px; border-radius: 12px; text-align: center; font-size: 22px; font-weight: 700; width: fit-content; padding-left: 36px; padding-right: 36px; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      width: 1200px; height: 627px; background-color: #F2F5F8; color: #111317;
+      display: flex; flex-direction: column; justify-content: space-between; padding: 48px; overflow: hidden; position: relative;
+    }
+    header { display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+    .logo { height: 50px; object-fit: contain; }
+    main { z-index: 2; margin-top: 10px; }
+    .category { color: #1E81FE; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+    h1 { font-size: 40px; font-weight: 800; line-height: 1.1; color: #111317; margin-bottom: 12px; }
+    .subtitle { font-size: 22px; font-weight: 500; color: #4A5568; margin-bottom: 24px; }
+    .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .info-card {
+      background: #FFFFFF; padding: 14px 20px; border-radius: 14px; border: 1px solid #E2E8F0;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .info-icon { font-size: 22px; }
+    .info-text-group { display: flex; flex-direction: column; }
+    .info-label { font-size: 13px; font-weight: 600; color: #718096; text-transform: uppercase; }
+    .info-value { font-size: 18px; font-weight: 700; color: #111317; }
+    footer {
+      z-index: 2; display: flex; justify-content: space-between; align-items: center;
+      background-color: #111317; padding: 20px 32px; border-radius: 16px;
+    }
+    .cta-text { color: #FFFFFF; font-size: 22px; font-weight: 700; }
+    .btn-cta { background-color: #1E81FE; color: #FFFFFF; font-size: 20px; font-weight: 800; padding: 10px 24px; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <div>
-    <div class="badge">JOBZ RECRUTAMENTO</div>
-    <h1 class="title">${copy.headline}</h1>
-    <p class="subtitle">${copy.subheadline}</p>
-    <div class="highlights-container">${highlightsHtml}</div>
-  </div>
-  <div class="cta-button">${copy.ctaText}</div>
+  <header>
+    <img class="logo" src="https://jobz.com.br/wp-content/uploads/2025/02/logocor01.png" alt="Jobz Logo">
+  </header>
+  <main>
+    <div class="category">OPORTUNIDADE DE EMPREGO</div>
+    <h1>${copy.headline}</h1>
+    <div class="subtitle">${copy.subheadline}</div>
+    <div class="grid-info">
+      <div class="info-card"><span class="info-icon">📍</span><div class="info-text-group"><span class="info-label">Local</span><span class="info-value">${loc}</span></div></div>
+      <div class="info-card"><span class="info-icon">⏰</span><div class="info-text-group"><span class="info-label">Modelo</span><span class="info-value">${mod}</span></div></div>
+      <div class="info-card"><span class="info-icon">💰</span><div class="info-text-group"><span class="info-label">Remuneração</span><span class="info-value">${sal}</span></div></div>
+      <div class="info-card"><span class="info-icon">🎓</span><div class="info-text-group"><span class="info-label">Requisito</span><span class="info-value">${req}</span></div></div>
+    </div>
+  </main>
+  <footer>
+    <div class="cta-text">👉 Candidate-se via LinkedIn ou pelo link!</div>
+    <div class="btn-cta">${copy.ctaText || 'Inscreva-se'}</div>
+  </footer>
 </body>
 </html>`;
 }
@@ -154,38 +407,49 @@ function escapeXml(str: string): string {
 function createRealPngBuffer(width: number, height: number, copy: CopyData, formatLabel: string): Buffer {
   const safeHeadline = escapeXml(copy.headline || 'Oportunidade de Emprego');
   const safeSubheadline = escapeXml(copy.subheadline || 'Venha fazer parte do time Jobz');
-  const safeCta = escapeXml(copy.ctaText || 'Cadastre-se na Jobz');
+  const safeCta = escapeXml(copy.ctaText || 'Inscreva-se');
 
-  const highlightsSvg = (copy.highlights || [])
-    .slice(0, 4)
-    .map((h, idx) => {
-      const safeH = escapeXml(h);
-      const boxY = 320 + idx * 75;
-      return `
-        <rect x="60" y="${boxY}" width="${width - 120}" height="60" rx="14" fill="#FFFFFF"/>
-        <circle cx="95" cy="${boxY + 30}" r="9" fill="#1E81FE"/>
-        <text x="120" y="${boxY + 37}" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#111317">${safeH}</text>
-      `;
-    })
-    .join('');
+  const highlights = copy.highlights || [];
+  const loc = escapeXml(highlights[0] || 'Vitória / ES');
+  const mod = escapeXml(highlights[1] || 'Presencial / Híbrido');
+  const sal = escapeXml(highlights[2] || 'A combinar');
+  const req = escapeXml(highlights[3] || 'Requisitos da Vaga');
+
+  const cardsData = [
+    { icon: 'LOCALIZACAO', label: 'LOCALIZACAO', val: loc, x: 60, y: 320 },
+    { icon: 'MODELO', label: 'MODELO / HORARIO', val: mod, x: width / 2 + 10, y: 320 },
+    { icon: 'REMUNERACAO', label: 'REMUNERACAO', val: sal, x: 60, y: 440 },
+    { icon: 'REQUISITO', label: 'REQUISITO', val: req, x: width / 2 + 10, y: 440 },
+  ];
+
+  const cardWidth = width / 2 - 70;
+
+  const cardsSvg = cardsData.map(c => `
+    <g transform="translate(${c.x}, ${c.y})">
+      <rect width="${cardWidth}" height="100" rx="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <text x="24" y="38" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" fill="#718096">${c.label}</text>
+      <text x="24" y="70" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="bold" fill="#111317">${c.val.slice(0, 24)}</text>
+    </g>
+  `).join('');
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <rect width="100%" height="100%" fill="#F2F5F8"/>
     
-    <!-- Badge Header -->
-    <rect x="60" y="60" width="300" height="48" rx="24" fill="#1E81FE"/>
-    <text x="80" y="91" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">JOBZ RECRUTAMENTO</text>
+    <!-- Jobz Category & Title -->
+    <text x="60" y="90" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#1E81FE" letter-spacing="2">OPORTUNIDADE DE EMPREGO</text>
+    <text x="60" y="170" font-family="DejaVu Sans, Arial, sans-serif" font-size="46" font-weight="bold" fill="#111317">${safeHeadline}</text>
+    <text x="60" y="230" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="500" fill="#4A5568">${safeSubheadline}</text>
     
-    <!-- Title and Subtitle -->
-    <text x="60" y="180" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="44" font-weight="bold" fill="#111317">${safeHeadline}</text>
-    <text x="60" y="240" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#1E81FE">${safeSubheadline}</text>
+    <!-- 2x2 Info Grid Cards -->
+    <g>${cardsSvg}</g>
     
-    <!-- Highlights List -->
-    <g>${highlightsSvg}</g>
+    <!-- Dark Footer Container -->
+    <rect x="60" y="${height - 140}" width="${width - 120}" height="80" rx="20" fill="#111317"/>
+    <text x="90" y="${height - 92}" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">👉 Candidate-se pelo link!</text>
     
-    <!-- CTA Button -->
-    <rect x="60" y="${height - 130}" width="${width - 120}" height="70" rx="20" fill="#111317"/>
-    <text x="${width / 2}" y="${height - 86}" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
+    <!-- Blue CTA Button -->
+    <rect x="${width - 320}" y="${height - 125}" width="230" height="50" rx="12" fill="#1E81FE"/>
+    <text x="${width - 205}" y="${height - 92}" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
   </svg>`;
 
   try {
@@ -200,7 +464,6 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
 }
 
 export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer }> {
-  // No ambiente Vercel Serverless, utiliza o renderizador ultra-rapido Resvg PNG direto (evita timeouts)
   if (process.env.VERCEL === '1') {
     return {
       feed: createRealPngBuffer(1080, 1350, copy, 'Feed'),
@@ -240,7 +503,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       await browser.close();
     }
   } catch (err: any) {
-    console.warn('Playwright nao disponivel no servidor, gerando PNGs reais com Resvg:', err?.message);
+    console.warn('Playwright nao disponivel no servidor, gerando PNGs com Resvg:', err?.message);
     return {
       feed: createRealPngBuffer(1080, 1350, copy, 'Feed'),
       whatsapp: createRealPngBuffer(1080, 1080, copy, 'WhatsApp'),
