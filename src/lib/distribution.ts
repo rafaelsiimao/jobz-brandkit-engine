@@ -262,15 +262,22 @@ export async function uploadAssetsAndSendEmail(
     linkedin: getPublicUrl(linkedinPath),
   };
 
-  // Envio de e-mail via Resend com tratamento de exceção seguro
+  // Envio de e-mail via Resend com verificação de erro explícita
   if (process.env.RESEND_API_KEY) {
     try {
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+      const sendResult = await resend.emails.send({
+        from: fromEmail,
         to: recipientEmail,
         subject: `🎯 Dossier de Sourcing: ${copy.headline} (${getContractBadge(extractedData?.contractType || 'CLT').label})`,
         html: generateEmailHtml(copy, sourcing, urls, extractedData),
       });
+
+      if (sendResult.error) {
+        console.warn(`Aviso Resend (${sendResult.error.name}):`, sendResult.error.message);
+      } else {
+        console.log(`E-mail disparado com sucesso via Resend! ID: ${sendResult.data?.id}`);
+      }
     } catch (emailErr: any) {
       console.warn('Aviso: E-mail não pôde ser disparado via Resend:', emailErr?.message);
     }
