@@ -1,6 +1,24 @@
+import fs from 'fs';
+import path from 'path';
 import { chromium } from 'playwright';
 import { Resvg } from '@resvg/resvg-js';
 import { CopyData } from './types';
+
+let cachedFontBuffer: Buffer | null = null;
+
+function getFontBuffer(): Buffer | null {
+  if (cachedFontBuffer) return cachedFontBuffer;
+  try {
+    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'PlusJakartaSans-Bold.ttf');
+    if (fs.existsSync(fontPath)) {
+      cachedFontBuffer = fs.readFileSync(fontPath);
+      return cachedFontBuffer;
+    }
+  } catch (err) {
+    console.error('Erro ao carregar fonte TTF para Resvg:', err);
+  }
+  return null;
+}
 
 export function generateFeedHtml(copy: CopyData): string {
   const highlights = copy.highlights || [];
@@ -415,47 +433,66 @@ function createRealPngBuffer(width: number, height: number, copy: CopyData, form
   const sal = escapeXml(highlights[2] || 'A combinar');
   const req = escapeXml(highlights[3] || 'Requisitos da Vaga');
 
-  const cardsData = [
-    { icon: 'LOCALIZACAO', label: 'LOCALIZACAO', val: loc, x: 60, y: 320 },
-    { icon: 'MODELO', label: 'MODELO / HORARIO', val: mod, x: width / 2 + 10, y: 320 },
-    { icon: 'REMUNERACAO', label: 'REMUNERACAO', val: sal, x: 60, y: 440 },
-    { icon: 'REQUISITO', label: 'REQUISITO', val: req, x: width / 2 + 10, y: 440 },
-  ];
-
-  const cardWidth = width / 2 - 70;
-
-  const cardsSvg = cardsData.map(c => `
-    <g transform="translate(${c.x}, ${c.y})">
-      <rect width="${cardWidth}" height="100" rx="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
-      <text x="24" y="38" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="bold" fill="#718096">${c.label}</text>
-      <text x="24" y="70" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="bold" fill="#111317">${c.val.slice(0, 24)}</text>
-    </g>
-  `).join('');
+  const cardW = Math.floor(width / 2 - 70);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <rect width="100%" height="100%" fill="#F2F5F8"/>
     
-    <!-- Jobz Category & Title -->
-    <text x="60" y="90" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#1E81FE" letter-spacing="2">OPORTUNIDADE DE EMPREGO</text>
-    <text x="60" y="170" font-family="DejaVu Sans, Arial, sans-serif" font-size="46" font-weight="bold" fill="#111317">${safeHeadline}</text>
-    <text x="60" y="230" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="500" fill="#4A5568">${safeSubheadline}</text>
+    <!-- Category Badge Header -->
+    <text x="60" y="90" font-family="Plus Jakarta Sans" font-size="24" font-weight="bold" fill="#1E81FE" letter-spacing="2">OPORTUNIDADE DE EMPREGO</text>
     
-    <!-- 2x2 Info Grid Cards -->
-    <g>${cardsSvg}</g>
+    <!-- Headline & Subheadline -->
+    <text x="60" y="170" font-family="Plus Jakarta Sans" font-size="46" font-weight="bold" fill="#111317">${safeHeadline}</text>
+    <text x="60" y="230" font-family="Plus Jakarta Sans" font-size="24" font-weight="bold" fill="#4A5568">${safeSubheadline}</text>
+    
+    <!-- 2x2 Info Cards -->
+    <g transform="translate(60, 310)">
+      <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <text x="24" y="38" font-family="Plus Jakarta Sans" font-size="15" font-weight="bold" fill="#718096">LOCALIZAÇÃO</text>
+      <text x="24" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${loc.slice(0, 24)}</text>
+    </g>
+
+    <g transform="translate(${width / 2 + 10}, 310)">
+      <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <text x="24" y="38" font-family="Plus Jakarta Sans" font-size="15" font-weight="bold" fill="#718096">MODELO / HORÁRIO</text>
+      <text x="24" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${mod.slice(0, 24)}</text>
+    </g>
+
+    <g transform="translate(60, 440)">
+      <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <text x="24" y="38" font-family="Plus Jakarta Sans" font-size="15" font-weight="bold" fill="#718096">REMUNERAÇÃO</text>
+      <text x="24" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${sal.slice(0, 24)}</text>
+    </g>
+
+    <g transform="translate(${width / 2 + 10}, 440)">
+      <rect width="${cardW}" height="105" rx="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <text x="24" y="38" font-family="Plus Jakarta Sans" font-size="15" font-weight="bold" fill="#718096">REQUISITO</text>
+      <text x="24" y="74" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#111317">${req.slice(0, 24)}</text>
+    </g>
     
     <!-- Dark Footer Container -->
-    <rect x="60" y="${height - 140}" width="${width - 120}" height="80" rx="20" fill="#111317"/>
-    <text x="90" y="${height - 92}" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">👉 Candidate-se pelo link!</text>
+    <rect x="60" y="${height - 140}" width="${width - 120}" height="85" rx="22" fill="#111317"/>
+    <text x="95" y="${height - 87}" font-family="Plus Jakarta Sans" font-size="24" font-weight="bold" fill="#FFFFFF">Candidate-se pelo link na bio!</text>
     
     <!-- Blue CTA Button -->
-    <rect x="${width - 320}" y="${height - 125}" width="230" height="50" rx="12" fill="#1E81FE"/>
-    <text x="${width - 205}" y="${height - 92}" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
+    <rect x="${width - 330}" y="${height - 125}" width="240" height="55" rx="14" fill="#1E81FE"/>
+    <text x="${width - 210}" y="${height - 90}" font-family="Plus Jakarta Sans" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${safeCta}</text>
   </svg>`;
 
   try {
-    const resvg = new Resvg(svg, {
+    const fontBuf = getFontBuffer();
+    const resvgOptions: any = {
       fitTo: { mode: 'width', value: width },
-    });
+    };
+
+    if (fontBuf) {
+      resvgOptions.font = {
+        fontBuffers: [fontBuf],
+        defaultFontFamily: 'Plus Jakarta Sans',
+      };
+    }
+
+    const resvg = new Resvg(svg, resvgOptions);
     return resvg.render().asPng();
   } catch (err) {
     console.error('Erro na renderização Resvg:', err);
