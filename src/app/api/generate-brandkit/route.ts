@@ -20,13 +20,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Criar registro inicial com status 'pending' e expiração em 48 horas
+    // 1. Criar registro inicial com status 'pending' e expiração em 48 horas (com fallback se a coluna ainda não existir no DB)
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    const { data: dbJob, error: dbError } = await supabase
+    let dbJob: any = null;
+    let dbError: any = null;
+
+    const resWithExpires = await supabase
       .from('brandkit_jobs')
       .insert([{ job_url: jobUrl, recipient_email: recipientEmail, status: 'pending', expires_at: expiresAt }])
       .select()
       .single();
+
+    if (resWithExpires.error && (resWithExpires.error.message?.includes('expires_at') || resWithExpires.error.code === 'PGRST204')) {
+      // Fallback para inserção sem a coluna expires_at caso ela ainda não tenha sido adicionada na tabela no Supabase
+      const resFallback = await supabase
+        .from('brandkit_jobs')
+        .insert([{ job_url: jobUrl, recipient_email: recipientEmail, status: 'pending' }])
+        .select()
+        .single();
+      dbJob = resFallback.data;
+      dbError = resFallback.error;
+    } else {
+      dbJob = resWithExpires.data;
+      dbError = resWithExpires.error;
+    }
 
     if (dbError || !dbJob) {
       throw new Error(`Erro no Supabase DB: ${dbError?.message || 'Falha ao inserir job'}`);
