@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { supabase } from './supabase';
 import { AssetUrls, SourcingProfile, CopyData, ExtractedJobData } from './types';
 
@@ -262,15 +263,47 @@ export async function uploadAssetsAndSendEmail(
     linkedin: getPublicUrl(linkedinPath),
   };
 
-  // Envio de e-mail via Resend com verificação de erro explícita
+  const subject = `🎯 Dossier de Sourcing: ${copy.headline} (${getContractBadge(extractedData?.contractType || 'CLT').label})`;
+  const htmlContent = generateEmailHtml(copy, sourcing, urls, extractedData);
+
+  // 1. Tenta envio via Google Workspace / Gmail SMTP (Nodemailer) se configurado
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: Number(process.env.SMTP_PORT) || 465,
+        secure: true,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const fromEmail = process.env.SMTP_FROM || `Jobz Engine <${process.env.SMTP_USER}>`;
+
+      const info = await transporter.sendMail({
+        from: fromEmail,
+        to: recipientEmail,
+        subject,
+        html: htmlContent,
+      });
+
+      console.log(`E-mail disparado com sucesso via Google Workspace SMTP! MessageID: ${info.messageId}`);
+      return urls;
+    } catch (smtpErr: any) {
+      console.warn('Aviso: Falha ao disparar via Google Workspace SMTP (tentando fallback):', smtpErr?.message);
+    }
+  }
+
+  // 2. Fallback para Resend se configurado
   if (process.env.RESEND_API_KEY) {
     try {
       const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
       const sendResult = await resend.emails.send({
         from: fromEmail,
         to: recipientEmail,
-        subject: `🎯 Dossier de Sourcing: ${copy.headline} (${getContractBadge(extractedData?.contractType || 'CLT').label})`,
-        html: generateEmailHtml(copy, sourcing, urls, extractedData),
+        subject,
+        html: htmlContent,
       });
 
       if (sendResult.error) {
