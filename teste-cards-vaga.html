@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teste de Templates de Card de Vagas — Jobz Carreira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --fundo-pagina: #F2F5F8;
+    --card-bg: #FFFFFF;
+    --azul-jobz: #1E81FE;
+    --texto-titulo: #111317;
+    --texto-corpo: #5F6673;
+    --texto-sub: #8A94A3;
+    --linha-borda: #D7DEE7;
+    --fonte-principal: "Plus Jakarta Sans", sans-serif;
+    --fonte-mono: "JetBrains Mono", monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--fundo-pagina);
+    color: var(--texto-titulo);
+    font-family: var(--fonte-principal);
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  header {
+    text-align: center;
+    max-width: 700px;
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  header p {
+    color: var(--texto-corpo);
+    font-size: 15px;
+  }
+
+  .grid-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  /* ─── CARD OFICIAL JOBZ CARREIRA (Brandbook) ─── */
+  .job-card-official {
+    width: 380px;
+    background: var(--card-bg);
+    border-radius: 24px;
+    border: 1px solid var(--linha-borda);
+    padding: 32px 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(17, 19, 23, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 480px;
+  }
+
+  /* Curva Azul Proprietária no Canto Superior Direito */
+  .job-card-official::after {
+    content: "";
+    position: absolute;
+    right: -24px;
+    top: -24px;
+    width: 96px;
+    height: 96px;
+    border-radius: 0 0 0 96px;
+    background: var(--azul-jobz);
+    pointer-events: none;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-logo {
+    height: 36px;
+    width: auto;
+  }
+
+  .card-kicker {
+    font-family: var(--fonte-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--azul-jobz);
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--texto-titulo);
+    margin-bottom: 20px;
+  }
+
+  .card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .detail-label {
+    font-family: var(--fonte-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--texto-sub);
+  }
+
+  .detail-value {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--texto-titulo);
+    line-height: 1.35;
+  }
+
+  .job-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #EBF0F5;
+    margin-bottom: 16px;
+  }
+
+  .job-tags span {
+    font-family: var(--fonte-mono);
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--linha-borda);
+    border-radius: 999px;
+    padding: 5px 12px;
+    color: var(--texto-corpo);
+    background-color: #FAFAFC;
+  }
+
+  .job-tags span.highlight {
+    background-color: #EBF3FF;
+    border-color: #B2D3FF;
+    color: var(--azul-jobz);
+    font-weight: 700;
+  }
+
+  .card-footer-cta {
+    background-color: #111317;
+    color: #FFFFFF;
+    border-radius: 14px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .card-footer-cta span.link {
+    color: #66A9FF;
+    font-family: var(--fonte-mono);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>Template Oficial Jobz Carreira com Logo & CTA</h1>
+    <p>Visualização final do Card de Vagas com a logo oficial SVG e a chamada de candidatura <code>Candidate-se em: jobz.com.br/vagas</code>.</p>
+  </header>
+
+  <div class="grid-cards">
+
+    <!-- Exemplo 1: Vaga de Estágio -->
+    <div class="job-card-official">
+      <div>
+        <div class="card-top">
+          <img class="card-logo" src="https://jobz.com.br/brandbook/jobz-carreira/assets/jobz-carreira-logo-preto.svg" alt="Jobz Carreira" />
+        </div>
+        <div class="card-kicker">VAGA ABERTA · ESTÁGIO</div>
+        <h2 class="card-title">Estágio em Marketing Digital</h2>
+        
+        <div class="card-details">
+          <div class="detail-row">
+            <span class="detail-label">Jornada de Estágio</span>
+            <span class="detail-value">6h diárias (30h semanais)</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Bolsa</span>
+            <span class="detail-value">R$ 1.200 / mês</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Benefícios</span>
+            <span class="detail-value">Auxílio Transporte + Vale Refeição</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="job-tags">
+          <span class="highlight">Presencial</span>
+          <span>Vila Velha / ES</span>
+          <span>Estágio</span>
+        </div>
+        <div class="card-footer-cta">
+          👉 Candidate-se em: <span class="link">jobz.com.br/vagas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exemplo 2: Vaga CLT -->
+    <div class="job-card-official">
+      <div>
+        <div class="card-top">
+          <img class="card-logo" src="https://jobz.com.br/brandbook/jobz-carreira/assets/jobz-carreira-logo-preto.svg" alt="Jobz Carreira" />
+        </div>
+        <div class="card-kicker">OPORTUNIDADE · CLT</div>
+        <h2 class="card-title">Desenvolvedor Full Stack Senior</h2>
+        
+        <div class="card-details">
+          <div class="detail-row">
+            <span class="detail-label">Jornada</span>
+            <span class="detail-value">40h semanais (Segunda a Sexta)</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Salário</span>
+            <span class="detail-value">R$ 8.000 - R$ 10.000</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Benefícios</span>
+            <span class="detail-value">Plano de Saúde + VR (R$ 35/dia) + Seguro</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="job-tags">
+          <span class="highlight">Híbrido</span>
+          <span>Vitória / ES</span>
+          <span>CLT</span>
+        </div>
+        <div class="card-footer-cta">
+          👉 Candidate-se em: <span class="link">jobz.com.br/vagas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exemplo 3: Vaga PJ -->
+    <div class="job-card-official">
+      <div>
+        <div class="card-top">
+          <img class="card-logo" src="https://jobz.com.br/brandbook/jobz-carreira/assets/jobz-carreira-logo-preto.svg" alt="Jobz Carreira" />
+        </div>
+        <div class="card-kicker">CONTRATO PRESTADOR · PJ</div>
+        <h2 class="card-title">Consultor de Vendas B2B</h2>
+        
+        <div class="card-details">
+          <div class="detail-row">
+            <span class="detail-label">Jornada</span>
+            <span class="detail-value">Horário Flexível (Por Entregas)</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Remuneração</span>
+            <span class="detail-value">R$ 6.000 + Comissões por Meta</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Benefícios</span>
+            <span class="detail-value">Bônus Trimestral + Horário Flexível</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="job-tags">
+          <span class="highlight">Remoto</span>
+          <span>Brasil</span>
+          <span>PJ</span>
+        </div>
+        <div class="card-footer-cta">
+          👉 Candidate-se em: <span class="link">jobz.com.br/vagas</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
