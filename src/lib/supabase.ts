@@ -19,5 +19,6 @@ export function mapDbJobToModel(row: Record<string, any>): BrandKitJob {
     error_message: row.error_message || undefined,
     created_at: row.created_at,
     completed_at: row.completed_at || undefined,
+    expires_at: row.expires_at || undefined,
   };
 }

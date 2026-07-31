@@ -58,7 +58,7 @@ export interface BrandKitJob {
   id: string;
   job_url: string;
   recipient_email: string;
-  status: 'pending' | 'processing' | 'scraping' | 'generating_ai' | 'rendering_arts' | 'uploading_and_mailing' | 'completed' | 'failed' | string;
+  status: 'pending' | 'processing' | 'scraping' | 'generating_ai' | 'rendering_arts' | 'uploading_and_mailing' | 'completed' | 'failed' | 'expired' | string;
   extracted_data?: ExtractedJobData;
   sourcing_profile?: SourcingProfile;
   copy_data?: CopyData;
@@ -66,4 +66,5 @@ export interface BrandKitJob {
   error_message?: string;
   created_at: string;
   completed_at?: string;
+  expires_at?: string;
 }

@@ -215,6 +215,33 @@ export default function HomePage() {
     setTimeout(() => setCopiedCaptionId(null), 2500);
   };
 
+  const getRemainingHoursInfo = (job: BrandKitJob) => {
+    if (job.status === 'expired') {
+      return { isExpired: true, label: '⚠️ Expirado (48h)', colorClass: 'bg-slate-200 text-slate-700 border border-slate-300' };
+    }
+
+    const createdAt = new Date(job.created_at).getTime();
+    const expiresAt = job.expires_at ? new Date(job.expires_at).getTime() : createdAt + 48 * 60 * 60 * 1000;
+    const now = Date.now();
+    const diffMs = expiresAt - now;
+
+    if (diffMs <= 0) {
+      return { isExpired: true, label: '⚠️ Expirado (48h)', colorClass: 'bg-slate-200 text-slate-700 border border-slate-300' };
+    }
+
+    const hours = Math.ceil(diffMs / (1000 * 60 * 60));
+    if (hours > 24) {
+      return { isExpired: false, label: `⌛ Expira em ${hours}h`, colorClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200' };
+    }
+    return { isExpired: false, label: `⌛ Expira em ${hours}h`, colorClass: 'bg-amber-100 text-amber-900 border border-amber-300 font-bold' };
+  };
+
+  const handleRegenerate = (job: BrandKitJob) => {
+    setJobUrl(job.job_url);
+    setRecipientEmail(job.recipient_email);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Helper to determine step completion in stepper
   const getStepState = (stepKey: string) => {
     const order = ['pending', 'scraping', 'generating_ai', 'rendering_arts', 'uploading_and_mailing', 'completed'];
@@ -534,21 +561,30 @@ export default function HomePage() {
                       </a>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <span className="text-[11px] text-gray-400">
                         {new Date(job.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </span>
+                      {job.status === 'completed' && (
+                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${getRemainingHoursInfo(job).colorClass}`}>
+                          {getRemainingHoursInfo(job).label}
+                        </span>
+                      )}
                       <span
                         className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                          job.status === 'completed'
+                          job.status === 'completed' && !getRemainingHoursInfo(job).isExpired
                             ? 'bg-emerald-100 text-emerald-800'
+                            : job.status === 'expired' || (job.status === 'completed' && getRemainingHoursInfo(job).isExpired)
+                            ? 'bg-slate-200 text-slate-700'
                             : job.status === 'failed'
                             ? 'bg-rose-100 text-rose-800'
                             : 'bg-amber-100 text-amber-800 animate-pulse'
                         }`}
                       >
-                        {job.status === 'completed'
+                        {job.status === 'completed' && !getRemainingHoursInfo(job).isExpired
                           ? 'Concluído'
+                          : job.status === 'expired' || (job.status === 'completed' && getRemainingHoursInfo(job).isExpired)
+                          ? 'Expirado'
                           : job.status === 'scraping'
                           ? '🔍 Extraindo Vaga'
                           : job.status === 'generating_ai'
@@ -565,7 +601,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Asset Downloads & Actions */}
-                  {job.status === 'completed' && job.asset_urls && (
+                  {job.status === 'completed' && job.asset_urls && !getRemainingHoursInfo(job).isExpired && (
                     <div className="pt-3 border-t border-slate-200/60 space-y-3">
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="font-bold text-gray-500 text-[11px] uppercase tracking-wider mr-1">Baixar Artes:</span>
@@ -671,6 +707,22 @@ export default function HomePage() {
                           {resendStatus[job.id].message}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Expired Job View */}
+                  {(job.status === 'expired' || (job.status === 'completed' && getRemainingHoursInfo(job).isExpired)) && (
+                    <div className="pt-3 border-t border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="text-xs text-slate-500 font-medium">
+                        ⚠️ <span className="font-semibold text-slate-700">Artes expiradas (48h):</span> Os arquivos PNG foram removidos do servidor após 48 horas por política de retenção.
+                      </div>
+                      <button
+                        onClick={() => handleRegenerate(job)}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#1E81FE] hover:bg-[#196edb] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Regerar Kit (1-Clique)</span>
+                      </button>
                     </div>
                   )}
                 </div>

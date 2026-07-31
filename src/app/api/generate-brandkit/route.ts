@@ -20,10 +20,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Criar registro inicial com status 'pending'
+    // 1. Criar registro inicial com status 'pending' e expiração em 48 horas
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
     const { data: dbJob, error: dbError } = await supabase
       .from('brandkit_jobs')
-      .insert([{ job_url: jobUrl, recipient_email: recipientEmail, status: 'pending' }])
+      .insert([{ job_url: jobUrl, recipient_email: recipientEmail, status: 'pending', expires_at: expiresAt }])
       .select()
       .single();
 
