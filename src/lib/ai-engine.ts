@@ -39,6 +39,12 @@ function getContractLabel(ct: string): string {
 }
 
 export async function generateBrandKitAI(extractedData: ExtractedJobData): Promise<{ sourcing: SourcingProfile; copy: CopyData }> {
+  const isEstagio = extractedData.contractType === 'ESTAGIO';
+  const isPJ = extractedData.contractType === 'PJ';
+
+  const labelHoursPrefix = isEstagio ? 'Jornada de Estágio: ' : 'Jornada: ';
+  const labelFinancialPrefix = isEstagio ? 'Bolsa: ' : isPJ ? 'Remuneração: ' : 'Salário: ';
+
   // If OPENAI_API_KEY is provided (supports NVIDIA Nim API or OpenAI compatible endpoints)
   if (process.env.OPENAI_API_KEY) {
     try {
@@ -63,51 +69,52 @@ Analise esta vaga extraída da plataforma Abler ATS e gere um Dossier de Intelig
 - Benefícios: ${extractedData.benefits.join('; ')}
 - Descrição Completa: ${extractedData.rawDescription.slice(0, 1500)}
 
-## Instruções IMPORTANTES
-1. **hardSkills**: Liste as 5 a 8 competências TÉCNICAS mais relevantes (ferramentas, tecnologias, softwares, certificações, linguagens de programação, metodologias técnicas).
-2. **softSkills**: Liste as 4 a 6 competências COMPORTAMENTAIS mais relevantes (comunicação, liderança, proatividade, organização, trabalho em equipe, etc.).
-3. **companyExpectations**: Descreva em 2-3 frases o que a empresa espera do candidato em termos de postura, atitude e entregas.
-4. **sourcingChannels**: Forneça canais REAIS e específicos para encontrar candidatos:
-   ${extractedData.contractType === 'ESTAGIO' ? '- **universities**: Liste faculdades relevantes da região (ex: UFES, UVV, FAESA, PUC, Multivix, IFES, etc.).' : '- **universities**: Lista vazia [] pois não se aplica a vagas CLT/PJ.'}
-   - **facebookGroups**: Liste 3-5 nomes de grupos reais do Facebook para a área/região (ex: "Vagas de TI Vitória ES", "Vagas Espírito Santo").
+## Instruções IMPORTANTES (Zero Alucinação)
+1. **Modalidade**: Mantenha ESTRITAMENTE a modalidade real ("${extractedData.modality}"). NUNCA altere presencial para remoto.
+2. **hardSkills**: Liste as 5 a 8 competências TÉCNICAS mais relevantes.
+3. **softSkills**: Liste as 4 a 6 competências COMPORTAMENTAIS mais relevantes.
+4. **companyExpectations**: Descreva em 2-3 frases o que a empresa espera do candidato.
+5. **sourcingChannels**: Forneça canais REAIS e específicos para encontrar candidatos:
+   ${isEstagio ? '- **universities**: Liste faculdades relevantes da região (ex: UFES, UVV, FAESA, PUC, Multivix, IFES, etc.).' : '- **universities**: Lista vazia [] pois não se aplica a vagas CLT/PJ.'}
+   - **facebookGroups**: Liste 3-5 nomes de grupos reais do Facebook para a área/região.
    - **whatsappTelegramCommunities**: Liste 2-3 tipos de comunidades de WhatsApp/Telegram relevantes.
-   - **linkedinSearchQueries**: Forneça 2-3 strings de busca booleana para o LinkedIn Recruiter (ex: "desenvolvedor AND react AND (vitória OR remoto)").
-   - **specializedPlatforms**: Liste plataformas específicas onde encontrar candidatos (ex: GitHub, Behance, 99designs, Catho, Indeed, Vagas.com, etc.).
-5. **screeningQuestions**: Crie 4-5 perguntas eliminatórias de triagem rápida e específicas para esta vaga.
-6. **coldOutreachTemplates**: Scripts de abordagem realistas e persuasivos para LinkedIn InMail e WhatsApp.
+   - **linkedinSearchQueries**: Forneça 2-3 strings de busca booleana para o LinkedIn Recruiter.
+   - **specializedPlatforms**: Liste plataformas específicas (ex: GitHub, Behance, Catho, Indeed, Vagas.com).
+6. **screeningQuestions**: Crie 4-5 perguntas eliminatórias de triagem rápida.
+7. **coldOutreachTemplates**: Scripts de abordagem realistas para LinkedIn e WhatsApp.
 
 Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o seguinte objeto:
 {
   "sourcing": {
     "idealCandidate": "descrição completa do perfil ideal em 2-3 frases",
-    "hardSkills": ["skill1", "skill2", ...],
-    "softSkills": ["skill1", "skill2", ...],
-    "companyExpectations": "texto descritivo do que a empresa espera",
+    "hardSkills": ["skill1", "skill2"],
+    "softSkills": ["skill1", "skill2"],
+    "companyExpectations": "texto descritivo",
     "sourcingChannels": {
-      "universities": ["faculdade1", "faculdade2", ...],
-      "facebookGroups": ["grupo1", "grupo2", ...],
-      "whatsappTelegramCommunities": ["comunidade1", ...],
-      "linkedinSearchQueries": ["query booleana 1", ...],
-      "specializedPlatforms": ["plataforma1", ...]
+      "universities": ["faculdade1"],
+      "facebookGroups": ["grupo1"],
+      "whatsappTelegramCommunities": ["comunidade1"],
+      "linkedinSearchQueries": ["query1"],
+      "specializedPlatforms": ["plataforma1"]
     },
     "coldOutreachTemplates": {
       "linkedinInmail": "mensagem completa",
       "whatsappDirect": "mensagem completa"
     },
-    "screeningQuestions": ["pergunta 1", "pergunta 2", ...],
-    "recommendedUniversities": ["UFES", "UVV", ...],
-    "linkedinHashtags": ["#Jobz", "#Vagas", ...]
+    "screeningQuestions": ["pergunta 1"],
+    "recommendedUniversities": ["UFES"],
+    "linkedinHashtags": ["#Jobz", "#Vagas"]
   },
   "copy": {
     "headline": "${extractedData.title}",
     "subheadline": "frase atrativa sobre a oportunidade",
     "highlights": [
-      "${extractedData.location}",
-      "${extractedData.modality} | ${extractedData.schedule}",
-      "${extractedData.salary}",
-      "${extractedData.requirements[0] || 'Formação na área'}"
+      "${extractedData.modality} | ${extractedData.location}",
+      "${labelHoursPrefix}${extractedData.schedule}",
+      "${labelFinancialPrefix}${extractedData.salary}",
+      "Benefícios: ${extractedData.benefits.slice(0, 2).join(' + ') || 'Compatível com o mercado'}"
     ],
-    "ctaText": "Inscreva-se na Jobz",
+    "ctaText": "Inscreva-se",
     "socialCaption": "legenda completa para redes sociais com emojis e hashtags"
   }
 }`;
@@ -134,12 +141,10 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
         const jsonRes = await res.json();
         const rawContent = jsonRes?.choices?.[0]?.message?.content || '';
         
-        // Match JSON substring
         const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           if (parsed.sourcing && parsed.copy && Array.isArray(parsed.copy.highlights)) {
-            // Ensure all new fields exist with fallbacks
             const sourcing: SourcingProfile = {
               idealCandidate: parsed.sourcing.idealCandidate || '',
               hardSkills: parsed.sourcing.hardSkills || [],
@@ -161,6 +166,14 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
               linkedinHashtags: parsed.sourcing.linkedinHashtags || ['#Jobz', '#Vagas'],
             };
 
+            // Enforce exact highlights structure
+            parsed.copy.highlights = [
+              `${extractedData.modality} | ${extractedData.location}`,
+              `${labelHoursPrefix}${extractedData.schedule}`,
+              `${labelFinancialPrefix}${extractedData.salary}`,
+              `Benefícios: ${extractedData.benefits.slice(0, 2).join(' + ') || 'Compatível com o mercado'}`
+            ];
+
             return { sourcing, copy: parsed.copy };
           }
         }
@@ -174,9 +187,6 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
   }
 
   // ─── Fallback Estruturado Inteligente (sem IA) ──────────────────────────
-  const isEstagio = extractedData.contractType === 'ESTAGIO';
-  const isPJ = extractedData.contractType === 'PJ';
-
   const sourcingChannels: SourcingChannels = {
     universities: isEstagio
       ? ['UFES', 'UVV', 'FAESA', 'PUC', 'Multivix', 'IFES', 'UCL']
@@ -218,19 +228,18 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
       ? `Oportunidade de Estágio em ${extractedData.location}`
       : `${getContractLabel(extractedData.contractType)} em ${extractedData.location}`,
     highlights: [
-      extractedData.location,
-      `${extractedData.modality} (${extractedData.schedule})`,
-      extractedData.salary,
-      extractedData.requirements[0] || 'Formação ou cursando área relacionada'
+      `${extractedData.modality} | ${extractedData.location}`,
+      `${labelHoursPrefix}${extractedData.schedule}`,
+      `${labelFinancialPrefix}${extractedData.salary}`,
+      `Benefícios: ${extractedData.benefits.slice(0, 2).join(' + ') || 'Compatível com o mercado'}`
     ],
     ctaText: 'Inscreva-se',
-    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${extractedData.title}.\n📍 ${extractedData.location} (${extractedData.modality})\n⏰ ${extractedData.schedule}\n💰 ${extractedData.salary}\n📋 ${getContractLabel(extractedData.contractType)}\n\nVenha fazer parte do nosso time. Inscreva-se pelo link oficial na bio!\n\n#Vagas #Jobz #Recrutamento #Capixaba`
+    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${extractedData.title}.\n📍 ${extractedData.location} (${extractedData.modality})\n⏰ ${extractedData.schedule}\n💰 ${extractedData.salary}\n📋 ${getContractLabel(extractedData.contractType)}\n\nVenha fazer parte do nosso time. Candidate-se em: jobz.com.br/vagas\n\n#Vagas #Jobz #Recrutamento #Capixaba`
   };
 
   return { sourcing, copy };
 }
 
-// ─── Helper: Detect specialized platforms based on job area ─────────────────
 function detectSpecializedPlatforms(data: ExtractedJobData): string[] {
   const text = `${data.title} ${data.requirements.join(' ')} ${data.rawDescription}`.toLowerCase();
   const platforms: string[] = [];
@@ -261,12 +270,10 @@ function detectSpecializedPlatforms(data: ExtractedJobData): string[] {
   return [...new Set(platforms)];
 }
 
-// ─── Helper: Extract hard skills from requirements and description ──────────
 function extractHardSkills(data: ExtractedJobData): string[] {
   const skills = new Set<string>();
   const allText = [...data.requirements, ...data.activities, data.rawDescription].join(' ');
 
-  // Known tech skills patterns
   const knownSkills = [
     'Excel', 'Word', 'PowerPoint', 'Power BI', 'Python', 'Java', 'JavaScript', 'TypeScript',
     'React', 'Next.js', 'Node.js', 'SQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'AWS', 'Azure',
@@ -282,7 +289,6 @@ function extractHardSkills(data: ExtractedJobData): string[] {
     }
   }
 
-  // Also include top requirements as skills
   data.requirements.slice(0, 3).forEach(r => {
     if (r.length < 60 && !skills.has(r)) skills.add(r);
   });
@@ -295,7 +301,6 @@ function extractHardSkills(data: ExtractedJobData): string[] {
   return Array.from(skills).slice(0, 8);
 }
 
-// ─── Helper: Generate screening questions ──────────────────────────────────
 function generateScreeningQuestions(data: ExtractedJobData): string[] {
   const questions: string[] = [];
 

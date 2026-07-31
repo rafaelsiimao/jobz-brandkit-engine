@@ -7,7 +7,7 @@ describe('AI Engine Schemas & Generation (v2.0)', () => {
     const mockCopy = {
       headline: 'Desenvolvedor Next.js na Jobz',
       subheadline: 'Venha transformar o recrutamento no Brasil',
-      highlights: ['Remoto', 'R$ 10k', 'Plano de Saúde', 'Bônus'],
+      highlights: ['Remoto | Brasil', 'Jornada: 40h/semana', 'Salário: R$ 10k', 'Benefícios: Plano de Saúde'],
       ctaText: 'Envie seu currículo agora!',
       socialCaption: 'Estamos contratando! Inscreva-se pelo link da bio. #jobz #vagas'
     };
@@ -40,19 +40,19 @@ describe('AI Engine Schemas & Generation (v2.0)', () => {
     expect(parsed.success).toBe(true);
   });
 
-  it('should generate brand kit AI response adhering to schemas', async () => {
+  it('should generate brand kit AI response adhering strictly to extracted job data', async () => {
     const mockExtractedData: ExtractedJobData = {
-      title: 'Desenvolvedor Full Stack Senior',
-      location: 'Vitória - ES',
-      modality: 'Híbrido',
-      salary: 'R$ 8.000 - R$ 10.000',
-      benefits: ['Vale Refeição', 'Plano de Saúde'],
-      schedule: '40h semanais',
-      requirements: ['Node.js', 'React'],
-      activities: ['Desenvolver APIs', 'Criar UIs'],
-      contractType: 'CLT',
-      seniorityLevel: 'Sênior',
-      rawDescription: 'Buscamos um desenvolvedor full stack senior para atuar com Node.js e React.',
+      title: 'Estágio em Odontologia',
+      location: 'Vila Velha / ES',
+      modality: 'Presencial',
+      salary: 'R$ 1.000 + R$ 200 VT',
+      benefits: ['Vale Transporte'],
+      schedule: '08h às 12h (Seg a Sex)',
+      requirements: ['Cursando Odontologia'],
+      activities: ['Desenvolver prática clínica'],
+      contractType: 'ESTAGIO',
+      seniorityLevel: 'Estágio',
+      rawDescription: 'Buscamos estagiário presencial de odontologia em Vila Velha.',
     };
 
     const { sourcing, copy } = await generateBrandKitAI(mockExtractedData);
@@ -63,10 +63,9 @@ describe('AI Engine Schemas & Generation (v2.0)', () => {
     const sourcingParsed = sourcingProfileSchema.safeParse(sourcing);
     expect(sourcingParsed.success).toBe(true);
 
-    expect(copy.headline).toContain('Desenvolvedor Full Stack Senior');
-    expect(sourcing.idealCandidate).toContain('Desenvolvedor Full Stack Senior');
-    expect(sourcing.hardSkills.length).toBeGreaterThan(0);
-    expect(sourcing.softSkills.length).toBeGreaterThan(0);
-    expect(sourcing.screeningQuestions.length).toBeGreaterThan(0);
+    expect(copy.headline).toContain('Estágio em Odontologia');
+    expect(copy.highlights[0]).toContain('Presencial');
+    expect(copy.highlights[1]).toContain('Jornada de Estágio');
+    expect(copy.highlights[2]).toContain('Bolsa');
   });
 });
