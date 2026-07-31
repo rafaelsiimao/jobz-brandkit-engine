@@ -4,6 +4,8 @@ import { CopyData } from './types';
 import { FONT_PLUS_JAKARTA_SANS_BOLD_BASE64 } from './font-data';
 
 const fontBuffer = Buffer.from(FONT_PLUS_JAKARTA_SANS_BOLD_BASE64, 'base64');
+const LOGO_SVG_URL = 'https://jobz.com.br/brandbook/jobz-carreira/assets/jobz-carreira-logo-preto.svg';
+const CTA_FOOTER_TEXT = 'Candidate-se em: jobz.com.br/vagas';
 
 function decodeUnicodeEscapes(str: string): string {
   if (!str) return '';
@@ -18,7 +20,6 @@ function cleanText(str: string): string {
   if (!str) return '';
   let decoded = decodeUnicodeEscapes(str);
 
-  // Cut off at raw JS payload metadata keys if present
   const jsPayloadCutoffs = [
     ',allDescriptions:',
     'allDescriptions:',
@@ -38,13 +39,9 @@ function cleanText(str: string): string {
     }
   }
 
-  // Remove emojis and non-standard symbols
   decoded = decoded.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-  // Strip HTML tags
   decoded = decoded.replace(/<[^>]+>/g, ' ');
-  // Strip leftover HTML entities
   decoded = decoded.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  // Collapse spaces
   return decoded.replace(/\s+/g, ' ').trim();
 }
 
@@ -54,19 +51,65 @@ function truncateText(str: string, maxLen: number): string {
   return cleaned.slice(0, maxLen - 3).trim() + '...';
 }
 
-function getCardFontSize(text: string, baseSize: number = 22): number {
-  if (text.length > 50) return Math.max(14, baseSize - 6);
-  if (text.length > 35) return Math.max(16, baseSize - 4);
-  if (text.length > 25) return Math.max(18, baseSize - 2);
-  return baseSize;
+function parseCardHighlights(highlights: string[] = []) {
+  const h0 = cleanText(highlights[0] || 'Presencial | Vitória / ES');
+  const h1 = cleanText(highlights[1] || 'Jornada: 40h semanais');
+  const h2 = cleanText(highlights[2] || 'Salário: Compatível com o mercado');
+  const h3 = cleanText(highlights[3] || 'Benefícios: Vale Transporte + VR');
+
+  // Extract modality
+  let modality = 'Presencial';
+  if (/h[ií]brido/i.test(h0)) modality = 'Híbrido';
+  else if (/remoto|home\s*office/i.test(h0)) modality = 'Remoto';
+
+  // Extract location
+  const locParts = h0.split('|');
+  const location = truncateText(locParts[1] || locParts[0] || 'Brasil', 35);
+
+  // Extract contract type / kicker
+  let contractKicker = 'OPORTUNIDADE · VAGA ABERTA';
+  if (/est[áa]gio/i.test(h1) || /est[áa]gio/i.test(h2) || /est[áa]gio/i.test(h0)) {
+    contractKicker = 'VAGA ABERTA · ESTÁGIO';
+  } else if (/pj\b|prestador/i.test(h2) || /pj\b|prestador/i.test(h0)) {
+    contractKicker = 'CONTRATO PRESTADOR · PJ';
+  } else if (/clt/i.test(h0) || /clt/i.test(h2)) {
+    contractKicker = 'OPORTUNIDADE · CLT';
+  }
+
+  // Determine Label 1 (Hours)
+  let labelHours = 'JORNADA';
+  if (/est[áa]gio/i.test(contractKicker)) {
+    labelHours = 'JORNADA DE ESTÁGIO';
+  }
+
+  // Determine Label 2 (Financial)
+  let labelFinancial = 'SALÁRIO';
+  if (/est[áa]gio/i.test(contractKicker)) {
+    labelFinancial = 'BOLSA';
+  } else if (/pj/i.test(contractKicker)) {
+    labelFinancial = 'REMUNERAÇÃO';
+  }
+
+  // Values
+  const valueHours = truncateText(h1.replace(/^jornada(?:\s*de\s*est[áa]gio)?[:\s]*/i, ''), 50);
+  const valueFinancial = truncateText(h2.replace(/^(?:sal[áa]rio|remunera[çc][ãa]o|bolsa)[:\s]*/i, ''), 50);
+  const valueBenefits = truncateText(h3.replace(/^benef[íi]cios[:\s]*/i, ''), 55);
+
+  return {
+    modality,
+    location,
+    contractKicker,
+    labelHours,
+    labelFinancial,
+    valueHours,
+    valueFinancial,
+    valueBenefits,
+  };
 }
 
 export function generateFeedHtml(copy: CopyData): string {
-  const highlights = copy.highlights || [];
-  const loc = cleanText(highlights[0]) || 'Vitória / ES';
-  const mod = cleanText(highlights[1]) || 'Presencial / Híbrido';
-  const sal = cleanText(highlights[2]) || 'A combinar';
-  const req = truncateText(highlights[3] || 'Requisitos da Vaga', 60);
+  const parsed = parseCardHighlights(copy.highlights);
+  const headline = truncateText(copy.headline, 60);
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -79,14 +122,19 @@ export function generateFeedHtml(copy: CopyData): string {
       width: 1080px; height: 1350px; background-color: #F2F5F8; color: #111317;
       display: flex; flex-direction: column; justify-content: space-between; padding: 80px 70px;
     }
-    .badge { color: #1E81FE; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="badge">OPORTUNIDADE DE EMPREGO</div>
-  <h1>${cleanText(copy.headline)}</h1>
-  <p>${cleanText(copy.subheadline)}</p>
-  <div>${loc} | ${mod} | ${sal} | ${req}</div>
+  <div>
+    <img src="${LOGO_SVG_URL}" alt="Jobz Carreira" />
+    <div style="color: #1E81FE;">${parsed.contractKicker}</div>
+    <h1>${headline}</h1>
+    <div>${parsed.labelHours}: ${parsed.valueHours}</div>
+    <div>${parsed.labelFinancial}: ${parsed.valueFinancial}</div>
+    <div>BENEFÍCIOS: ${parsed.valueBenefits}</div>
+    <div>${parsed.modality} | ${parsed.location}</div>
+  </div>
+  <div>👉 ${CTA_FOOTER_TEXT}</div>
 </body>
 </html>`;
 }
@@ -126,14 +174,7 @@ async function renderJsxToBuffer(element: React.ReactElement, width: number, hei
 
 export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer }> {
   const headline = truncateText(copy.headline || 'Oportunidade de Emprego', 65);
-  const subheadline = truncateText(copy.subheadline || 'Venha fazer parte do time Jobz', 85);
-  const ctaText = truncateText(copy.ctaText || 'Inscreva-se', 25);
-
-  const highlights = copy.highlights || [];
-  const loc = truncateText(highlights[0] || 'Vitória / ES', 45);
-  const mod = truncateText(highlights[1] || 'Presencial / Híbrido', 45);
-  const sal = truncateText(highlights[2] || 'A combinar', 45);
-  const req = truncateText(highlights[3] || 'Requisitos da Vaga', 55);
+  const parsed = parseCardHighlights(copy.highlights);
 
   // 1. Feed (1080 x 1350)
   const feedJsx = (
@@ -145,132 +186,103 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
+        alignItems: 'center',
         padding: '70px 60px',
         fontFamily: 'Plus Jakarta Sans',
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ display: 'flex', width: '100px', height: '6px', backgroundColor: '#1E81FE', borderRadius: '3px' }} />
-        <div style={{ fontSize: '26px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1.5px', marginTop: '10px' }}>
-          OPORTUNIDADE DE EMPREGO
-        </div>
-      </div>
-
-      {/* Main Title & Subtitle */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
-        <div style={{ fontSize: '54px', fontWeight: 700, color: '#111317', lineHeight: 1.15 }}>
-          {headline}
-        </div>
-        <div style={{ fontSize: '28px', fontWeight: 700, color: '#4A5568', lineHeight: 1.3 }}>
-          {subheadline}
-        </div>
-      </div>
-
-      {/* 2x2 Grid Info Cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', margin: '20px 0' }}>
-        <div style={{ display: 'flex', gap: '20px' }}>
-          {/* Card 1 */}
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: '20px',
-              border: '1px solid #E2E8F0',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ fontSize: '15px', color: '#718096', fontWeight: 700 }}>LOCALIZAÇÃO</div>
-            <div style={{ fontSize: `${getCardFontSize(loc, 24)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{loc}</div>
-          </div>
-          {/* Card 2 */}
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: '20px',
-              border: '1px solid #E2E8F0',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ fontSize: '15px', color: '#718096', fontWeight: 700 }}>MODELO / HORÁRIO</div>
-            <div style={{ fontSize: `${getCardFontSize(mod, 24)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{mod}</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '20px' }}>
-          {/* Card 3 */}
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: '20px',
-              border: '1px solid #E2E8F0',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ fontSize: '15px', color: '#718096', fontWeight: 700 }}>REMUNERAÇÃO</div>
-            <div style={{ fontSize: `${getCardFontSize(sal, 24)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{sal}</div>
-          </div>
-          {/* Card 4 */}
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: '20px',
-              border: '1px solid #E2E8F0',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ fontSize: '15px', color: '#718096', fontWeight: 700 }}>REQUISITO</div>
-            <div style={{ fontSize: `${getCardFontSize(req, 22)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{req}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Banner */}
+      {/* Official Jobz Carreira Card Container */}
       <div
         style={{
+          width: '920px',
+          height: '1150px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '36px',
+          border: '1px solid #D7DEE7',
+          padding: '64px 56px',
           display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: '#111317',
-          padding: '28px 40px',
-          borderRadius: '24px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 16px 48px rgba(17, 19, 23, 0.08)',
         }}
       >
-        <div style={{ fontSize: '26px', color: '#FFFFFF', fontWeight: 700 }}>
-          Candidate-se pelo link na bio!
-        </div>
+        {/* Proprietary Blue Corner Element */}
         <div
           style={{
+            position: 'absolute',
+            right: '-30px',
+            top: '-30px',
+            width: '140px',
+            height: '140px',
+            borderRadius: '0 0 0 140px',
             backgroundColor: '#1E81FE',
-            color: '#FFFFFF',
-            fontSize: '24px',
-            fontWeight: 700,
-            padding: '14px 32px',
-            borderRadius: '14px',
             display: 'flex',
           }}
-        >
-          {ctaText}
+        />
+
+        {/* Card Header & Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          {/* Logo Top Left */}
+          <div style={{ display: 'flex', marginBottom: '32px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_SVG_URL} alt="Jobz Carreira" style={{ height: '54px', width: 'auto' }} />
+          </div>
+
+          {/* Monospace Kicker */}
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '20px' }}>
+            {parsed.contractKicker}
+          </div>
+
+          {/* Job Title */}
+          <div style={{ fontSize: '50px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '40px' }}>
+            {headline}
+          </div>
+
+          {/* Detail Rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
+            {/* Row 1: Hours */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
+            </div>
+
+            {/* Row 2: Financial */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
+            </div>
+
+            {/* Row 3: Benefits */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card Footer: Pill Tags & CTA Banner */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+          {/* Pill Tags */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '24px', borderTop: '1px solid #EBF0F5' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 700, display: 'flex' }}>
+              {parsed.modality}
+            </div>
+            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
+              {parsed.location}
+            </div>
+            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
+              Aberta
+            </div>
+          </div>
+
+          {/* Dark Footer CTA Banner */}
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '20px', padding: '22px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '22px', fontWeight: 700 }}>
+            <span>👉 Candidate-se em:</span>
+            <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
+          </div>
         </div>
       </div>
     </div>
@@ -286,54 +298,88 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '50px 50px',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '50px 40px',
         fontFamily: 'Plus Jakarta Sans',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', width: '90px', height: '6px', backgroundColor: '#1E81FE', borderRadius: '3px' }} />
-        <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1px', marginTop: '8px' }}>
-          OPORTUNIDADE DE EMPREGO
-        </div>
-      </div>
+      <div
+        style={{
+          width: '940px',
+          height: '940px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '32px',
+          border: '1px solid #D7DEE7',
+          padding: '48px 44px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 12px 36px rgba(17, 19, 23, 0.08)',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            right: '-24px',
+            top: '-24px',
+            width: '120px',
+            height: '120px',
+            borderRadius: '0 0 0 120px',
+            backgroundColor: '#1E81FE',
+            display: 'flex',
+          }}
+        />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '44px', fontWeight: 700, color: '#111317', lineHeight: 1.15 }}>
-          {headline}
-        </div>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#4A5568', lineHeight: 1.3 }}>
-          {subheadline}
-        </div>
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <div style={{ display: 'flex', marginBottom: '24px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_SVG_URL} alt="Jobz Carreira" style={{ height: '46px', width: 'auto' }} />
+          </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-            <div style={{ fontSize: '14px', color: '#718096', fontWeight: 700 }}>LOCALIZAÇÃO</div>
-            <div style={{ fontSize: `${getCardFontSize(loc, 22)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{loc}</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1.5px', marginBottom: '14px' }}>
+            {parsed.contractKicker}
           </div>
-          <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-            <div style={{ fontSize: '14px', color: '#718096', fontWeight: 700 }}>MODELO</div>
-            <div style={{ fontSize: `${getCardFontSize(mod, 22)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{mod}</div>
+
+          <div style={{ fontSize: '42px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '28px' }}>
+            {headline}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ fontSize: '14px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ fontSize: '14px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ fontSize: '14px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-            <div style={{ fontSize: '14px', color: '#718096', fontWeight: 700 }}>REMUNERAÇÃO</div>
-            <div style={{ fontSize: `${getCardFontSize(sal, 22)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{sal}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '18px', borderTop: '1px solid #EBF0F5' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '8px 16px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, display: 'flex' }}>
+              {parsed.modality}
+            </div>
+            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '8px 16px', borderRadius: '999px', fontSize: '16px', fontWeight: 600, display: 'flex' }}>
+              {parsed.location}
+            </div>
           </div>
-          <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #E2E8F0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-            <div style={{ fontSize: '14px', color: '#718096', fontWeight: 700 }}>REQUISITO</div>
-            <div style={{ fontSize: `${getCardFontSize(req, 20)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{req}</div>
+
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '16px', padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '19px', fontWeight: 700 }}>
+            <span>👉 Candidate-se em:</span>
+            <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111317', padding: '22px 32px', borderRadius: '20px' }}>
-        <div style={{ fontSize: '22px', color: '#FFFFFF', fontWeight: 700 }}>Clique no link e candidate-se!</div>
-        <div style={{ backgroundColor: '#1E81FE', color: '#FFFFFF', fontSize: '20px', fontWeight: 700, padding: '12px 28px', borderRadius: '12px', display: 'flex' }}>{ctaText}</div>
       </div>
     </div>
   );
@@ -348,52 +394,88 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '100px 70px',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '90px 60px',
         fontFamily: 'Plus Jakarta Sans',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', width: '120px', height: '8px', backgroundColor: '#1E81FE', borderRadius: '4px' }} />
-        <div style={{ fontSize: '32px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginTop: '14px' }}>
-          OPORTUNIDADE DE EMPREGO
-        </div>
-      </div>
+      <div
+        style={{
+          width: '920px',
+          height: '1680px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '40px',
+          border: '1px solid #D7DEE7',
+          padding: '80px 64px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(17, 19, 23, 0.08)',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            right: '-36px',
+            top: '-36px',
+            width: '160px',
+            height: '160px',
+            borderRadius: '0 0 0 160px',
+            backgroundColor: '#1E81FE',
+            display: 'flex',
+          }}
+        />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ fontSize: '64px', fontWeight: 700, color: '#111317', lineHeight: 1.15 }}>
-          {headline}
-        </div>
-        <div style={{ fontSize: '36px', fontWeight: 700, color: '#4A5568', lineHeight: 1.35 }}>
-          {subheadline}
-        </div>
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <div style={{ display: 'flex', marginBottom: '40px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_SVG_URL} alt="Jobz Carreira" style={{ height: '64px', width: 'auto' }} />
+          </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '20px', color: '#718096', fontWeight: 700 }}>LOCALIZAÇÃO</div>
-          <div style={{ fontSize: `${getCardFontSize(loc, 34)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{loc}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '24px' }}>
+            {parsed.contractKicker}
+          </div>
+
+          <div style={{ fontSize: '58px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '56px' }}>
+            {headline}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', marginBottom: '48px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+              <div style={{ fontSize: '32px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+              <div style={{ fontSize: '32px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+              <div style={{ fontSize: '32px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
+            </div>
+          </div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '20px', color: '#718096', fontWeight: 700 }}>MODELO / JORNADA</div>
-          <div style={{ fontSize: `${getCardFontSize(mod, 34)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{mod}</div>
-        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', paddingTop: '32px', borderTop: '1px solid #EBF0F5' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '14px 28px', borderRadius: '999px', fontSize: '22px', fontWeight: 700, display: 'flex' }}>
+              {parsed.modality}
+            </div>
+            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '14px 28px', borderRadius: '999px', fontSize: '22px', fontWeight: 600, display: 'flex' }}>
+              {parsed.location}
+            </div>
+          </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '20px', color: '#718096', fontWeight: 700 }}>REMUNERAÇÃO</div>
-          <div style={{ fontSize: `${getCardFontSize(sal, 34)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{sal}</div>
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '24px', padding: '28px 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '26px', fontWeight: 700 }}>
+            <span>👉 Candidate-se em:</span>
+            <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
+          </div>
         </div>
-
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '20px', color: '#718096', fontWeight: 700 }}>REQUISITOS</div>
-          <div style={{ fontSize: `${getCardFontSize(req, 30)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{req}</div>
-        </div>
-      </div>
-
-      <div style={{ backgroundColor: '#111317', borderRadius: '28px', padding: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center' }}>
-        <div style={{ fontSize: '36px', color: '#1E81FE', fontWeight: 700 }}>Candidate-se pelo link na bio!</div>
-        <div style={{ fontSize: '28px', color: '#E2E8F0', fontWeight: 700 }}>Inscreva-se em menos de 1 minuto</div>
       </div>
     </div>
   );
@@ -408,49 +490,87 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '45px 50px',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '30px 40px',
         fontFamily: 'Plus Jakarta Sans',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', width: '80px', height: '5px', backgroundColor: '#1E81FE', borderRadius: '3px' }} />
-        <div style={{ fontSize: '18px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1px', marginTop: '6px' }}>
-          OPORTUNIDADE DE EMPREGO
-        </div>
-      </div>
+      <div
+        style={{
+          width: '1120px',
+          height: '560px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '24px',
+          border: '1px solid #D7DEE7',
+          padding: '36px 40px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 10px 30px rgba(17, 19, 23, 0.08)',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            right: '-20px',
+            top: '-20px',
+            width: '100px',
+            height: '100px',
+            borderRadius: '0 0 0 100px',
+            backgroundColor: '#1E81FE',
+            display: 'flex',
+          }}
+        />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ fontSize: '38px', fontWeight: 700, color: '#111317', lineHeight: 1.15 }}>
-          {headline}
-        </div>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: '#4A5568', lineHeight: 1.3 }}>
-          {subheadline}
-        </div>
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_SVG_URL} alt="Jobz Carreira" style={{ height: '36px', width: 'auto' }} />
+            <div style={{ fontSize: '15px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1px', marginRight: '70px' }}>
+              {parsed.contractKicker}
+            </div>
+          </div>
 
-      <div style={{ display: 'flex', gap: '14px' }}>
-        <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '14px', border: '1px solid #E2E8F0', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '12px', color: '#718096', fontWeight: 700 }}>LOCALIZAÇÃO</div>
-          <div style={{ fontSize: `${getCardFontSize(loc, 18)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{loc}</div>
-        </div>
-        <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '14px', border: '1px solid #E2E8F0', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '12px', color: '#718096', fontWeight: 700 }}>MODELO</div>
-          <div style={{ fontSize: `${getCardFontSize(mod, 18)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{mod}</div>
-        </div>
-        <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '14px', border: '1px solid #E2E8F0', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '12px', color: '#718096', fontWeight: 700 }}>REMUNERAÇÃO</div>
-          <div style={{ fontSize: `${getCardFontSize(sal, 18)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{sal}</div>
-        </div>
-        <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: '14px', border: '1px solid #E2E8F0', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '12px', color: '#718096', fontWeight: 700 }}>REQUISITO</div>
-          <div style={{ fontSize: `${getCardFontSize(req, 16)}px`, color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{req}</div>
-        </div>
-      </div>
+          <div style={{ fontSize: '34px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '20px' }}>
+            {headline}
+          </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111317', padding: '18px 28px', borderRadius: '16px' }}>
-        <div style={{ fontSize: '20px', color: '#FFFFFF', fontWeight: 700 }}>Candidate-se via LinkedIn ou pelo link!</div>
-        <div style={{ backgroundColor: '#1E81FE', color: '#FFFFFF', fontSize: '18px', fontWeight: 700, padding: '10px 24px', borderRadius: '10px', display: 'flex' }}>{ctaText}</div>
+          <div style={{ display: 'flex', gap: '32px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+              <div style={{ fontSize: '12px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+              <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+              <div style={{ fontSize: '12px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+              <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+              <div style={{ fontSize: '12px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+              <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: '14px', borderTop: '1px solid #EBF0F5' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '6px 14px', borderRadius: '999px', fontSize: '14px', fontWeight: 700, display: 'flex' }}>
+              {parsed.modality}
+            </div>
+            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '6px 14px', borderRadius: '999px', fontSize: '14px', fontWeight: 600, display: 'flex' }}>
+              {parsed.location}
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '12px', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '16px', fontWeight: 700 }}>
+            <span>👉 Candidate-se em:</span>
+            <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
+          </div>
+        </div>
       </div>
     </div>
   );
