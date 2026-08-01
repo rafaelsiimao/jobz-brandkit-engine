@@ -59,7 +59,6 @@ export interface CopyData {
 export interface AssetUrls {
   feed: string;
   story: string;
-  linkedin: string;
   whatsapp: string;
 }
 

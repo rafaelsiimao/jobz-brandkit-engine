@@ -28,8 +28,7 @@ import {
   ToggleRight,
   Instagram,
   MessageSquare,
-  Smartphone,
-  Linkedin
+  Smartphone
 } from 'lucide-react';
 import { AblerVacancyItem } from '@/lib/abler-api';
 import { JOBZ_LOGO_PNG_BASE64 } from '@/lib/logo-png-base64';
@@ -48,7 +47,7 @@ interface EditFormState {
   candidatureEmail: string;
   showRequirements: boolean;
   requirementsList: string;
-  previewFormat: 'feed' | 'whatsapp' | 'story' | 'linkedin';
+  previewFormat: 'feed' | 'whatsapp' | 'story';
 }
 
 export default function HomePage() {
@@ -186,7 +185,7 @@ export default function HomePage() {
         setStatusMessage({
           type: 'success',
           title: 'Artes Geradas com Sucesso! 🚀',
-          text: `Suas 4 artes (Feed, WhatsApp, Story e LinkedIn) no padrão oficial Jobz Carreira estão prontas para download abaixo e foram enviadas para ${formData.recipientEmail}.`,
+          text: `Suas 3 artes (Feed, WhatsApp e Story) no padrão oficial Jobz Carreira estão prontas para download abaixo e foram enviadas para ${formData.recipientEmail}.`,
         });
       } else {
         setGenerating(false);
@@ -706,18 +705,6 @@ export default function HomePage() {
                         <span>Story 9:16</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, previewFormat: 'linkedin' })}
-                        className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
-                          formData.previewFormat === 'linkedin'
-                            ? 'bg-[#1E81FE] text-white shadow-sm'
-                            : 'text-[#5F6673] hover:bg-[#FAFAFC]'
-                        }`}
-                      >
-                        <Linkedin className="w-3.5 h-3.5" />
-                        <span>LinkedIn</span>
-                      </button>
                     </div>
                   </div>
 
@@ -728,8 +715,6 @@ export default function HomePage() {
                         ? 'max-w-[285px] aspect-[9/16] p-4 text-xs'
                         : formData.previewFormat === 'whatsapp'
                         ? 'max-w-[360px] aspect-square p-5 text-xs'
-                        : formData.previewFormat === 'linkedin'
-                        ? 'max-w-[460px] aspect-[1.91/1] p-4 text-[11px]'
                         : 'max-w-[370px] aspect-[1/1.25] p-5 text-xs'
                     }`}>
                       
@@ -905,17 +890,6 @@ export default function HomePage() {
                     >
                       <Download className="w-4 h-4 text-[#1E81FE] group-hover:scale-110 transition-transform" />
                       <span>Story (1080x1920)</span>
-                    </a>
-
-                    <a
-                      href={generatedAssets.linkedin}
-                      target="_blank"
-                      rel="noreferrer"
-                      download="jobz-linkedin.png"
-                      className="bg-[#FAFAFC] hover:bg-[#EBF3FF] border border-[#D7DEE7] hover:border-[#B2D3FF] p-3 rounded-xl flex items-center gap-2 text-xs font-bold text-[#111317] hover:text-[#1E81FE] transition-all shadow-sm group"
-                    >
-                      <Download className="w-4 h-4 text-[#1E81FE] group-hover:scale-110 transition-transform" />
-                      <span>LinkedIn (1200x627)</span>
                     </a>
                   </div>
                 </div>

@@ -210,7 +210,7 @@ async function renderJsxToBuffer(element: React.ReactElement, width: number, hei
   return Buffer.from(arrayBuffer);
 }
 
-export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer }> {
+export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; whatsapp: Buffer }> {
   const headline = truncateText(copy.headline || 'Oportunidade de Emprego', 65);
   const parsed = parseCardHighlights(copy.highlights);
 
@@ -657,12 +657,11 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
     </div>
   );
 
-  const [feed, whatsapp, story, linkedin] = await Promise.all([
+  const [feed, whatsapp, story] = await Promise.all([
     renderJsxToBuffer(feedJsx, 1080, 1350),
     renderJsxToBuffer(whatsappJsx, 1080, 1080),
     renderJsxToBuffer(storyJsx, 1080, 1920),
-    renderJsxToBuffer(linkedinJsx, 1200, 627),
   ]);
 
-  return { feed, story, linkedin, whatsapp };
+  return { feed, story, whatsapp };
 }

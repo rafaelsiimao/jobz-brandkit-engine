@@ -32,7 +32,6 @@ describe('Email Template Generator (v2.0 Clean Arts Delivery)', () => {
       feed: 'http://img/feed.png',
       whatsapp: 'http://img/whatsapp.png',
       story: 'http://img/story.png',
-      linkedin: 'http://img/linkedin.png'
     };
 
     const html = generateEmailHtml(mockCopy, mockSourcing, mockUrls);
@@ -46,7 +45,6 @@ describe('Email Template Generator (v2.0 Clean Arts Delivery)', () => {
     expect(html).toContain('http://img/feed.png');
     expect(html).toContain('http://img/whatsapp.png');
     expect(html).toContain('http://img/story.png');
-    expect(html).toContain('http://img/linkedin.png');
     expect(html).toContain('Vaga Teste');
   });
 });

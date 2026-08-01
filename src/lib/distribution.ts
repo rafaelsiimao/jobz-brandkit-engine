@@ -84,17 +84,12 @@ export function generateEmailHtml(
                     📱 Story (1080×1920)
                   </a>
                 </td>
-                <td width="50%" style="padding: 4px;">
-                  <a href="${urls.linkedin}" target="_blank" style="display:block;background:#0A66C2;color:#FFFFFF;padding:14px 16px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
-                    💼 LinkedIn (1200×627)
-                  </a>
-                </td>
               </tr>
             </table>
           </div>
 
           <div style="background: #EBF3FF; border: 1px solid #B2D3FF; color: #1E81FE; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 700; text-align: center;">
-            📎 Nota: Os 4 arquivos PNG também estão salvos e prontos para uso em alta definição.
+            📎 Nota: Os 3 arquivos PNG também estão salvos e prontos para uso em alta definição.
           </div>
         </div>
 
@@ -111,7 +106,7 @@ export function generateEmailHtml(
 export async function uploadAssetsAndSendEmail(
   jobId: string,
   recipientEmail: string,
-  buffers: { feed: Buffer; story: Buffer; linkedin: Buffer; whatsapp: Buffer },
+  buffers: { feed: Buffer; story: Buffer; whatsapp: Buffer },
   sourcing: SourcingProfile,
   copy: CopyData,
   extractedData?: ExtractedJobData
@@ -119,13 +114,11 @@ export async function uploadAssetsAndSendEmail(
   const feedPath = `jobs/${jobId}/feed.png`;
   const whatsappPath = `jobs/${jobId}/whatsapp.png`;
   const storyPath = `jobs/${jobId}/story.png`;
-  const linkedinPath = `jobs/${jobId}/linkedin.png`;
 
   try {
     await supabase.storage.from('brandkit-arts').upload(feedPath, buffers.feed, { contentType: 'image/png', upsert: true });
     await supabase.storage.from('brandkit-arts').upload(whatsappPath, buffers.whatsapp, { contentType: 'image/png', upsert: true });
     await supabase.storage.from('brandkit-arts').upload(storyPath, buffers.story, { contentType: 'image/png', upsert: true });
-    await supabase.storage.from('brandkit-arts').upload(linkedinPath, buffers.linkedin, { contentType: 'image/png', upsert: true });
   } catch (err: any) {
     console.error('Aviso no upload de assets para o Storage:', err?.message);
   }
@@ -136,7 +129,6 @@ export async function uploadAssetsAndSendEmail(
     feed: getPublicUrl(feedPath),
     whatsapp: getPublicUrl(whatsappPath),
     story: getPublicUrl(storyPath),
-    linkedin: getPublicUrl(linkedinPath),
   };
 
   const subject = `🚀 Kit de Artes da Vaga: ${copy.headline}`;
