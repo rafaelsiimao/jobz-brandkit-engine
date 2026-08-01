@@ -7,17 +7,12 @@ const fontBuffer = Buffer.from(FONT_PLUS_JAKARTA_SANS_BOLD_BASE64, 'base64');
 const LOGO_SVG_URL = 'https://jobz.com.br/brandbook/jobz-carreira/assets/jobz-carreira-logo-preto.svg';
 const CTA_FOOTER_TEXT = 'Candidate-se em: jobz.com.br/vagas';
 
-// Componente SVG Nativo JSX para o Satori renderizar a Logo Oficial com 100% de Confiabilidade
-const JobzLogoSvg = ({ height = 50 }: { height?: number }) => {
+import { JOBZ_LOGO_PNG_BASE64 } from './logo-png-base64';
+
+const JobzLogoPng = ({ height = 50 }: { height?: number }) => {
   const width = Math.round(height * (206.91 / 100));
   return (
-    <svg width={width} height={height} viewBox="0 0 206.91 100" fill="none">
-      <path fill="#111317" fillRule="evenodd" d="M12.18,23.38v56.55c0,2.53-.68,4.48-2.05,5.84s-3.3,2.05-5.83,2.05H0v12.18h3.37c5.33,0,9.64-.68,12.91-2.05,3.28-1.37,5.71-3.56,7.28-6.6,1.57-3.04,2.35-7.12,2.35-12.24V23.38h-13.73ZM12.18,23.38v10.65h13.73v-10.65h-13.73Z"/>
-      <path fill="#1E81FE" fillRule="evenodd" d="M32.51,0c0,11.23-9.12,20.35-20.35,20.35V0h20.35Z"/>
-      <path fill="#111317" fillRule="evenodd" d="M63.5,80.95c-4.92,0-9.25-.78-13.01-2.36-3.76-1.57-6.93-3.7-9.53-6.4-2.6-2.7-4.56-5.75-5.89-9.17s-2-6.97-2-10.65v-2.15c0-3.82.7-7.46,2.1-10.91,1.4-3.45,3.41-6.52,6.04-9.22s5.82-4.81,9.58-6.35c3.76-1.54,7.99-2.3,12.7-2.3s8.95.77,12.7,2.3c3.75,1.54,6.95,3.65,9.58,6.35,2.63,2.7,4.63,5.77,5.99,9.22,1.37,3.45,2.05,7.08,2.05,10.91v2.15c0,3.69-.67,7.24-2,10.65s-3.3,6.47-5.89,9.17-5.77,4.83-9.53,6.4-8.06,2.36-12.91,2.36c0,0,.02,0,.02,0ZM63.5,68.76c3.48,0,6.42-.77,8.81-2.3,2.39-1.54,4.2-3.62,5.43-6.25s1.84-5.62,1.84-8.96-.63-6.43-1.89-9.06-3.11-4.71-5.53-6.25-5.31-2.3-8.66-2.3-6.23.77-8.66,2.3c-2.42,1.54-4.29,3.62-5.58,6.25-1.3,2.63-1.95,5.65-1.95,9.06s.63,6.34,1.9,8.96c1.26,2.63,3.09,4.71,5.48,6.25s5.33,2.3,8.81,2.3Z"/>
-      <path fill="#111317" fillRule="evenodd" d="M133.88,80.85c-4.58,0-8.6-.97-12.09-2.92s-6.21-4.8-8.19-8.55-3.07-8.3-3.28-13.62h2.15v23.25h-11.27V4.23h14.24v37.39l-3.79,5.84c.27-5.74,1.42-10.52,3.43-14.34s4.73-6.69,8.14-8.6c3.41-1.91,7.27-2.87,11.58-2.87,3.82,0,7.31.72,10.45,2.15s5.84,3.43,8.09,5.99c2.25,2.56,3.98,5.55,5.17,8.96s1.79,7.14,1.79,11.17v2.15c0,4.03-.61,7.78-1.85,11.27-1.23,3.48-3,6.54-5.33,9.17-2.32,2.63-5.11,4.68-8.35,6.15s-6.88,2.2-10.91,2.2h.02ZM130.7,68.87c3.07,0,5.75-.77,8.04-2.3,2.29-1.54,4.08-3.64,5.38-6.3s1.95-5.74,1.95-9.22-.65-6.62-1.95-9.22c-1.3-2.59-3.09-4.61-5.38-6.04-2.29-1.43-4.97-2.15-8.04-2.15-2.8,0-5.38.61-7.73,1.84s-4.27,3.04-5.74,5.43-2.2,5.26-2.2,8.6v4.1c0,3.21.75,5.94,2.25,8.19,1.5,2.25,3.45,4,5.84,5.22,2.39,1.54,4.92,1.85,7.58,1.85h0Z"/>
-      <path fill="#1E81FE" fillRule="evenodd" d="M163.48,79.01v-11.27l27.45-32.98v1.64l-2.15-2.87,1.74.82h-27.14v-10.96h42.41v11.27l-27.45,32.98v-1.54l2.25,2.87-1.74-.92h28.07v10.96h-43.44Z"/>
-    </svg>
+    <img src={JOBZ_LOGO_PNG_BASE64} alt="Jobz Carreira" style={{ height: `${height}px`, width: `${width}px` }} />
   );
 };
 
@@ -242,7 +237,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {/* Logo Top Left - Native JSX SVG */}
           <div style={{ display: 'flex', marginBottom: '32px' }}>
-            <JobzLogoSvg height={54} />
+            <JobzLogoPng height={54} />
           </div>
 
           {/* Monospace Kicker */}
@@ -349,7 +344,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
 
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <div style={{ display: 'flex', marginBottom: '24px' }}>
-            <JobzLogoSvg height={46} />
+            <JobzLogoPng height={46} />
           </div>
 
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1.5px', marginBottom: '14px' }}>
@@ -444,7 +439,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
 
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <div style={{ display: 'flex', marginBottom: '40px' }}>
-            <JobzLogoSvg height={64} />
+            <JobzLogoPng height={64} />
           </div>
 
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '24px' }}>
@@ -539,7 +534,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
 
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <JobzLogoSvg height={36} />
+            <JobzLogoPng height={36} />
             <div style={{ fontSize: '15px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1px', marginRight: '70px' }}>
               {parsed.contractKicker}
             </div>
