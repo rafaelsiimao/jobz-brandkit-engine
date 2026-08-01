@@ -733,8 +733,8 @@ export default function HomePage() {
                         : 'max-w-[370px] aspect-[1/1.25] p-5 text-xs'
                     }`}>
                       
-                      {/* Top Right Blue Accent Corner */}
-                      <div className="absolute top-0 right-0 w-14 h-14 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
+                      {/* Top Right Blue Accent Corner — 25% do card */}
+                      <div className="absolute top-0 right-0 w-1/4 h-1/4 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
 
                       <div className="space-y-2.5">
                         {/* Logo PNG Oficial */}

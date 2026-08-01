@@ -229,46 +229,44 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
         padding: '72px 64px',
         position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
         overflow: 'hidden',
       }}
     >
-      {/* Top Right Blue Corner Accent Element */}
+      {/* Top Right Blue Corner Accent Element — 25% da largura = ~270px */}
       <div
         style={{
           position: 'absolute',
           right: '0px',
           top: '0px',
-          width: '170px',
-          height: '170px',
-          borderRadius: '0 0 0 170px',
+          width: '270px',
+          height: '270px',
+          borderRadius: '0 0 0 270px',
           backgroundColor: '#1E81FE',
           display: 'flex',
         }}
       />
 
-      {/* Main Content Area */}
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        {/* Logo Top Left */}
-        <div style={{ display: 'flex', marginBottom: '36px' }}>
-          <JobzLogoPng height={58} />
-        </div>
+      {/* Logo Top Left */}
+      <div style={{ display: 'flex', marginBottom: '32px' }}>
+        <JobzLogoPng height={58} />
+      </div>
 
-        {/* Kicker */}
-        <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2.5px', marginBottom: '20px' }}>
-          {parsed.contractKicker}
-        </div>
+      {/* Kicker */}
+      <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2.5px', marginBottom: '16px' }}>
+        {parsed.contractKicker}
+      </div>
 
-        {/* Headline */}
-        <div style={{ fontSize: '64px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '44px' }}>
-          {headline}
-        </div>
+      {/* Headline */}
+      <div style={{ fontSize: '64px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '40px' }}>
+        {headline}
+      </div>
 
-        {/* Highlight Rows with Vector Icons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginBottom: '36px' }}>
+      {/* Highlight Rows — flex:1 expands to fill vertical space */}
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, marginBottom: '32px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
           {/* Row 1: Hours */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -367,9 +365,9 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
           position: 'absolute',
           right: '0px',
           top: '0px',
-          width: '140px',
-          height: '140px',
-          borderRadius: '0 0 0 140px',
+          width: '270px',
+          height: '270px',
+          borderRadius: '0 0 0 270px',
           backgroundColor: '#1E81FE',
           display: 'flex',
         }}
@@ -477,9 +475,9 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
           position: 'absolute',
           right: '0px',
           top: '0px',
-          width: '220px',
-          height: '220px',
-          borderRadius: '0 0 0 220px',
+          width: '300px',
+          height: '300px',
+          borderRadius: '0 0 0 300px',
           backgroundColor: '#1E81FE',
           display: 'flex',
         }}
@@ -587,9 +585,9 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
           position: 'absolute',
           right: '0px',
           top: '0px',
-          width: '120px',
-          height: '120px',
-          borderRadius: '0 0 0 120px',
+          width: '190px',
+          height: '190px',
+          borderRadius: '0 0 0 190px',
           backgroundColor: '#1E81FE',
           display: 'flex',
         }}
