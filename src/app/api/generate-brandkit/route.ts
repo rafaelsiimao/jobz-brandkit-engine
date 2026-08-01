@@ -5,7 +5,7 @@ import { fetchVacancyDetailsFromAbler } from '@/lib/abler-api';
 import { generateBrandKitAI } from '@/lib/ai-engine';
 import { renderBrandKitPNGs } from '@/lib/renderer-engine';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
-import { ExtractedJobData } from '@/lib/types';
+import { ExtractedJobData, ContractType } from '@/lib/types';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   let jobId: string | null = null;
 
   try {
-    const { jobUrl, vacancyId, recipientEmail } = await request.json();
+    const { jobUrl, vacancyId, recipientEmail, customFields } = await request.json();
 
     if ((!jobUrl && !vacancyId) || !recipientEmail) {
       return NextResponse.json(
@@ -67,7 +67,6 @@ export async function POST(request: Request) {
         extractedData = await extractJobFromAbler(effectiveJobUrl);
       }
     } else {
-      // Tentar extrair ID numérico da URL da Abler se presente (ex: /secretaria-executiva-497454)
       const numericIdMatch = jobUrl?.match(/-(\d+)(?:\/|$|\?)/) || jobUrl?.match(/vagas\/(\d+)/);
       if (numericIdMatch && numericIdMatch[1]) {
         try {
@@ -80,7 +79,18 @@ export async function POST(request: Request) {
       }
     }
 
-    await delay(300);
+    // Apply custom field overrides from recruiter's Preview Modal edits
+    if (customFields) {
+      if (customFields.title) extractedData.title = customFields.title;
+      if (customFields.contractType) extractedData.contractType = customFields.contractType as ContractType;
+      if (customFields.salary) extractedData.salary = customFields.salary;
+      if (customFields.schedule) extractedData.schedule = customFields.schedule;
+      if (customFields.location) extractedData.location = customFields.location;
+      if (customFields.benefits && Array.isArray(customFields.benefits)) extractedData.benefits = customFields.benefits;
+      if (customFields.modality) extractedData.modality = customFields.modality;
+    }
+
+    await delay(200);
 
     // Etapa 2: Inteligência de Recrutamento & Copy (IA Profiler)
     await supabase
@@ -89,7 +99,20 @@ export async function POST(request: Request) {
       .eq('id', jobId);
 
     const { sourcing, copy } = await generateBrandKitAI(extractedData);
-    await delay(300);
+
+    // Ensure custom fields strictly override final copy highlights
+    if (customFields) {
+      if (customFields.title) copy.headline = customFields.title;
+      
+      const modalityLoc = `${customFields.modality || extractedData.modality} | ${customFields.location || extractedData.location}`;
+      const scheduleStr = `Jornada: ${customFields.schedule || extractedData.schedule}`;
+      const salaryStr = `${extractedData.contractType === 'ESTAGIO' ? 'Bolsa' : extractedData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}: ${customFields.salary || extractedData.salary}`;
+      const benefitsStr = `Benefícios: ${Array.isArray(customFields.benefits) ? customFields.benefits.join(', ') : extractedData.benefits.join(', ')}`;
+
+      copy.highlights = [modalityLoc, scheduleStr, salaryStr, benefitsStr];
+    }
+
+    await delay(200);
 
     // Etapa 3: Renderização das Artes PNG (Card Oficial Brandbook Jobz Carreira)
     await supabase
@@ -98,7 +121,7 @@ export async function POST(request: Request) {
       .eq('id', jobId);
 
     const pngBuffers = await renderBrandKitPNGs(copy);
-    await delay(300);
+    await delay(200);
 
     // Etapa 4: Upload para Storage & Envio do Kit por E-mail
     await supabase.from('brandkit_jobs').update({ status: 'uploading_and_mailing' }).eq('id', jobId);
@@ -111,7 +134,7 @@ export async function POST(request: Request) {
       copy,
       extractedData
     );
-    await delay(200);
+    await delay(100);
 
     // Etapa Concluída com Sucesso!
     await supabase

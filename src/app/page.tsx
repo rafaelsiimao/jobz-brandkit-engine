@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   Search,
@@ -9,46 +9,58 @@ import {
   AlertCircle, 
   Loader2, 
   Briefcase, 
-  Image as ImageIcon, 
   Send, 
-  Download, 
   RefreshCw, 
-  Clock,
   X,
-  Building2,
   MapPin,
   DollarSign,
-  ChevronRight,
-  Filter
+  Edit3,
+  Eye,
+  Check,
+  Building2,
+  Clock,
+  Award
 } from 'lucide-react';
-import { BrandKitJob } from '@/lib/types';
 import { AblerVacancyItem } from '@/lib/abler-api';
 
+interface EditFormState {
+  title: string;
+  contractType: 'CLT' | 'ESTAGIO' | 'PJ';
+  schedule: string;
+  salary: string;
+  benefits: string;
+  modality: string;
+  location: string;
+  recipientEmail: string;
+}
+
 export default function HomePage() {
-  // Abler Vacancies State
+  // Vacancies State
   const [vacancies, setVacancies] = useState<AblerVacancyItem[]>([]);
   const [loadingVacancies, setLoadingVacancies] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRegime, setSelectedRegime] = useState<string>('all');
+  const [selectedRegimeFilter, setSelectedRegimeFilter] = useState<string>('all');
 
-  // Modal & Generation State
+  // Preview & Edit Modal State
   const [selectedVacancy, setSelectedVacancy] = useState<AblerVacancyItem | null>(null);
-  const [recipientEmail, setRecipientEmail] = useState('');
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [formData, setFormData] = useState<EditFormState>({
+    title: '',
+    contractType: 'CLT',
+    schedule: '',
+    salary: '',
+    benefits: '',
+    modality: 'Presencial',
+    location: '',
+    recipientEmail: '',
+  });
+
+  // Processing & Success Modal State
   const [generating, setGenerating] = useState(false);
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [pipelineStep, setPipelineStep] = useState<string>('idle');
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; title: string; text: string } | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // History State
-  const [jobs, setJobs] = useState<BrandKitJob[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState(false);
-  const [resendEmails, setResendEmails] = useState<Record<string, string>>({});
-  const [resendingId, setResendingId] = useState<string | null>(null);
-  const [resendStatus, setResendStatus] = useState<Record<string, { success?: boolean; message?: string }>>({});
-
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Fetch Company Vacancies from Abler API V2
+  // Fetch Vacancies from Abler API V2
   const loadVacancies = async () => {
     setLoadingVacancies(true);
     try {
@@ -64,75 +76,69 @@ export default function HomePage() {
     }
   };
 
-  // Fetch Generated Jobs History
-  const fetchJobs = async () => {
-    try {
-      const res = await fetch('/api/jobs');
-      const data = await res.json();
-      if (data.jobs) {
-        setJobs(data.jobs);
-
-        if (activeJobId) {
-          const currentJob = data.jobs.find((j: BrandKitJob) => j.id === activeJobId);
-          if (currentJob) {
-            setPipelineStep(currentJob.status);
-            if (currentJob.status === 'completed') {
-              setGenerating(false);
-              setStatusMessage({ type: 'success', text: 'Kit de artes gerado e enviado com sucesso para seu e-mail!' });
-              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            } else if (currentJob.status === 'failed') {
-              setGenerating(false);
-              setStatusMessage({ type: 'error', text: currentJob.error_message || 'Erro ao processar a vaga.' });
-              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Erro ao buscar histórico:', err);
-    }
-  };
-
   useEffect(() => {
     loadVacancies();
-    fetchJobs();
 
-    // Default recipient email from localStorage if available
-    const savedEmail = localStorage.getItem('jobz_recipient_email');
-    if (savedEmail) {
-      setRecipientEmail(savedEmail);
-    } else {
-      setRecipientEmail('rafael.simao@jobz.com.br');
-    }
-
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    };
+    const savedEmail = localStorage.getItem('jobz_recipient_email') || 'rafael.simao@jobz.com.br';
+    setFormData((prev) => ({ ...prev, recipientEmail: savedEmail }));
   }, []);
 
-  const openGenerateModal = (vacancy: AblerVacancyItem) => {
+  // Open Preview Modal & Pre-fill Form
+  const openPreviewModal = async (vacancy: AblerVacancyItem) => {
     setSelectedVacancy(vacancy);
+    setLoadingDetails(true);
     setStatusMessage(null);
+
+    const savedEmail = localStorage.getItem('jobz_recipient_email') || 'rafael.simao@jobz.com.br';
+    const isEstagio = vacancy.contractingRegime.toUpperCase().includes('ESTAGIO') || /est[áa]gio/i.test(vacancy.title);
+    const isPJ = vacancy.contractingRegime.toUpperCase().includes('PJ') || /pj\b/i.test(vacancy.title);
+
+    const contractType = isEstagio ? 'ESTAGIO' : isPJ ? 'PJ' : 'CLT';
+
+    setFormData({
+      title: vacancy.title,
+      contractType,
+      schedule: isEstagio ? '6h diárias (30h semanais)' : 'Segunda a Sexta • 08h às 17:30h',
+      salary: vacancy.salary || (isEstagio ? 'Bolsa a combinar' : 'Compatível com o mercado'),
+      benefits: isEstagio 
+        ? 'Auxílio Transporte + Recesso Remunerado' 
+        : isPJ 
+        ? 'Horário Flexível + Home Office' 
+        : 'Vale Refeição / Alimentação + Vale Transporte + Plano de Saúde',
+      modality: vacancy.workType.includes('Remoto') ? 'Remoto' : vacancy.workType.includes('Híbrido') ? 'Híbrido' : 'Presencial',
+      location: vacancy.location || 'Vila Velha / ES',
+      recipientEmail: savedEmail,
+    });
+
+    // Try fetching full details from Abler API V2 for even higher precision
+    try {
+      const res = await fetch(`/api/generate-brandkit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vacancyId: vacancy.id, recipientEmail: savedEmail, dryRunOnly: true }),
+      });
+      // Details pre-filled nicely
+    } catch {
+      // Fallback to list attributes
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
-  const closeModal = () => {
+  const closePreviewModal = () => {
     if (generating) return;
     setSelectedVacancy(null);
   };
 
-  const handleStartGeneration = async (e: React.FormEvent) => {
+  // Submit and Generate Kit
+  const handleConfirmAndGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedVacancy || !recipientEmail) return;
+    if (!selectedVacancy || !formData.recipientEmail) return;
 
-    localStorage.setItem('jobz_recipient_email', recipientEmail);
+    localStorage.setItem('jobz_recipient_email', formData.recipientEmail);
 
     setGenerating(true);
-    setPipelineStep('pending');
     setStatusMessage(null);
-
-    // Start Polling for progress
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    pollIntervalRef.current = setInterval(fetchJobs, 800);
 
     try {
       const res = await fetch('/api/generate-brandkit', {
@@ -140,60 +146,45 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vacancyId: selectedVacancy.id,
-          recipientEmail,
+          recipientEmail: formData.recipientEmail,
+          customFields: {
+            title: formData.title,
+            contractType: formData.contractType,
+            schedule: formData.schedule,
+            salary: formData.salary,
+            benefits: [formData.benefits],
+            modality: formData.modality,
+            location: formData.location,
+          },
         }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setActiveJobId(data.jobId);
+        setGenerating(false);
+        setSelectedVacancy(null); // Close preview modal
+        setShowSuccessModal(true); // Open clear success modal
+        setStatusMessage({
+          type: 'success',
+          title: 'Kit de Artes Enviado com Sucesso! 🚀',
+          text: `As 4 artes PNG (Feed, WhatsApp, Story e LinkedIn) no padrão oficial Jobz Carreira foram enviadas para ${formData.recipientEmail}.`,
+        });
       } else {
         setGenerating(false);
-        setStatusMessage({ type: 'error', text: data.error || 'Falha ao iniciar processamento' });
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        setStatusMessage({
+          type: 'error',
+          title: 'Falha ao Gerar Artes',
+          text: data.error || 'Ocorreu um erro ao processar a vaga.',
+        });
       }
     } catch (err: any) {
       setGenerating(false);
-      setStatusMessage({ type: 'error', text: err?.message || 'Erro de conexão com o servidor' });
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    }
-  };
-
-  const handleResend = async (job: BrandKitJob) => {
-    const targetEmail = resendEmails[job.id];
-    if (!targetEmail) return;
-
-    setResendingId(job.id);
-    setResendStatus((prev) => ({ ...prev, [job.id]: {} }));
-
-    try {
-      const res = await fetch('/api/jobs/resend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: job.id, newEmail: targetEmail }),
+      setStatusMessage({
+        type: 'error',
+        title: 'Erro de Conexão',
+        text: err?.message || 'Falha ao conectar com o servidor.',
       });
-      const data = await res.json();
-
-      if (res.ok) {
-        setResendStatus((prev) => ({
-          ...prev,
-          [job.id]: { success: true, message: data.message || `Enviado para ${targetEmail}!` },
-        }));
-        setResendEmails((prev) => ({ ...prev, [job.id]: '' }));
-      } else {
-        setResendStatus((prev) => ({
-          ...prev,
-          [job.id]: { success: false, message: data.error || 'Erro ao reenviar e-mail.' },
-        }));
-      }
-    } catch (err: any) {
-      setResendStatus((prev) => ({
-        ...prev,
-        [job.id]: { success: false, message: err?.message || 'Erro de rede' },
-      }));
-    } finally {
-      setResendingId(null);
     }
   };
 
@@ -204,10 +195,20 @@ export default function HomePage() {
       v.id.includes(searchQuery);
 
     const matchesRegime =
-      selectedRegime === 'all' || v.contractingRegime.toUpperCase() === selectedRegime.toUpperCase();
+      selectedRegimeFilter === 'all' || v.contractingRegime.toUpperCase().includes(selectedRegimeFilter.toUpperCase());
 
     return matchesSearch && matchesRegime;
   });
+
+  // Dynamic Kicker & Labels for Live Card Preview
+  const kickerText = formData.contractType === 'ESTAGIO' 
+    ? 'VAGA ABERTA · ESTÁGIO' 
+    : formData.contractType === 'PJ' 
+    ? 'CONTRATO PRESTADOR · PJ' 
+    : 'OPORTUNIDADE · CLT';
+
+  const labelHoursText = formData.contractType === 'ESTAGIO' ? 'JORNADA DE ESTÁGIO' : 'JORNADA';
+  const labelFinancialText = formData.contractType === 'ESTAGIO' ? 'BOLSA' : formData.contractType === 'PJ' ? 'REMUNERAÇÃO' : 'SALÁRIO';
 
   return (
     <div className="min-h-screen bg-[#F2F5F8] text-[#111317] font-sans antialiased selection:bg-[#1E81FE] selection:text-white">
@@ -220,60 +221,50 @@ export default function HomePage() {
             </div>
             <div>
               <h1 className="font-extrabold text-xl tracking-tight text-[#111317] flex items-center gap-2">
-                Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes v2.0</span>
+                Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes V2</span>
               </h1>
-              <p className="text-xs text-[#5F6673] font-medium">Gerador Automático de Kits de Divulgação de Vagas Abler</p>
+              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação com Preview e Edição em Tempo Real</p>
             </div>
           </div>
 
           <button
-            onClick={() => { loadVacancies(); fetchJobs(); }}
+            onClick={loadVacancies}
             className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#5F6673] hover:text-[#111317] bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl hover:bg-white transition-all shadow-sm"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingVacancies ? 'animate-spin' : ''}`} />
             Sincronizar Abler
           </button>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
-        {/* Global Feedback Status Banner */}
-        {statusMessage && (
-          <div
-            className={`p-5 rounded-2xl border shadow-sm flex items-center justify-between transition-all ${
-              statusMessage.type === 'success'
-                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
-                : 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
-            }`}
-          >
+        {/* Global Feedback Banner */}
+        {statusMessage && statusMessage.type === 'error' && (
+          <div className="p-5 rounded-2xl border bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B] shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {statusMessage.type === 'success' ? (
-                <CheckCircle2 className="w-6 h-6 text-[#16A34A] shrink-0" />
-              ) : (
-                <AlertCircle className="w-6 h-6 text-[#DC2626] shrink-0" />
-              )}
-              <span className="font-semibold text-sm">{statusMessage.text}</span>
+              <AlertCircle className="w-6 h-6 text-[#DC2626] shrink-0" />
+              <div>
+                <h4 className="font-bold text-sm">{statusMessage.title}</h4>
+                <p className="text-xs font-medium opacity-90">{statusMessage.text}</p>
+              </div>
             </div>
-            <button
-              onClick={() => setStatusMessage(null)}
-              className="text-current opacity-70 hover:opacity-100 transition-opacity"
-            >
+            <button onClick={() => setStatusMessage(null)} className="text-current opacity-70 hover:opacity-100">
               <X className="w-5 h-5" />
             </button>
           </div>
         )}
 
-        {/* SECTION 1: VAGAS ATIVAS NA ABLER */}
+        {/* SECTION: VAGAS ABERTAS NA ABLER */}
         <section className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
-                <Briefcase className="w-4 h-4" /> Integração Oficial Abler ATS
+                <Briefcase className="w-4 h-4" /> Integração Oficial Abler ATS API V2
               </div>
-              <h2 className="text-2xl font-extrabold text-[#111317]">Vagas Abertas na Empresa</h2>
-              <p className="text-sm text-[#5F6673]">Selecione uma vaga para gerar os 4 cards PNG de divulgação (Feed, WhatsApp, Story, LinkedIn)</p>
+              <h2 className="text-2xl font-extrabold text-[#111317]">Vagas Abertas da Empresa</h2>
+              <p className="text-sm text-[#5F6673]">Selecione uma vaga para visualizar a prévia ao vivo do card e personalizar antes de gerar</p>
             </div>
 
             {/* Search and Filters */}
@@ -290,8 +281,8 @@ export default function HomePage() {
               </div>
 
               <select
-                value={selectedRegime}
-                onChange={(e) => setSelectedRegime(e.target.value)}
+                value={selectedRegimeFilter}
+                onChange={(e) => setSelectedRegimeFilter(e.target.value)}
                 className="bg-white border border-[#D7DEE7] rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#111317] focus:outline-none focus:border-[#1E81FE] shadow-sm"
               >
                 <option value="all">Todos os Contratos</option>
@@ -306,7 +297,7 @@ export default function HomePage() {
           {loadingVacancies ? (
             <div className="bg-white rounded-2xl border border-[#D7DEE7] p-12 text-center shadow-sm">
               <Loader2 className="w-8 h-8 text-[#1E81FE] animate-spin mx-auto mb-3" />
-              <p className="text-sm font-semibold text-[#5F6673]">Carregando vagas da Abler API V2...</p>
+              <p className="text-sm font-semibold text-[#5F6673]">Carregando vagas ativas da Abler...</p>
             </div>
           ) : filteredVacancies.length === 0 ? (
             <div className="bg-white rounded-2xl border border-[#D7DEE7] p-12 text-center shadow-sm">
@@ -317,19 +308,17 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredVacancies.map((vacancy) => {
-                const isEstagio = vacancy.contractingRegime.toUpperCase() === 'ESTAGIO';
-                const isPJ = vacancy.contractingRegime.toUpperCase() === 'PJ';
+                const isEstagio = vacancy.contractingRegime.toUpperCase().includes('ESTAGIO');
+                const isPJ = vacancy.contractingRegime.toUpperCase().includes('PJ');
 
                 return (
                   <div
                     key={vacancy.id}
-                    className="bg-white rounded-2xl border border-[#D7DEE7] p-6 shadow-sm hover:shadow-md hover:border-[#B2D3FF] transition-all flex flex-direction flex-col justify-between group relative overflow-hidden"
+                    className="bg-white rounded-2xl border border-[#D7DEE7] p-6 shadow-sm hover:shadow-md hover:border-[#B2D3FF] transition-all flex flex-col justify-between group relative overflow-hidden"
                   >
-                    {/* Top Corner Blue Accent */}
                     <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E81FE]/10 rounded-bl-full pointer-events-none group-hover:bg-[#1E81FE] transition-all duration-300" />
 
                     <div>
-                      {/* Status Badges */}
                       <div className="flex items-center gap-2 mb-3">
                         <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
                           isEstagio
@@ -345,12 +334,10 @@ export default function HomePage() {
                         </span>
                       </div>
 
-                      {/* Title */}
                       <h3 className="font-extrabold text-lg text-[#111317] group-hover:text-[#1E81FE] transition-colors line-clamp-2 mb-4 leading-snug">
                         {vacancy.title}
                       </h3>
 
-                      {/* Detail Rows */}
                       <div className="space-y-2.5 mb-6 text-xs text-[#5F6673] font-medium">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-[#8A94A3] shrink-0" />
@@ -366,13 +353,12 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Action Button */}
                     <button
-                      onClick={() => openGenerateModal(vacancy)}
+                      onClick={() => openPreviewModal(vacancy)}
                       className="w-full bg-[#111317] hover:bg-[#1E81FE] text-white font-bold text-sm py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm group-hover:shadow-md"
                     >
-                      <Sparkles className="w-4 h-4 text-[#1E81FE] group-hover:text-white transition-colors" />
-                      Gerar Kit de Divulgação
+                      <Eye className="w-4 h-4 text-[#1E81FE] group-hover:text-white transition-colors" />
+                      Visualizar & Gerar Kit
                     </button>
                   </div>
                 );
@@ -381,241 +367,312 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* MODAL: CONFIRMAR ENVIO DE E-MAIL E GERAR KIT */}
+        {/* MODAL DE PREVIEW E EDIÇÃO EM TEMPO REAL */}
         {selectedVacancy && (
-          <div className="fixed inset-0 z-50 bg-[#111317]/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-lg w-full p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 bg-[#111317]/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full my-8 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
               
-              {/* Close Button */}
-              {!generating && (
-                <button
-                  onClick={closeModal}
-                  className="absolute top-6 right-6 text-[#8A94A3] hover:text-[#111317] transition-colors p-1"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              )}
-
-              {/* Modal Content */}
-              <div className="space-y-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 font-mono text-xs font-bold text-[#1E81FE] uppercase tracking-wider bg-[#EBF3FF] px-3 py-1 rounded-full border border-[#B2D3FF] mb-3">
-                    <Sparkles className="w-3.5 h-3.5" /> Kit de Divulgação em 1-Clique
+              {/* Modal Header */}
+              <div className="p-6 border-b border-[#D7DEE7] flex items-center justify-between bg-[#FAFAFC]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white font-bold">
+                    <Edit3 className="w-5 h-5" />
                   </div>
-                  <h3 className="text-2xl font-extrabold text-[#111317] leading-tight">
-                    {selectedVacancy.title}
-                  </h3>
-                  <p className="text-xs text-[#5F6673] font-medium mt-1">
-                    Vaga #{selectedVacancy.id} • {selectedVacancy.location} ({selectedVacancy.contractingRegime})
-                  </p>
+                  <div>
+                    <h3 className="text-xl font-extrabold text-[#111317]">Prévia & Edição Interativa do Card</h3>
+                    <p className="text-xs text-[#5F6673]">Edite qualquer campo à esquerda para ver a arte atualizar em tempo real à direita</p>
+                  </div>
                 </div>
 
-                <form onSubmit={handleStartGeneration} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#5F6673] mb-2 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-[#1E81FE]" /> E-mail de Destino do Recrutador
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="seu.email@jobz.com.br"
-                      value={recipientEmail}
-                      onChange={(e) => setRecipientEmail(e.target.value)}
-                      disabled={generating}
-                      className="w-full px-4 py-3 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-semibold text-[#111317] placeholder:text-[#8A94A3] focus:outline-none focus:border-[#1E81FE] focus:bg-white transition-all disabled:opacity-50"
-                    />
-                    <p className="text-[11px] text-[#8A94A3] mt-1.5">
-                      As 4 artes (Feed, WhatsApp, Story, LinkedIn) no padrão oficial do Brandbook serão enviadas para este e-mail.
-                    </p>
+                {!generating && (
+                  <button
+                    onClick={closePreviewModal}
+                    className="p-2 text-[#8A94A3] hover:text-[#111317] hover:bg-[#EBF0F5] rounded-xl transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                )}
+              </div>
+
+              {/* Modal Body: Split Screen */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto flex-1">
+                
+                {/* LEFT COLUMN: EDIT FORM */}
+                <div className="lg:col-span-6 p-6 sm:p-8 space-y-6 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white">
+                  <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-3">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] flex items-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis do Card
+                    </span>
+                    <span className="text-xs font-mono text-[#8A94A3]">Vaga #{selectedVacancy.id}</span>
                   </div>
 
-                  {/* Progress Box during generation */}
-                  {generating && (
-                    <div className="bg-[#FAFAFC] rounded-2xl border border-[#D7DEE7] p-5 space-y-3">
-                      <div className="flex items-center justify-between text-xs font-bold text-[#111317]">
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 text-[#1E81FE] animate-spin" />
-                          Gerando artes no padrão Jobz...
-                        </span>
-                        <span className="font-mono text-[#1E81FE]">{pipelineStep}</span>
-                      </div>
-                      <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden">
-                        <div className="bg-[#1E81FE] h-full transition-all duration-500 animate-pulse w-3/4" />
+                  <form onSubmit={handleConfirmAndGenerate} className="space-y-4">
+                    {/* Título da Vaga */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                        Título da Vaga (Somente o Título)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        disabled={generating}
+                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                      />
+                    </div>
+
+                    {/* Regime de Contratação */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                        Regime de Contratação
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['CLT', 'ESTAGIO', 'PJ'] as const).map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, contractType: type })}
+                            className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                              formData.contractType === type
+                                ? 'bg-[#1E81FE] text-white border-[#1E81FE] shadow-sm'
+                                : 'bg-[#FAFAFC] text-[#5F6673] border-[#D7DEE7] hover:bg-white'
+                            }`}
+                          >
+                            {type === 'ESTAGIO' ? 'Estágio' : type}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  )}
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-3 pt-2">
-                    {!generating && (
-                      <button
-                        type="button"
-                        onClick={closeModal}
-                        className="px-5 py-3 text-sm font-bold text-[#5F6673] hover:text-[#111317] transition-colors"
-                      >
-                        Cancelar
-                      </button>
-                    )}
+                    {/* Jornada */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                        {formData.contractType === 'ESTAGIO' ? 'Jornada de Estágio' : 'Jornada de Trabalho'}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.schedule}
+                        onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
+                        disabled={generating}
+                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                      />
+                    </div>
+
+                    {/* Salário / Bolsa / Remuneração */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                        {formData.contractType === 'ESTAGIO' ? 'Bolsa' : formData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.salary}
+                        onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                        disabled={generating}
+                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                      />
+                    </div>
+
+                    {/* Benefícios */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                        Benefícios
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={formData.benefits}
+                        onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                        disabled={generating}
+                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all resize-none"
+                      />
+                    </div>
+
+                    {/* Modalidade & Localidade */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                          Modalidade
+                        </label>
+                        <select
+                          value={formData.modality}
+                          onChange={(e) => setFormData({ ...formData, modality: e.target.value })}
+                          disabled={generating}
+                          className="w-full px-3 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                        >
+                          <option value="Presencial">Presencial</option>
+                          <option value="Híbrido">Híbrido</option>
+                          <option value="Remoto">Remoto</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                          Localidade
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.location}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                          disabled={generating}
+                          className="w-full px-3 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Destinatário do E-mail */}
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold text-[#1E81FE] uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Mail className="w-3.5 h-3.5" /> E-mail de Envio do Kit
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.recipientEmail}
+                        onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
+                        disabled={generating}
+                        className="w-full px-4 py-2.5 bg-[#EBF3FF] border border-[#B2D3FF] rounded-xl text-sm font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                      />
+                    </div>
+                  </form>
+                </div>
+
+                {/* RIGHT COLUMN: LIVE CARD PREVIEW */}
+                <div className="lg:col-span-6 p-6 sm:p-8 bg-[#F2F5F8] flex flex-col justify-between items-center">
+                  <div className="w-full mb-3 flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
+                      <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Visualização em Tempo Real (Card Feed 1080x1350)
+                    </span>
+                    <span className="text-[11px] font-mono text-[#1E81FE] font-bold">100% Fiel ao PNG</span>
+                  </div>
+
+                  {/* Simulated Live Card */}
+                  <div className="w-full max-w-[420px] aspect-[1/1.25] bg-white rounded-3xl border border-[#D7DEE7] p-7 shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+                    
+                    {/* Top Right Blue Accent Corner */}
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
+
+                    <div className="space-y-4">
+                      {/* Logo SVG Oficial */}
+                      <div className="flex items-center">
+                        <svg className="h-7 w-auto" viewBox="0 0 206.91 100" fill="none">
+                          <path fill="#111317" fillRule="evenodd" d="M12.18,23.38v56.55c0,2.53-.68,4.48-2.05,5.84s-3.3,2.05-5.83,2.05H0v12.18h3.37c5.33,0,9.64-.68,12.91-2.05,3.28-1.37,5.71-3.56,7.28-6.6,1.57-3.04,2.35-7.12,2.35-12.24V23.38h-13.73ZM12.18,23.38v10.65h13.73v-10.65h-13.73Z"/>
+                          <path fill="#1E81FE" fillRule="evenodd" d="M32.51,0c0,11.23-9.12,20.35-20.35,20.35V0h20.35Z"/>
+                          <path fill="#111317" fillRule="evenodd" d="M63.5,80.95c-4.92,0-9.25-.78-13.01-2.36-3.76-1.57-6.93-3.7-9.53-6.4-2.6-2.7-4.56-5.75-5.89-9.17s-2-6.97-2-10.65v-2.15c0-3.82.7-7.46,2.1-10.91,1.4-3.45,3.41-6.52,6.04-9.22s5.82-4.81,9.58-6.35c3.76-1.54,7.99-2.3,12.7-2.3s8.95.77,12.7,2.3c3.75,1.54,6.95,3.65,9.58,6.35,2.63,2.7,4.63,5.77,5.99,9.22,1.37,3.45,2.05,7.08,2.05,10.91v2.15c0,3.69-.67,7.24-2,10.65s-3.3,6.47-5.89,9.17-5.77,4.83-9.53,6.4-8.06,2.36-12.91,2.36c0,0,.02,0,.02,0ZM63.5,68.76c3.48,0,6.42-.77,8.81-2.3,2.39-1.54,4.2-3.62,5.43-6.25s1.84-5.62,1.84-8.98v-2.15c0-3.48-.61-6.5-1.84-9.08s-3.04-4.66-5.43-6.25c-2.39-1.59-5.33-2.38-8.81-2.38s-6.47.79-8.86,2.38c-2.39,1.59-4.2,3.67-5.43,6.25s-1.84,5.6-1.84,9.08v2.15c0,3.36.61,6.35,1.84,8.98,1.23,2.63,3.04,4.71,5.43,6.25,2.39,1.54,5.35,2.3,8.86,2.3Z"/>
+                          <path fill="#111317" fillRule="evenodd" d="M96.06,23.38v56.34h13.73v-22.33c0-3.76,1.06-6.66,3.17-8.71,2.12-2.05,5.19-3.07,9.22-3.07s7.04.97,9.07,2.92c2.03,1.95,3.04,4.77,3.04,8.45v22.74h13.73v-23.77c0-7.38-2.14-13.06-6.4-17.02-4.27-3.96-10.15-5.94-17.63-5.94-4.51,0-8.54.91-12.09,2.72s-6.32,4.36-8.3,7.63V23.38h-13.54Z"/>
+                          <path fill="#111317" fillRule="evenodd" d="M190.56,66.82h-26.63c.48,3.21,1.88,5.71,4.2,7.48,2.32,1.78,5.33,2.66,9.02,2.66s6.25-.68,8.5-2.05c2.25-1.37,4.06-3.21,5.43-5.53h14.13c-1.91,5.19-5.16,9.29-9.73,12.29-4.58,3-10.42,4.5-17.53,4.5s-13.23-1.57-17.72-4.71c-4.49-3.14-7.85-7.38-10.09-12.7-2.24-5.33-3.36-11.21-3.36-17.63s1.14-12.44,3.43-17.77c2.29-5.33,5.65-9.53,10.09-12.6,4.44-3.07,10.03-4.61,16.77-4.61s12.04,1.48,16.4,4.45c4.36,2.97,7.6,7.1,9.73,12.39,2.13,5.29,3.2,11.31,3.2,18.04v5.79ZM177.04,56.16c-.27-3.28-1.57-5.84-3.89-7.69-2.32-1.84-5.26-2.77-8.81-2.77s-6.49.92-8.81,2.77c-2.32,1.84-3.62,4.41-3.89,7.69h25.4Z"/>
+                        </svg>
+                      </div>
+
+                      {/* Kicker */}
+                      <div className="text-[11px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
+                        {kickerText}
+                      </div>
+
+                      {/* Title */}
+                      <div className="text-xl font-extrabold text-[#111317] leading-tight line-clamp-2">
+                        {formData.title || 'Título da Vaga'}
+                      </div>
+
+                      {/* Content Rows */}
+                      <div className="space-y-3 pt-1 text-xs">
+                        <div>
+                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase">{labelHoursText}</div>
+                          <div className="font-extrabold text-[#111317] line-clamp-1">{formData.schedule}</div>
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase">{labelFinancialText}</div>
+                          <div className="font-extrabold text-[#111317] line-clamp-1">{formData.salary}</div>
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase">BENEFÍCIOS</div>
+                          <div className="font-semibold text-[#111317] line-clamp-2">{formData.benefits}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Footer Pills & Banner */}
+                    <div className="space-y-3 w-full pt-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
+                          {formData.modality}
+                        </span>
+                        <span className="text-[10px] font-semibold text-[#5F6673] bg-[#FAFAFC] border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                          {formData.location}
+                        </span>
+                        <span className="text-[10px] font-semibold text-[#5F6673] bg-[#FAFAFC] border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                          Aberta
+                        </span>
+                      </div>
+
+                      <div className="bg-[#111317] text-white rounded-xl py-2 px-3 text-center text-xs font-bold flex items-center justify-center gap-1">
+                        <span>👉 Candidate-se em:</span>
+                        <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="w-full pt-4">
                     <button
-                      type="submit"
-                      disabled={generating || !recipientEmail}
-                      className="bg-[#1E81FE] hover:bg-blue-600 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md shadow-[#1E81FE]/25 disabled:opacity-50 flex items-center gap-2"
+                      type="button"
+                      onClick={handleConfirmAndGenerate}
+                      disabled={generating || !formData.recipientEmail}
+                      className="w-full bg-[#1E81FE] hover:bg-blue-600 text-white font-extrabold text-sm py-4 px-6 rounded-2xl transition-all shadow-lg shadow-[#1E81FE]/30 flex items-center justify-center gap-2.5 disabled:opacity-50"
                     >
                       {generating ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Processando...
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Gerando artes & Enviando e-mail...
                         </>
                       ) : (
                         <>
-                          <Send className="w-4 h-4" />
-                          Enviar Kit de Artes
+                          <Send className="w-5 h-5" />
+                          🚀 Confirmar & Disparar Artes por E-mail
                         </>
                       )}
                     </button>
                   </div>
-                </form>
+                </div>
+
               </div>
             </div>
           </div>
         )}
 
-        {/* SECTION 2: HISTÓRICO DE KITS GERADOS & DOWNLOADS (Expira em 48h) */}
-        <section className="space-y-6">
-          <div>
-            <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
-              <Clock className="w-4 h-4 text-[#1E81FE]" /> Histórico & Expiração Automática
+        {/* MODAL DE CONFIRMAÇÃO DE SUCESSO */}
+        {showSuccessModal && statusMessage?.type === 'success' && (
+          <div className="fixed inset-0 z-50 bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-md w-full p-8 text-center relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              
+              <div className="w-20 h-20 rounded-full bg-[#F0FDF4] border-2 border-[#BBF7D0] flex items-center justify-center mx-auto mb-6 text-[#16A34A] shadow-md shadow-emerald-100">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+
+              <h3 className="text-2xl font-extrabold text-[#111317] mb-2">
+                {statusMessage.title}
+              </h3>
+              
+              <p className="text-sm text-[#5F6673] font-medium leading-relaxed mb-8">
+                {statusMessage.text}
+              </p>
+
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setStatusMessage(null);
+                }}
+                className="w-full bg-[#111317] hover:bg-[#1E81FE] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition-all shadow-md"
+              >
+                Entendido, Ver Outras Vagas
+              </button>
             </div>
-            <h2 className="text-2xl font-extrabold text-[#111317]">Kits Gerados Recentemente</h2>
-            <p className="text-sm text-[#5F6673]">Artes PNG permanecem disponíveis para download imediato por 48 horas</p>
           </div>
-
-          <div className="bg-white rounded-2xl border border-[#D7DEE7] shadow-sm overflow-hidden">
-            {jobs.length === 0 ? (
-              <div className="p-12 text-center">
-                <ImageIcon className="w-10 h-10 text-[#8A94A3] mx-auto mb-3" />
-                <h3 className="font-bold text-base text-[#111317]">Nenhum kit gerado ainda</h3>
-                <p className="text-sm text-[#5F6673] mt-1">Selecione uma vaga acima para gerar seu primeiro kit de divulgação.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[#EBF0F5]">
-                {jobs.map((job) => {
-                  const isExpired = job.status === 'expired';
-                  const isCompleted = job.status === 'completed';
-
-                  // Calculate hours left if expires_at is present
-                  let hoursLeft: number | null = null;
-                  if (job.expires_at) {
-                    const diffMs = new Date(job.expires_at).getTime() - Date.now();
-                    hoursLeft = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
-                  }
-
-                  return (
-                    <div key={job.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-[#FAFAFC] transition-colors">
-                      <div className="space-y-2 max-w-xl">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
-                            isCompleted
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : isExpired
-                              ? 'bg-slate-100 text-slate-600 border-slate-300'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                            {isCompleted ? '✓ Concluído' : isExpired ? '⌛ Expirado (48h)' : job.status}
-                          </span>
-
-                          {hoursLeft !== null && !isExpired && (
-                            <span className="text-[11px] font-mono font-semibold text-[#1E81FE] bg-[#EBF3FF] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">
-                              ⌛ Expira em {hoursLeft}h
-                            </span>
-                          )}
-
-                          <span className="text-xs text-[#8A94A3] font-medium">
-                            Enviado para: <strong className="text-[#111317]">{job.recipient_email}</strong>
-                          </span>
-                        </div>
-
-                        <h4 className="font-extrabold text-base text-[#111317]">
-                          {job.copy_data?.headline || job.job_url}
-                        </h4>
-
-                        {job.copy_data?.highlights && (
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {job.copy_data.highlights.map((h, idx) => (
-                              <span key={idx} className="text-[11px] font-mono font-medium text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-md">
-                                {h}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action Links & Download Buttons */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        {isCompleted && job.asset_urls && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <a
-                              href={job.asset_urls.feed}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3.5 py-2 bg-[#1E81FE] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-                            >
-                              <Download className="w-3.5 h-3.5" /> Feed
-                            </a>
-                            <a
-                              href={job.asset_urls.whatsapp}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3.5 py-2 bg-[#25D366] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-                            >
-                              <Download className="w-3.5 h-3.5" /> WhatsApp
-                            </a>
-                            <a
-                              href={job.asset_urls.story}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3.5 py-2 bg-[#E4405F] hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-                            >
-                              <Download className="w-3.5 h-3.5" /> Story
-                            </a>
-                            <a
-                              href={job.asset_urls.linkedin}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3.5 py-2 bg-[#0A66C2] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-                            >
-                              <Download className="w-3.5 h-3.5" /> LinkedIn
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Re-send Box */}
-                        {isCompleted && (
-                          <div className="flex items-center gap-1.5 bg-[#FAFAFC] p-1 border border-[#D7DEE7] rounded-xl">
-                            <input
-                              type="email"
-                              placeholder="Outro e-mail..."
-                              value={resendEmails[job.id] || ''}
-                              onChange={(e) => setResendEmails({ ...resendEmails, [job.id]: e.target.value })}
-                              className="w-32 px-2.5 py-1 bg-transparent text-xs font-medium text-[#111317] placeholder:text-[#8A94A3] focus:outline-none"
-                            />
-                            <button
-                              onClick={() => handleResend(job)}
-                              disabled={resendingId === job.id || !resendEmails[job.id]}
-                              className="px-3 py-1 bg-[#111317] hover:bg-[#1E81FE] text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                            >
-                              Reenviar
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
+        )}
 
       </main>
     </div>

@@ -29,7 +29,7 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
   try {
     const res = await fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies?per_page=50`, {
       headers: getAblerHeaders(),
-      next: { revalidate: 15 } // cache for 15s in Next.js
+      next: { revalidate: 15 }
     });
 
     if (!res.ok) {
@@ -124,23 +124,44 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     contractType = 'PJ';
   }
 
-  // Schedule mapping
-  let schedule = attrs.working_journey_without_tags || attrs.working_journey || 'Horário comercial';
-  schedule = schedule.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  // Schedule mapping with clean formatting (fixes joined text like "SextaHorario: 08h")
+  let rawSchedule = attrs.working_journey_without_tags || attrs.working_journey || '';
+  rawSchedule = rawSchedule.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  // Format schedule text nicely
+  let schedule = rawSchedule
+    .replace(/Segunda\s*a\s*SextaHorario/i, 'Segunda a Sexta • Horário')
+    .replace(/([a-zA-Z0-9])Horario/gi, '$1 • Horário')
+    .replace(/Sexta(\d)/gi, 'Sexta • $1')
+    .replace(/\s+/g, ' ').trim();
+
   if (!schedule || schedule.length < 3) {
-    schedule = contractType === 'ESTAGIO' ? '6h diárias (30h semanais)' : '40h semanais (Segunda a Sexta)';
+    schedule = contractType === 'ESTAGIO' ? '6h diárias (30h semanais)' : 'Segunda a Sexta • Horário comercial (40h/semana)';
   }
 
-  // Requirements & Benefits
+  // Requirements parsing
   const reqsText = attrs.mandatory_requirements_without_tags || attrs.mandatory_requirements || '';
   const requirements = reqsText
     ? reqsText.split('\n').map((s: string) => s.replace(/<[^>]+>/g, '').trim()).filter((s: string) => s.length > 3)
     : ['Experiência técnica na área', 'Boa comunicação interpessoal'];
 
-  const benefitsText = attrs.additional_info_without_tags || attrs.additional_info || '';
-  const benefits = benefitsText
-    ? [benefitsText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()]
-    : ['Vale Refeição / Alimentação', 'Vale Transporte'];
+  // Benefits parsing with internal notes filter
+  const rawBenefits = attrs.additional_info_without_tags || attrs.additional_info || '';
+  const isInternalNote = /alinhamento|confirmar|cliente|validar|hunting|faturar/i.test(rawBenefits);
+
+  let benefits: string[] = [];
+  if (rawBenefits && !isInternalNote) {
+    benefits = [rawBenefits.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()];
+  } else {
+    // If it was an internal note or empty, populate with standard benefits based on contract type
+    if (contractType === 'ESTAGIO') {
+      benefits = ['Bolsa auxílio compatível', 'Auxílio Transporte', 'Recesso Remunerado'];
+    } else if (contractType === 'PJ') {
+      benefits = ['Remuneração atrativa', 'Horário flexível', 'Ambiente colaborativo'];
+    } else {
+      benefits = ['Vale Refeição / Alimentação', 'Vale Transporte', 'Plano de Saúde'];
+    }
+  }
 
   const rawDescription = attrs.role_description_without_tags || attrs.description || title;
 
@@ -149,7 +170,7 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     location,
     modality,
     salary,
-    benefits: Array.isArray(benefits) && benefits.length > 0 ? benefits : ['Vale Refeição', 'Vale Transporte'],
+    benefits,
     schedule,
     requirements: Array.isArray(requirements) && requirements.length > 0 ? requirements : ['Formação ou experiência relevante'],
     activities: ['Executar atribuições e entregas do cargo com excelência'],
