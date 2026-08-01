@@ -16,6 +16,8 @@ export interface ExtractedJobData {
   rawDescription: string;
   candidatureType?: CandidatureType;
   candidatureEmail?: string;
+  showRequirements?: boolean;
+  requirementsList?: string;
 }
 
 export interface SourcingChannels {
@@ -50,6 +52,8 @@ export interface CopyData {
   socialCaption: string;
   candidatureType?: CandidatureType;
   candidatureEmail?: string;
+  showRequirements?: boolean;
+  requirementsList?: string;
 }
 
 export interface AssetUrls {

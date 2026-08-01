@@ -13,6 +13,38 @@ const JobzLogoPng = ({ height = 50 }: { height?: number }) => {
   );
 };
 
+// Vector SVG Icons for Satori Rendering
+const ClockIcon = ({ size = 22, color = '#1E81FE' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const WalletIcon = ({ size = 22, color = '#1E81FE' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <line x1="2" y1="10" x2="22" y2="10" />
+  </svg>
+);
+
+const GiftIcon = ({ size = 22, color = '#1E81FE' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 12 20 22 4 22 4 12" />
+    <rect x="2" y="7" width="20" height="5" />
+    <line x1="12" y1="22" x2="12" y2="7" />
+    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+  </svg>
+);
+
+const CheckListIcon = ({ size = 22, color = '#1E81FE' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
 function decodeUnicodeEscapes(str: string): string {
   if (!str) return '';
   let decoded = str.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
@@ -64,16 +96,13 @@ function parseCardHighlights(highlights: string[] = []) {
   const h2 = cleanText(safeHighlights[2] || 'Salário: Compatível com o mercado');
   const h3 = cleanText(safeHighlights[3] || 'Benefícios: Vale Refeição + VT + Plano de Saúde');
 
-  // Extract modality
   let modality = 'Presencial';
   if (/h[ií]brido/i.test(h0)) modality = 'Híbrido';
   else if (/remoto|home\s*office/i.test(h0)) modality = 'Remoto';
 
-  // Extract location
   const locParts = h0.split('|');
   const location = truncateText(locParts[1] || locParts[0] || 'Brasil', 40);
 
-  // Extract contract type / kicker
   let contractKicker = 'OPORTUNIDADE · CLT';
   if (/est[áa]gio/i.test(h1) || /est[áa]gio/i.test(h2) || /est[áa]gio/i.test(h0)) {
     contractKicker = 'VAGA ABERTA · ESTÁGIO';
@@ -83,13 +112,11 @@ function parseCardHighlights(highlights: string[] = []) {
     contractKicker = 'OPORTUNIDADE · CLT';
   }
 
-  // Determine Label 1 (Hours)
   let labelHours = 'JORNADA';
   if (/est[áa]gio/i.test(contractKicker)) {
     labelHours = 'JORNADA DE ESTÁGIO';
   }
 
-  // Determine Label 2 (Financial)
   let labelFinancial = 'SALÁRIO';
   if (/est[áa]gio/i.test(contractKicker)) {
     labelFinancial = 'BOLSA';
@@ -97,7 +124,6 @@ function parseCardHighlights(highlights: string[] = []) {
     labelFinancial = 'REMUNERAÇÃO';
   }
 
-  // Values
   const valueHours = truncateText(h1.replace(/^jornada(?:\s*de\s*est[áa]gio)?[:\s]*/i, ''), 60);
   const valueFinancial = truncateText(h2.replace(/^(?:sal[áa]rio|remunera[çc][ãa]o|bolsa)[:\s]*/i, ''), 60);
   const valueBenefits = truncateText(h3.replace(/^benef[íi]cios[:\s]*/i, ''), 70);
@@ -130,7 +156,7 @@ export function generateFeedHtml(copy: CopyData): string {
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
     body {
-      width: 1080px; height: 1350px; background-color: #FFFFFF; color: #111317;
+      width: 1080px; height: 1350px; background-color: #F1F4F7; color: #111317;
       display: flex; flex-direction: column; justify-content: space-between; padding: 80px 70px;
     }
   </style>
@@ -143,6 +169,7 @@ export function generateFeedHtml(copy: CopyData): string {
     <div>${parsed.labelHours}: ${parsed.valueHours}</div>
     <div>${parsed.labelFinancial}: ${parsed.valueFinancial}</div>
     <div>BENEFÍCIOS: ${parsed.valueBenefits}</div>
+    ${copy.showRequirements && copy.requirementsList ? `<div>REQUISITOS: ${copy.requirementsList}</div>` : ''}
     <div>${parsed.modality} | ${parsed.location}</div>
   </div>
   <div>${ctaLine}</div>
@@ -189,14 +216,16 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
 
   const isEmail = copy.candidatureType === 'email';
   const emailAddress = copy.candidatureEmail || 'vagas@jobz.com.br';
+  const showReqs = copy.showRequirements && !!copy.requirementsList;
+  const reqsText = truncateText(copy.requirementsList || '', 120);
 
-  // 1. Feed (1080 x 1350) - 100% Canvas, Zero Outer Gray Frame
+  // 1. Feed (1080 x 1350) - Canvas Background #F1F4F7
   const feedJsx = (
     <div
       style={{
         width: '1080px',
         height: '1350px',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F1F4F7',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
@@ -213,9 +242,9 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
           position: 'absolute',
           right: '0px',
           top: '0px',
-          width: '160px',
-          height: '160px',
-          borderRadius: '0 0 0 160px',
+          width: '170px',
+          height: '170px',
+          borderRadius: '0 0 0 170px',
           backgroundColor: '#1E81FE',
           display: 'flex',
         }}
@@ -224,53 +253,73 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       {/* Main Content Area */}
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
         {/* Logo Top Left */}
-        <div style={{ display: 'flex', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', marginBottom: '36px' }}>
           <JobzLogoPng height={58} />
         </div>
 
         {/* Kicker */}
-        <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2.5px', marginBottom: '24px' }}>
+        <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2.5px', marginBottom: '20px' }}>
           {parsed.contractKicker}
         </div>
 
         {/* Headline */}
-        <div style={{ fontSize: '56px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '52px' }}>
+        <div style={{ fontSize: '64px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '44px' }}>
           {headline}
         </div>
 
-        {/* Highlight Rows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginBottom: '48px' }}>
+        {/* Highlight Rows with Vector Icons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginBottom: '36px' }}>
           {/* Row 1: Hours */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-            <div style={{ fontSize: '30px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueHours}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ClockIcon size={22} color="#1E81FE" />
+              <span style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</span>
+            </div>
+            <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{parsed.valueHours}</div>
           </div>
 
           {/* Row 2: Financial */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-            <div style={{ fontSize: '30px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueFinancial}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <WalletIcon size={22} color="#1E81FE" />
+              <span style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</span>
+            </div>
+            <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{parsed.valueFinancial}</div>
           </div>
 
           {/* Row 3: Benefits */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-            <div style={{ fontSize: '30px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueBenefits}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <GiftIcon size={22} color="#1E81FE" />
+              <span style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</span>
+            </div>
+            <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{parsed.valueBenefits}</div>
           </div>
+
+          {/* Row 4: Requisitos Opcionais */}
+          {showReqs && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckListIcon size={22} color="#1E81FE" />
+                <span style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>REQUISITOS ESSENCIAIS</span>
+              </div>
+              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{reqsText}</div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer Area */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
         {/* Pills */}
-        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', paddingTop: '28px', borderTop: '2px solid #EBF0F5' }}>
+        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', paddingTop: '24px', borderTop: '2px solid #D7DEE7' }}>
           <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 700, display: 'flex' }}>
             {parsed.modality}
           </div>
-          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
             {parsed.location}
           </div>
-          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
             Vaga Aberta
           </div>
         </div>
@@ -296,18 +345,18 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
     </div>
   );
 
-  // 2. WhatsApp (1080 x 1080) - 100% Canvas, Zero Outer Gray Frame
+  // 2. WhatsApp (1080 x 1080) - Canvas Background #F1F4F7
   const whatsappJsx = (
     <div
       style={{
         width: '1080px',
         height: '1080px',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F1F4F7',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '56px 56px',
+        padding: '52px 52px',
         position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
         overflow: 'hidden',
@@ -327,42 +376,61 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <div style={{ display: 'flex', marginBottom: '32px' }}>
-          <JobzLogoPng height={50} />
+        <div style={{ display: 'flex', marginBottom: '28px' }}>
+          <JobzLogoPng height={48} />
         </div>
 
-        <div style={{ fontSize: '20px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '18px' }}>
+        <div style={{ fontSize: '20px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '16px' }}>
           {parsed.contractKicker}
         </div>
 
-        <div style={{ fontSize: '46px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '36px' }}>
+        <div style={{ fontSize: '50px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '32px' }}>
           {headline}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-            <div style={{ fontSize: '25px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ClockIcon size={20} color="#1E81FE" />
+              <span style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</span>
+            </div>
+            <div style={{ fontSize: '24px', color: '#111317', fontWeight: 700, lineHeight: 1.2, paddingLeft: '28px' }}>{parsed.valueHours}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-            <div style={{ fontSize: '25px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <WalletIcon size={20} color="#1E81FE" />
+              <span style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</span>
+            </div>
+            <div style={{ fontSize: '24px', color: '#111317', fontWeight: 700, lineHeight: 1.2, paddingLeft: '28px' }}>{parsed.valueFinancial}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-            <div style={{ fontSize: '25px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <GiftIcon size={20} color="#1E81FE" />
+              <span style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</span>
+            </div>
+            <div style={{ fontSize: '24px', color: '#111317', fontWeight: 700, lineHeight: 1.2, paddingLeft: '28px' }}>{parsed.valueBenefits}</div>
           </div>
+
+          {showReqs && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckListIcon size={20} color="#1E81FE" />
+                <span style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>REQUISITOS</span>
+              </div>
+              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2, paddingLeft: '28px' }}>{reqsText}</div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '20px', borderTop: '2px solid #EBF0F5' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '16px', borderTop: '2px solid #D7DEE7' }}>
           <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 700, display: 'flex' }}>
             {parsed.modality}
           </div>
-          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
             {parsed.location}
           </div>
         </div>
@@ -387,18 +455,18 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
     </div>
   );
 
-  // 3. Story (1080 x 1920) - 100% Canvas, Zero Outer Gray Frame
+  // 3. Story (1080 x 1920) - Canvas Background #F1F4F7
   const storyJsx = (
     <div
       style={{
         width: '1080px',
         height: '1920px',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F1F4F7',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '110px 80px',
+        padding: '100px 76px',
         position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
         overflow: 'hidden',
@@ -418,42 +486,61 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <div style={{ display: 'flex', marginBottom: '56px' }}>
+        <div style={{ display: 'flex', marginBottom: '52px' }}>
           <JobzLogoPng height={72} />
         </div>
 
-        <div style={{ fontSize: '28px', fontWeight: 700, color: '#1E81FE', letterSpacing: '3px', marginBottom: '32px' }}>
+        <div style={{ fontSize: '28px', fontWeight: 700, color: '#1E81FE', letterSpacing: '3px', marginBottom: '28px' }}>
           {parsed.contractKicker}
         </div>
 
-        <div style={{ fontSize: '68px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '72px' }}>
+        <div style={{ fontSize: '72px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '64px' }}>
           {headline}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', marginBottom: '64px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '42px', marginBottom: '56px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-            <div style={{ fontSize: '38px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueHours}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ClockIcon size={26} color="#1E81FE" />
+              <span style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</span>
+            </div>
+            <div style={{ fontSize: '36px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '36px' }}>{parsed.valueHours}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-            <div style={{ fontSize: '38px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueFinancial}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <WalletIcon size={26} color="#1E81FE" />
+              <span style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</span>
+            </div>
+            <div style={{ fontSize: '36px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '36px' }}>{parsed.valueFinancial}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-            <div style={{ fontSize: '38px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueBenefits}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <GiftIcon size={26} color="#1E81FE" />
+              <span style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</span>
+            </div>
+            <div style={{ fontSize: '36px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '36px' }}>{parsed.valueBenefits}</div>
           </div>
+
+          {showReqs && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CheckListIcon size={26} color="#1E81FE" />
+                <span style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>REQUISITOS ESSENCIAIS</span>
+              </div>
+              <div style={{ fontSize: '34px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '36px' }}>{reqsText}</div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', paddingTop: '36px', borderTop: '2px solid #EBF0F5' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', paddingTop: '32px', borderTop: '2px solid #D7DEE7' }}>
           <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 700, display: 'flex' }}>
             {parsed.modality}
           </div>
-          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 600, display: 'flex' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 600, display: 'flex' }}>
             {parsed.location}
           </div>
         </div>
@@ -478,18 +565,18 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
     </div>
   );
 
-  // 4. LinkedIn (1200 x 627) - 100% Canvas, Zero Outer Gray Frame
+  // 4. LinkedIn (1200 x 627) - Canvas Background #F1F4F7
   const linkedinJsx = (
     <div
       style={{
         width: '1200px',
         height: '627px',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F1F4F7',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '44px 52px',
+        padding: '40px 48px',
         position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
         overflow: 'hidden',
@@ -509,52 +596,61 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <JobzLogoPng height={42} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <JobzLogoPng height={40} />
           <div style={{ fontSize: '16px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1.5px', marginRight: '80px' }}>
             {parsed.contractKicker}
           </div>
         </div>
 
-        <div style={{ fontSize: '38px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '24px' }}>
+        <div style={{ fontSize: '42px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '20px' }}>
           {headline}
         </div>
 
-        <div style={{ display: 'flex', gap: '36px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '28px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-            <div style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-            <div style={{ fontSize: '20px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ClockIcon size={16} color="#1E81FE" />
+              <span style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</span>
+            </div>
+            <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-            <div style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <WalletIcon size={16} color="#1E81FE" />
+              <span style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</span>
+            </div>
             <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-            <div style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <GiftIcon size={16} color="#1E81FE" />
+              <span style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</span>
+            </div>
             <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: '16px', borderTop: '2px solid #EBF0F5' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: '14px', borderTop: '2px solid #D7DEE7' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '8px 16px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'flex' }}>
             {parsed.modality}
           </div>
-          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '8px 16px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, display: 'flex' }}>
+          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '8px 16px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, display: 'flex' }}>
             {parsed.location}
           </div>
         </div>
 
         {isEmail ? (
-          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '14px', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px', fontWeight: 700 }}>
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '14px', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 700 }}>
             <span>👉 Envie seu CV (PDF) para:</span>
             <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
           </div>
         ) : (
-          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '14px', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px', fontWeight: 700 }}>
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '14px', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 700 }}>
             <span>👉 Candidate-se em:</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>

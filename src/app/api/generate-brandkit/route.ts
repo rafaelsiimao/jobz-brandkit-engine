@@ -100,11 +100,13 @@ export async function POST(request: Request) {
 
     const { sourcing, copy } = await generateBrandKitAI(extractedData);
 
-    // Ensure custom fields strictly override final copy highlights and candidature settings
+    // Ensure custom fields strictly override final copy highlights and candidature/requirements settings
     if (customFields) {
       if (customFields.title) copy.headline = customFields.title;
       if (customFields.candidatureType) copy.candidatureType = customFields.candidatureType;
       if (customFields.candidatureEmail) copy.candidatureEmail = customFields.candidatureEmail;
+      if (typeof customFields.showRequirements === 'boolean') copy.showRequirements = customFields.showRequirements;
+      if (customFields.requirementsList) copy.requirementsList = customFields.requirementsList;
 
       const modalityLoc = `${customFields.modality || extractedData.modality} | ${customFields.location || extractedData.location}`;
       const scheduleStr = `Jornada: ${customFields.schedule || extractedData.schedule}`;

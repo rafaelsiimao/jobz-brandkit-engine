@@ -13,7 +13,7 @@ describe('Official Jobz Carreira Card Template (v2.0)', () => {
 
   it('should generate valid feed HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateFeedHtml(mockCopy);
-    expect(html).toContain('#FFFFFF');
+    expect(html).toContain('#F1F4F7');
     expect(html).toContain('#111317');
     expect(html).toContain('#1E81FE');
     expect(html).toContain('Plus Jakarta Sans');

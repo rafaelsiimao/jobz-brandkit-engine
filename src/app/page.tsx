@@ -18,10 +18,22 @@ import {
   Eye,
   FileText,
   Globe,
-  Inbox
+  Inbox,
+  Clock,
+  Wallet,
+  Gift,
+  ListChecks,
+  Download,
+  ToggleLeft,
+  ToggleRight,
+  Instagram,
+  MessageSquare,
+  Smartphone,
+  Linkedin
 } from 'lucide-react';
 import { AblerVacancyItem } from '@/lib/abler-api';
 import { JOBZ_LOGO_PNG_BASE64 } from '@/lib/logo-png-base64';
+import { AssetUrls } from '@/lib/types';
 
 interface EditFormState {
   title: string;
@@ -34,16 +46,17 @@ interface EditFormState {
   recipientEmail: string;
   candidatureType: 'platform' | 'email';
   candidatureEmail: string;
+  showRequirements: boolean;
+  requirementsList: string;
+  previewFormat: 'feed' | 'whatsapp' | 'story' | 'linkedin';
 }
 
 export default function HomePage() {
-  // Vacancies State
   const [vacancies, setVacancies] = useState<AblerVacancyItem[]>([]);
   const [loadingVacancies, setLoadingVacancies] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegimeFilter, setSelectedRegimeFilter] = useState<string>('all');
 
-  // Preview & Edit Modal State
   const [selectedVacancy, setSelectedVacancy] = useState<AblerVacancyItem | null>(null);
   const [formData, setFormData] = useState<EditFormState>({
     title: '',
@@ -56,14 +69,16 @@ export default function HomePage() {
     recipientEmail: '',
     candidatureType: 'platform',
     candidatureEmail: '',
+    showRequirements: true,
+    requirementsList: 'Ensino Superior Completo • Pacote Office • Boa Comunicação',
+    previewFormat: 'feed',
   });
 
-  // Processing & Success Modal State
   const [generating, setGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; title: string; text: string } | null>(null);
+  const [generatedAssets, setGeneratedAssets] = useState<AssetUrls | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Fetch Vacancies from Abler API V2
   const loadVacancies = async () => {
     setLoadingVacancies(true);
     try {
@@ -90,7 +105,6 @@ export default function HomePage() {
     }));
   }, []);
 
-  // Open Preview Modal & Pre-fill Form
   const openPreviewModal = (vacancy: AblerVacancyItem) => {
     setSelectedVacancy(vacancy);
     setStatusMessage(null);
@@ -116,6 +130,9 @@ export default function HomePage() {
       recipientEmail: savedEmail,
       candidatureType: 'platform',
       candidatureEmail: savedEmail,
+      showRequirements: true,
+      requirementsList: 'Ensino Superior Completo • Conhecimentos na Área • Boa Comunicação',
+      previewFormat: 'feed',
     });
   };
 
@@ -124,7 +141,6 @@ export default function HomePage() {
     setSelectedVacancy(null);
   };
 
-  // Submit and Generate Kit
   const handleConfirmAndGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVacancy || !formData.recipientEmail) return;
@@ -133,6 +149,7 @@ export default function HomePage() {
 
     setGenerating(true);
     setStatusMessage(null);
+    setGeneratedAssets(null);
 
     try {
       const res = await fetch('/api/generate-brandkit', {
@@ -151,6 +168,8 @@ export default function HomePage() {
             location: formData.location,
             candidatureType: formData.candidatureType,
             candidatureEmail: formData.candidatureEmail,
+            showRequirements: formData.showRequirements,
+            requirementsList: formData.requirementsList,
           },
         }),
       });
@@ -160,11 +179,14 @@ export default function HomePage() {
       if (res.ok) {
         setGenerating(false);
         setSelectedVacancy(null);
+        if (data.assetUrls) {
+          setGeneratedAssets(data.assetUrls);
+        }
         setShowSuccessModal(true);
         setStatusMessage({
           type: 'success',
-          title: 'Kit de Artes Enviado com Sucesso! 🚀',
-          text: `As 4 artes PNG (Feed, WhatsApp, Story e LinkedIn) no padrão oficial Jobz Carreira foram enviadas para ${formData.recipientEmail}.`,
+          title: 'Artes Geradas com Sucesso! 🚀',
+          text: `Suas 4 artes (Feed, WhatsApp, Story e LinkedIn) no padrão oficial Jobz Carreira estão prontas para download abaixo e foram enviadas para ${formData.recipientEmail}.`,
         });
       } else {
         setGenerating(false);
@@ -218,7 +240,7 @@ export default function HomePage() {
               <h1 className="font-extrabold text-xl tracking-tight text-[#111317] flex items-center gap-2">
                 Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes V2</span>
               </h1>
-              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação de Vagas com Preview em Tempo Real</p>
+              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação de Vagas com Preview Multi-Formatos</p>
             </div>
           </div>
 
@@ -259,7 +281,7 @@ export default function HomePage() {
                 <Briefcase className="w-4 h-4" /> Integração Oficial Abler ATS API V2
               </div>
               <h2 className="text-2xl font-extrabold text-[#111317]">Vagas Abertas da Empresa</h2>
-              <p className="text-sm text-[#5F6673]">Selecione uma vaga para visualizar a prévia ao vivo do card e personalizar antes de gerar</p>
+              <p className="text-sm text-[#5F6673]">Selecione uma vaga para visualizar a prévia em tempo real e personalizar o kit de artes</p>
             </div>
 
             {/* Search and Filters */}
@@ -396,7 +418,7 @@ export default function HomePage() {
                 <div className="lg:col-span-6 p-6 sm:p-8 space-y-5 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white">
                   <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-3">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] flex items-center gap-1.5">
-                      <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis do Card
+                      <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis da Arte
                     </span>
                     <span className="text-xs font-mono text-[#8A94A3]">Vaga #{selectedVacancy.id}</span>
                   </div>
@@ -405,7 +427,7 @@ export default function HomePage() {
                     {/* Título da Vaga */}
                     <div>
                       <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
-                        Título da Vaga (Somente o Título)
+                        Título da Vaga (Destaque Principal)
                       </label>
                       <input
                         type="text"
@@ -442,7 +464,8 @@ export default function HomePage() {
 
                     {/* Jornada */}
                     <div>
-                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-[#1E81FE]" />
                         {formData.contractType === 'ESTAGIO' ? 'Jornada de Estágio' : 'Jornada de Trabalho'}
                       </label>
                       <input
@@ -457,7 +480,8 @@ export default function HomePage() {
 
                     {/* Salário / Bolsa / Remuneração */}
                     <div>
-                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Wallet className="w-3.5 h-3.5 text-[#1E81FE]" />
                         {formData.contractType === 'ESTAGIO' ? 'Bolsa' : formData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}
                       </label>
                       <input
@@ -472,8 +496,8 @@ export default function HomePage() {
 
                     {/* Benefícios */}
                     <div>
-                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
-                        Benefícios
+                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios
                       </label>
                       <textarea
                         rows={2}
@@ -485,8 +509,52 @@ export default function HomePage() {
                       />
                     </div>
 
+                    {/* BLUCO OPCIONAL DE REQUISITOS (TOGGLE ON/OFF) */}
+                    <div className="pt-2 border-t border-[#EBF0F5] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-[#111317] uppercase tracking-wider flex items-center gap-1.5">
+                          <ListChecks className="w-3.5 h-3.5 text-[#1E81FE]" /> Exibir Requisitos na Arte
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, showRequirements: !formData.showRequirements })}
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold transition-all border ${
+                            formData.showRequirements
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              : 'bg-gray-100 text-gray-500 border-gray-300'
+                          }`}
+                        >
+                          {formData.showRequirements ? (
+                            <>
+                              <ToggleRight className="w-4 h-4 text-emerald-600" /> LIGADO (ON)
+                            </>
+                          ) : (
+                            <>
+                              <ToggleLeft className="w-4 h-4 text-gray-400" /> DESLIGADO (OFF)
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {formData.showRequirements && (
+                        <div className="animate-in fade-in duration-150 pt-1">
+                          <label className="block text-[11px] font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+                            Requisitos Essenciais (Separados por • ou vírgula)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={formData.requirementsList}
+                            onChange={(e) => setFormData({ ...formData, requirementsList: e.target.value })}
+                            disabled={generating}
+                            placeholder="Ensino Superior Completo • Pacote Office • Boa Comunicação"
+                            className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all resize-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     {/* Modalidade & Localidade */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 pt-1">
                       <div>
                         <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
                           Modalidade
@@ -550,7 +618,6 @@ export default function HomePage() {
                         </button>
                       </div>
 
-                      {/* E-mail de Recebimento de CVs quando selecionar E-mail Direto */}
                       {formData.candidatureType === 'email' && (
                         <div className="pt-2 animate-in fade-in duration-150">
                           <label className="block text-[11px] font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
@@ -565,17 +632,14 @@ export default function HomePage() {
                             placeholder="vagas@jobz.com.br"
                             className="w-full px-3.5 py-2 bg-[#EBF3FF] border border-[#B2D3FF] rounded-xl text-xs font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                           />
-                          <p className="text-[11px] text-[#1E81FE] font-medium mt-1 flex items-center gap-1">
-                            <FileText className="w-3 h-3" /> A arte exibirá o aviso obrigatório: <strong>Aceitamos apenas currículos em PDF.</strong>
-                          </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Destinatário do E-mail do Recrutador (onde o Kit vai ser entregue) */}
+                    {/* Destinatário do E-mail do Recrutador */}
                     <div className="pt-2 border-t border-[#EBF0F5]">
                       <label className="block text-xs font-bold text-[#1E81FE] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Mail className="w-3.5 h-3.5" /> Enviar Kit para meu E-mail
+                        <Mail className="w-3.5 h-3.5" /> Enviar Cópia do Kit para meu E-mail
                       </label>
                       <input
                         type="email"
@@ -589,22 +653,89 @@ export default function HomePage() {
                   </form>
                 </div>
 
-                {/* RIGHT COLUMN: LIVE CARD PREVIEW (100% CANVAS, NO OUTER FRAME) */}
-                <div className="lg:col-span-6 p-6 sm:p-8 bg-[#F8FAFC] flex flex-col justify-between items-center">
-                  <div className="w-full mb-3 flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
-                      <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Visualização ao Vivo (100% Canvas da Arte)
-                    </span>
-                    <span className="text-[11px] font-mono text-[#1E81FE] font-bold">Sem Borda Externa</span>
+                {/* RIGHT COLUMN: LIVE CARD PREVIEW WITH MULTI-FORMAT DROPDOWN */}
+                <div className="lg:col-span-6 p-6 sm:p-8 bg-[#E5E9EE] flex flex-col justify-between items-center overflow-y-auto">
+                  
+                  {/* MULTI-FORMAT SELECTOR DROPDOWN / TABS */}
+                  <div className="w-full mb-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Prévia Ao Vivo em Multi-Formatos
+                      </span>
+                      <span className="text-[11px] font-mono text-[#1E81FE] font-bold">Fundo #F1F4F7</span>
+                    </div>
+
+                    {/* Format Selector Tabs */}
+                    <div className="grid grid-cols-4 gap-1.5 p-1 bg-white rounded-2xl border border-[#D7DEE7] shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, previewFormat: 'feed' })}
+                        className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                          formData.previewFormat === 'feed'
+                            ? 'bg-[#1E81FE] text-white shadow-sm'
+                            : 'text-[#5F6673] hover:bg-[#FAFAFC]'
+                        }`}
+                      >
+                        <Instagram className="w-3.5 h-3.5" />
+                        <span>Feed 4:5</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, previewFormat: 'whatsapp' })}
+                        className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                          formData.previewFormat === 'whatsapp'
+                            ? 'bg-[#1E81FE] text-white shadow-sm'
+                            : 'text-[#5F6673] hover:bg-[#FAFAFC]'
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>WhatsApp 1:1</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, previewFormat: 'story' })}
+                        className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                          formData.previewFormat === 'story'
+                            ? 'bg-[#1E81FE] text-white shadow-sm'
+                            : 'text-[#5F6673] hover:bg-[#FAFAFC]'
+                        }`}
+                      >
+                        <Smartphone className="w-3.5 h-3.5" />
+                        <span>Story 9:16</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, previewFormat: 'linkedin' })}
+                        className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                          formData.previewFormat === 'linkedin'
+                            ? 'bg-[#1E81FE] text-white shadow-sm'
+                            : 'text-[#5F6673] hover:bg-[#FAFAFC]'
+                        }`}
+                      >
+                        <Linkedin className="w-3.5 h-3.5" />
+                        <span>LinkedIn</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Simulated Live Card (100% Canvas Fill) */}
-                  <div className="w-full max-w-[420px] aspect-[1/1.25] bg-white border border-[#D7DEE7] p-7 shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+                  {/* Simulated Dynamic Live Card (#F1F4F7 Canvas) */}
+                  <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] p-6 shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
+                    formData.previewFormat === 'story'
+                      ? 'max-w-[320px] aspect-[9/16]'
+                      : formData.previewFormat === 'whatsapp'
+                      ? 'max-w-[380px] aspect-square'
+                      : formData.previewFormat === 'linkedin'
+                      ? 'max-w-[480px] aspect-[1.91/1]'
+                      : 'max-w-[390px] aspect-[1/1.25]'
+                  }`}>
                     
                     {/* Top Right Blue Accent Corner */}
                     <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Logo PNG Oficial */}
                       <div className="flex items-center">
                         <img src={JOBZ_LOGO_PNG_BASE64} className="h-7 w-auto" alt="Jobz Carreira" />
@@ -615,38 +746,55 @@ export default function HomePage() {
                         {kickerText}
                       </div>
 
-                      {/* Title */}
-                      <div className="text-xl font-extrabold text-[#111317] leading-tight line-clamp-2">
+                      {/* Title (Ampliado com Maior Destaque Visual) */}
+                      <div className="text-2xl font-extrabold text-[#111317] leading-tight line-clamp-2">
                         {formData.title || 'Título da Vaga'}
                       </div>
 
-                      {/* Content Rows */}
-                      <div className="space-y-3 pt-1 text-xs">
+                      {/* Content Rows with Vector Icons */}
+                      <div className="space-y-2.5 pt-1 text-xs">
                         <div>
-                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase">{labelHoursText}</div>
-                          <div className="font-extrabold text-[#111317] line-clamp-1">{formData.schedule}</div>
+                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-[#1E81FE]" /> {labelHoursText}
+                          </div>
+                          <div className="font-extrabold text-[#111317] pl-4 line-clamp-1">{formData.schedule}</div>
                         </div>
+
                         <div>
-                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase">{labelFinancialText}</div>
-                          <div className="font-extrabold text-[#111317] line-clamp-1">{formData.salary}</div>
+                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
+                            <Wallet className="w-3 h-3 text-[#1E81FE]" /> {labelFinancialText}
+                          </div>
+                          <div className="font-extrabold text-[#111317] pl-4 line-clamp-1">{formData.salary}</div>
                         </div>
+
                         <div>
-                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase">BENEFÍCIOS</div>
-                          <div className="font-semibold text-[#111317] line-clamp-2">{formData.benefits}</div>
+                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
+                            <Gift className="w-3 h-3 text-[#1E81FE]" /> BENEFÍCIOS
+                          </div>
+                          <div className="font-semibold text-[#111317] pl-4 line-clamp-2">{formData.benefits}</div>
                         </div>
+
+                        {formData.showRequirements && formData.requirementsList && (
+                          <div className="animate-in fade-in duration-150">
+                            <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
+                              <ListChecks className="w-3 h-3 text-[#1E81FE]" /> REQUISITOS ESSENCIAIS
+                            </div>
+                            <div className="font-semibold text-[#111317] pl-4 line-clamp-2">{formData.requirementsList}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Card Footer Pills & Dynamic Banner */}
-                    <div className="space-y-2.5 w-full pt-3">
+                    <div className="space-y-2 w-full pt-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
                           {formData.modality}
                         </span>
-                        <span className="text-[10px] font-semibold text-[#5F6673] bg-[#FAFAFC] border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
                           {formData.location}
                         </span>
-                        <span className="text-[10px] font-semibold text-[#5F6673] bg-[#FAFAFC] border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
                           Aberta
                         </span>
                       </div>
@@ -687,7 +835,7 @@ export default function HomePage() {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          🚀 Confirmar & Disparar Artes por E-mail
+                          🚀 Confirmar & Gerar Kit de Artes
                         </>
                       )}
                     </button>
@@ -699,31 +847,87 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* MODAL DE CONFIRMAÇÃO DE SUCESSO */}
+        {/* MODAL DE CONFIRMAÇÃO COM 4 BOTÕES DE DOWNLOAD DIRETO */}
         {showSuccessModal && statusMessage?.type === 'success' && (
           <div className="fixed inset-0 z-50 bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-md w-full p-8 text-center relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-lg w-full p-8 text-center relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               
-              <div className="w-20 h-20 rounded-full bg-[#F0FDF4] border-2 border-[#BBF7D0] flex items-center justify-center mx-auto mb-6 text-[#16A34A] shadow-md shadow-emerald-100">
-                <CheckCircle2 className="w-10 h-10" />
+              <div className="w-16 h-16 rounded-full bg-[#F0FDF4] border-2 border-[#BBF7D0] flex items-center justify-center mx-auto mb-4 text-[#16A34A] shadow-md">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
 
               <h3 className="text-2xl font-extrabold text-[#111317] mb-2">
                 {statusMessage.title}
               </h3>
               
-              <p className="text-sm text-[#5F6673] font-medium leading-relaxed mb-8">
+              <p className="text-xs text-[#5F6673] font-medium leading-relaxed mb-6">
                 {statusMessage.text}
               </p>
+
+              {/* 4 INSTANT 1-CLICK DOWNLOAD BUTTONS */}
+              {generatedAssets && (
+                <div className="space-y-2.5 mb-6 text-left">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] block text-center mb-2">
+                    📥 Download Direto dos Arquivos PNG em 1 Clique
+                  </span>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <a
+                      href={generatedAssets.feed}
+                      target="_blank"
+                      rel="noreferrer"
+                      download="jobz-feed.png"
+                      className="bg-[#FAFAFC] hover:bg-[#EBF3FF] border border-[#D7DEE7] hover:border-[#B2D3FF] p-3 rounded-xl flex items-center gap-2 text-xs font-bold text-[#111317] hover:text-[#1E81FE] transition-all shadow-sm group"
+                    >
+                      <Download className="w-4 h-4 text-[#1E81FE] group-hover:scale-110 transition-transform" />
+                      <span>Feed (1080x1350)</span>
+                    </a>
+
+                    <a
+                      href={generatedAssets.whatsapp}
+                      target="_blank"
+                      rel="noreferrer"
+                      download="jobz-whatsapp.png"
+                      className="bg-[#FAFAFC] hover:bg-[#EBF3FF] border border-[#D7DEE7] hover:border-[#B2D3FF] p-3 rounded-xl flex items-center gap-2 text-xs font-bold text-[#111317] hover:text-[#1E81FE] transition-all shadow-sm group"
+                    >
+                      <Download className="w-4 h-4 text-[#1E81FE] group-hover:scale-110 transition-transform" />
+                      <span>WhatsApp (1080x1080)</span>
+                    </a>
+
+                    <a
+                      href={generatedAssets.story}
+                      target="_blank"
+                      rel="noreferrer"
+                      download="jobz-story.png"
+                      className="bg-[#FAFAFC] hover:bg-[#EBF3FF] border border-[#D7DEE7] hover:border-[#B2D3FF] p-3 rounded-xl flex items-center gap-2 text-xs font-bold text-[#111317] hover:text-[#1E81FE] transition-all shadow-sm group"
+                    >
+                      <Download className="w-4 h-4 text-[#1E81FE] group-hover:scale-110 transition-transform" />
+                      <span>Story (1080x1920)</span>
+                    </a>
+
+                    <a
+                      href={generatedAssets.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      download="jobz-linkedin.png"
+                      className="bg-[#FAFAFC] hover:bg-[#EBF3FF] border border-[#D7DEE7] hover:border-[#B2D3FF] p-3 rounded-xl flex items-center gap-2 text-xs font-bold text-[#111317] hover:text-[#1E81FE] transition-all shadow-sm group"
+                    >
+                      <Download className="w-4 h-4 text-[#1E81FE] group-hover:scale-110 transition-transform" />
+                      <span>LinkedIn (1200x627)</span>
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
                   setStatusMessage(null);
+                  setGeneratedAssets(null);
                 }}
                 className="w-full bg-[#111317] hover:bg-[#1E81FE] text-white font-bold text-sm py-3.5 px-6 rounded-xl transition-all shadow-md"
               >
-                Entendido, Ver Outras Vagas
+                Concluir & Ver Outras Vagas
               </button>
             </div>
           </div>
