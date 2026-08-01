@@ -49,17 +49,10 @@ export default function HomePage() {
       if (data.jobs && data.jobs.length > 0) {
         setJobs(data.jobs);
         
-        // Find the active job being processed or the latest job
-        const targetJob = jobId 
-          ? data.jobs.find((j: BrandKitJob) => j.id === jobId)
-          : data.jobs[0];
-
-        if (targetJob) {
-          if (!jobId && (targetJob.status !== 'completed' && targetJob.status !== 'failed')) {
-            setJobId(targetJob.id);
-          }
-          
-          if (targetJob.id === jobId || loading) {
+        // Apenas atualizar o banner principal se um jobId específico estiver sendo processado
+        if (jobId) {
+          const targetJob = data.jobs.find((j: BrandKitJob) => j.id === jobId);
+          if (targetJob) {
             setActiveJobStatus(targetJob.status);
 
             if (targetJob.status === 'completed') {
