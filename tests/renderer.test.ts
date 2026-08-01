@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateFeedHtml, generateStoryHtml, generateLinkedinHtml, generateWhatsappHtml } from '../src/lib/renderer';
+import { generateFeedHtml, generateStoryHtml, generateLinkedinHtml, generateWhatsappHtml } from '../src/lib/renderer-engine';
 import { CopyData } from '../src/lib/types';
 
 describe('Official Jobz Carreira Card Template (v2.0)', () => {

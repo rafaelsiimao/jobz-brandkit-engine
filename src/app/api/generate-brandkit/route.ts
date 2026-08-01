@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { extractJobFromAbler } from '@/lib/scraper';
 import { generateBrandKitAI } from '@/lib/ai-engine';
-import { renderBrandKitPNGs } from '@/lib/renderer';
+import { renderBrandKitPNGs } from '@/lib/renderer-engine';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
