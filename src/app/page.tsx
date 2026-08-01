@@ -3,164 +3,159 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles, 
-  Link as LinkIcon, 
+  Search,
   Mail, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
-  ArrowRight,
-  Briefcase,
-  Layers,
-  Image as ImageIcon,
-  Send,
-  History,
-  Download,
-  Copy,
-  Check,
-  RefreshCw,
-  XCircle
+  Briefcase, 
+  Image as ImageIcon, 
+  Send, 
+  Download, 
+  RefreshCw, 
+  Clock,
+  X,
+  Building2,
+  MapPin,
+  DollarSign,
+  ChevronRight,
+  Filter
 } from 'lucide-react';
 import { BrandKitJob } from '@/lib/types';
+import { AblerVacancyItem } from '@/lib/abler-api';
 
 export default function HomePage() {
-  const [jobUrl, setJobUrl] = useState('');
-  const [recipientEmail, setRecipientEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [status, setStatus] = useState<'idle' | 'pending' | 'completed' | 'error'>('idle');
-  const [activeJobStatus, setActiveJobStatus] = useState<string>('pending');
-  const [message, setMessage] = useState<string | null>(null);
+  // Abler Vacancies State
+  const [vacancies, setVacancies] = useState<AblerVacancyItem[]>([]);
+  const [loadingVacancies, setLoadingVacancies] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRegime, setSelectedRegime] = useState<string>('all');
 
-  // History & Resend States
+  // Modal & Generation State
+  const [selectedVacancy, setSelectedVacancy] = useState<AblerVacancyItem | null>(null);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [pipelineStep, setPipelineStep] = useState<string>('idle');
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // History State
   const [jobs, setJobs] = useState<BrandKitJob[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [resendEmails, setResendEmails] = useState<Record<string, string>>({});
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [resendStatus, setResendStatus] = useState<Record<string, { success?: boolean; message?: string }>>({});
-  const [copiedCaptionId, setCopiedCaptionId] = useState<string | null>(null);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Fetch Company Vacancies from Abler API V2
+  const loadVacancies = async () => {
+    setLoadingVacancies(true);
+    try {
+      const res = await fetch('/api/vacancies');
+      const data = await res.json();
+      if (data.vacancies) {
+        setVacancies(data.vacancies);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar vagas da Abler:', err);
+    } finally {
+      setLoadingVacancies(false);
+    }
+  };
+
+  // Fetch Generated Jobs History
   const fetchJobs = async () => {
     try {
       const res = await fetch('/api/jobs');
       const data = await res.json();
-      if (data.jobs && data.jobs.length > 0) {
+      if (data.jobs) {
         setJobs(data.jobs);
-        
-        // Apenas atualizar o banner principal se um jobId específico estiver sendo processado
-        if (jobId) {
-          const targetJob = data.jobs.find((j: BrandKitJob) => j.id === jobId);
-          if (targetJob) {
-            setActiveJobStatus(targetJob.status);
 
-            if (targetJob.status === 'completed') {
-              setStatus('completed');
-              setLoading(false);
-              setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
+        if (activeJobId) {
+          const currentJob = data.jobs.find((j: BrandKitJob) => j.id === activeJobId);
+          if (currentJob) {
+            setPipelineStep(currentJob.status);
+            if (currentJob.status === 'completed') {
+              setGenerating(false);
+              setStatusMessage({ type: 'success', text: 'Kit de artes gerado e enviado com sucesso para seu e-mail!' });
               if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            } else if (targetJob.status === 'failed') {
-              setStatus('error');
-              setLoading(false);
-              setMessage(targetJob.error_message || 'Ocorreu um erro no processamento.');
+            } else if (currentJob.status === 'failed') {
+              setGenerating(false);
+              setStatusMessage({ type: 'error', text: currentJob.error_message || 'Erro ao processar a vaga.' });
               if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
             }
           }
         }
       }
     } catch (err) {
-      console.error('Erro ao buscar histórico de vagas:', err);
+      console.error('Erro ao buscar histórico:', err);
     }
   };
 
   useEffect(() => {
+    loadVacancies();
     fetchJobs();
+
+    // Default recipient email from localStorage if available
+    const savedEmail = localStorage.getItem('jobz_recipient_email');
+    if (savedEmail) {
+      setRecipientEmail(savedEmail);
+    } else {
+      setRecipientEmail('rafael.simao@jobz.com.br');
+    }
+
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, []);
 
-  const startPolling = () => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    // Poll every 800ms for instant real-time step transitions
-    pollIntervalRef.current = setInterval(() => {
-      fetchJobs();
-    }, 800);
+  const openGenerateModal = (vacancy: AblerVacancyItem) => {
+    setSelectedVacancy(vacancy);
+    setStatusMessage(null);
   };
 
-  const handleCancel = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-    setLoading(false);
-    setStatus('error');
-    setActiveJobStatus('canceled');
-    setMessage('Processamento cancelado pelo usuário.');
+  const closeModal = () => {
+    if (generating) return;
+    setSelectedVacancy(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStartGeneration = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setStatus('pending');
-    setActiveJobStatus('pending');
-    setMessage(null);
-    setJobId(null);
+    if (!selectedVacancy || !recipientEmail) return;
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    localStorage.setItem('jobz_recipient_email', recipientEmail);
 
-    // Start polling IMMEDIATELY when form is submitted so step updates appear in real-time
-    startPolling();
+    setGenerating(true);
+    setPipelineStep('pending');
+    setStatusMessage(null);
+
+    // Start Polling for progress
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    pollIntervalRef.current = setInterval(fetchJobs, 800);
 
     try {
       const res = await fetch('/api/generate-brandkit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobUrl, recipientEmail }),
-        signal: controller.signal
+        body: JSON.stringify({
+          vacancyId: selectedVacancy.id,
+          recipientEmail,
+        }),
       });
 
-      const rawText = await res.text();
-      let data: any = {};
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        data = { error: rawText.slice(0, 150) || 'Erro durante a comunicação com o servidor' };
-      }
+      const data = await res.json();
 
       if (res.ok) {
-        setJobId(data.jobId);
-        setActiveJobStatus(data.status || 'completed');
-        setStatus('completed');
-        setLoading(false);
-        setMessage('BrandKit gerado e enviado com sucesso para o seu e-mail!');
-        fetchJobs();
+        setActiveJobId(data.jobId);
       } else {
-        setStatus('error');
-        setLoading(false);
-        setMessage(data.error || 'Ocorreu um erro ao processar a requisição.');
+        setGenerating(false);
+        setStatusMessage({ type: 'error', text: data.error || 'Falha ao iniciar processamento' });
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setStatus('error');
-        setLoading(false);
-        setMessage('Processamento cancelado pelo usuário.');
-      } else {
-        setStatus('error');
-        setLoading(false);
-        setMessage(err.message || 'Erro de conexão com o servidor.');
-      }
-    } finally {
+      setGenerating(false);
+      setStatusMessage({ type: 'error', text: err?.message || 'Erro de conexão com o servidor' });
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     }
   };
@@ -176,560 +171,453 @@ export default function HomePage() {
       const res = await fetch('/api/jobs/resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: job.id, newEmail: targetEmail })
+        body: JSON.stringify({ jobId: job.id, newEmail: targetEmail }),
       });
       const data = await res.json();
 
       if (res.ok) {
         setResendStatus((prev) => ({
           ...prev,
-          [job.id]: { success: true, message: data.message || `Enviado para ${targetEmail}!` }
+          [job.id]: { success: true, message: data.message || `Enviado para ${targetEmail}!` },
         }));
         setResendEmails((prev) => ({ ...prev, [job.id]: '' }));
       } else {
         setResendStatus((prev) => ({
           ...prev,
-          [job.id]: { success: false, message: data.error || 'Erro ao reenviar e-mail.' }
+          [job.id]: { success: false, message: data.error || 'Erro ao reenviar e-mail.' },
         }));
       }
     } catch (err: any) {
       setResendStatus((prev) => ({
         ...prev,
-        [job.id]: { success: false, message: err.message || 'Erro de conexão.' }
+        [job.id]: { success: false, message: err?.message || 'Erro de rede' },
       }));
     } finally {
       setResendingId(null);
     }
   };
 
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCaptionId(id);
-    setTimeout(() => setCopiedCaptionId(null), 2500);
-  };
+  const filteredVacancies = vacancies.filter((v) => {
+    const matchesSearch =
+      v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.id.includes(searchQuery);
 
-  const getRemainingHoursInfo = (job: BrandKitJob) => {
-    if (job.status === 'expired') {
-      return { isExpired: true, label: '⚠️ Expirado (48h)', colorClass: 'bg-slate-200 text-slate-700 border border-slate-300' };
-    }
+    const matchesRegime =
+      selectedRegime === 'all' || v.contractingRegime.toUpperCase() === selectedRegime.toUpperCase();
 
-    const createdAt = new Date(job.created_at).getTime();
-    const expiresAt = job.expires_at ? new Date(job.expires_at).getTime() : createdAt + 48 * 60 * 60 * 1000;
-    const now = Date.now();
-    const diffMs = expiresAt - now;
-
-    if (diffMs <= 0) {
-      return { isExpired: true, label: '⚠️ Expirado (48h)', colorClass: 'bg-slate-200 text-slate-700 border border-slate-300' };
-    }
-
-    const hours = Math.ceil(diffMs / (1000 * 60 * 60));
-    if (hours > 24) {
-      return { isExpired: false, label: `⌛ Expira em ${hours}h`, colorClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200' };
-    }
-    return { isExpired: false, label: `⌛ Expira em ${hours}h`, colorClass: 'bg-amber-100 text-amber-900 border border-amber-300 font-bold' };
-  };
-
-  const handleRegenerate = (job: BrandKitJob) => {
-    setJobUrl(job.job_url);
-    setRecipientEmail(job.recipient_email);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Helper to determine step completion in stepper
-  const getStepState = (stepKey: string) => {
-    const order = ['pending', 'scraping', 'generating_ai', 'rendering_arts', 'uploading_and_mailing', 'completed'];
-    const currentIndex = order.indexOf(activeJobStatus);
-    const stepIndex = order.indexOf(stepKey);
-
-    if (activeJobStatus === 'completed') return 'completed';
-    if (currentIndex === stepIndex) return 'active';
-    if (currentIndex > stepIndex) return 'completed';
-    return 'upcoming';
-  };
+    return matchesSearch && matchesRegime;
+  });
 
   return (
-    <main className="min-h-screen bg-[#F2F5F8] text-[#111317] flex flex-col justify-between p-4 sm:p-6 md:p-12 font-sans">
-      {/* Top Header */}
-      <header className="max-w-5xl mx-auto w-full flex items-center justify-between py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white shadow-lg shadow-[#1E81FE]/20">
-            <Sparkles className="w-5 h-5" />
+    <div className="min-h-screen bg-[#F2F5F8] text-[#111317] font-sans antialiased selection:bg-[#1E81FE] selection:text-white">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-[#D7DEE7] shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white shadow-md shadow-[#1E81FE]/25">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-xl tracking-tight text-[#111317] flex items-center gap-2">
+                Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes v2.0</span>
+              </h1>
+              <p className="text-xs text-[#5F6673] font-medium">Gerador Automático de Kits de Divulgação de Vagas Abler</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-extrabold text-xl tracking-tight text-[#111317]">Jobz Engine</h1>
-            <p className="text-xs text-gray-500 font-medium">BrandKit & Sourcing Intelligence</p>
-          </div>
+
+          <button
+            onClick={() => { loadVacancies(); fetchJobs(); }}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#5F6673] hover:text-[#111317] bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl hover:bg-white transition-all shadow-sm"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Sincronizar Abler
+          </button>
         </div>
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#1E81FE]/10 text-[#1E81FE] border border-[#1E81FE]/20">
-          MVP v1.0
-        </span>
       </header>
 
-      {/* Main Grid Container */}
-      <div className="max-w-5xl mx-auto w-full my-6 space-y-8">
-        
-        {/* Form Card */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 bg-[#1E81FE]/10 text-[#1E81FE] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
-              <Briefcase className="w-3.5 h-3.5" />
-              Gerador de Kit de Divulgação
-            </div>
-            <h2 className="text-3xl font-extrabold text-[#111317] tracking-tight mb-3">
-              BrandKit Recrutamento
-            </h2>
-            <p className="text-gray-500 text-sm leading-relaxed">
-              Insira o link da vaga na Abler ATS e o e-mail de destino para receber o kit completo contendo artes para redes sociais e perfil de sourcing inteligente.
-            </p>
-          </div>
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="jobUrl" className="block text-xs font-bold uppercase tracking-wider text-[#111317] mb-2">
-                URL da Vaga (Abler ATS)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                  <LinkIcon className="w-4 h-4" />
-                </div>
-                <input
-                  id="jobUrl"
-                  type="url"
-                  required
-                  placeholder="https://ats.abler.com.br/jobs/jobz/vaga-123"
-                  value={jobUrl}
-                  onChange={(e) => setJobUrl(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-[#111317] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1E81FE] focus:border-transparent transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="recipientEmail" className="block text-xs font-bold uppercase tracking-wider text-[#111317] mb-2">
-                E-mail para Recebimento
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  id="recipientEmail"
-                  type="email"
-                  required
-                  placeholder="recrutadora@jobz.com.br"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-[#111317] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1E81FE] focus:border-transparent transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-[#1E81FE] hover:bg-[#196edb] active:scale-[0.99] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#1E81FE]/25 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Processando Pipeline...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Gerar & Enviar BrandKit</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-
-              {loading && (
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2"
-                >
-                  <XCircle className="w-5 h-5" />
-                  <span>Parar Processamento</span>
-                </button>
+        {/* Global Feedback Status Banner */}
+        {statusMessage && (
+          <div
+            className={`p-5 rounded-2xl border shadow-sm flex items-center justify-between transition-all ${
+              statusMessage.type === 'success'
+                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
+                : 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2 className="w-6 h-6 text-[#16A34A] shrink-0" />
+              ) : (
+                <AlertCircle className="w-6 h-6 text-[#DC2626] shrink-0" />
               )}
-            </div>
-          </form>
-
-          {/* Status Alert & Live Stepper Screen */}
-          {status !== 'idle' && (
-            <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
-              {status === 'completed' && (
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/60 text-emerald-900 text-sm flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-emerald-950 mb-1">Solicitação Concluída!</h4>
-                    <p className="text-emerald-800 leading-relaxed text-xs sm:text-sm">{message}</p>
-                    {jobId && (
-                      <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-emerald-200 text-xs font-mono text-emerald-700">
-                        <span>Job ID:</span>
-                        <span className="font-bold">{jobId}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {status === 'error' && (
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200/60 text-rose-900 text-sm flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-rose-950 mb-1">Status da Solicitação</h4>
-                    <p className="text-rose-800 leading-relaxed text-xs sm:text-sm">{message}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Live Pipeline Stepper Screen */}
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#111317] flex items-center gap-2">
-                    {loading && <Loader2 className="w-4 h-4 text-[#1E81FE] animate-spin" />}
-                    <span>Acompanhamento da Pipeline em Tempo Real</span>
-                  </h4>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[#1E81FE]/10 text-[#1E81FE] uppercase">
-                    {activeJobStatus}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                  {/* Step 1 */}
-                  <div
-                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
-                      getStepState('scraping') === 'active'
-                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
-                        : getStepState('scraping') === 'completed'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
-                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
-                    }`}
-                  >
-                    {getStepState('scraping') === 'active' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
-                    ) : getStepState('scraping') === 'completed' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <Briefcase className="w-4 h-4 shrink-0" />
-                    )}
-                    <div>
-                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 1</div>
-                      <div className="text-xs truncate">1. Scraping Abler</div>
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div
-                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
-                      getStepState('generating_ai') === 'active'
-                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
-                        : getStepState('generating_ai') === 'completed'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
-                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
-                    }`}
-                  >
-                    {getStepState('generating_ai') === 'active' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
-                    ) : getStepState('generating_ai') === 'completed' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <Layers className="w-4 h-4 shrink-0" />
-                    )}
-                    <div>
-                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 2</div>
-                      <div className="text-xs truncate">2. IA Sourcing</div>
-                    </div>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div
-                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
-                      getStepState('rendering_arts') === 'active'
-                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
-                        : getStepState('rendering_arts') === 'completed'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
-                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
-                    }`}
-                  >
-                    {getStepState('rendering_arts') === 'active' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
-                    ) : getStepState('rendering_arts') === 'completed' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <ImageIcon className="w-4 h-4 shrink-0" />
-                    )}
-                    <div>
-                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 3</div>
-                      <div className="text-xs truncate">3. Render 4 Artes</div>
-                    </div>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div
-                    className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
-                      getStepState('uploading_and_mailing') === 'active'
-                        ? 'bg-blue-50 border-[#1E81FE] ring-2 ring-[#1E81FE]/20 text-[#1E81FE] font-bold'
-                        : getStepState('uploading_and_mailing') === 'completed'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
-                        : 'bg-white border-slate-200 text-gray-400 opacity-60'
-                    }`}
-                  >
-                    {getStepState('uploading_and_mailing') === 'active' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-[#1E81FE] shrink-0" />
-                    ) : getStepState('uploading_and_mailing') === 'completed' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <Send className="w-4 h-4 shrink-0" />
-                    )}
-                    <div>
-                      <div className="text-[10px] uppercase font-bold tracking-wider">Etapa 4</div>
-                      <div className="text-xs truncate">4. Envio E-mail</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* History Section */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#1E81FE]/10 text-[#1E81FE] flex items-center justify-center">
-                <History className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xl font-extrabold text-[#111317]">
-                  Histórico de BrandKits Gerados
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Gerencie as vagas cadastradas no Supabase e reenvie os materiais para outros e-mails
-                </p>
-              </div>
+              <span className="font-semibold text-sm">{statusMessage.text}</span>
             </div>
             <button
-              onClick={fetchJobs}
-              disabled={loadingJobs}
-              className="p-2 rounded-xl border border-slate-200 text-gray-600 hover:text-[#1E81FE] hover:bg-slate-50 transition-all text-xs font-semibold flex items-center gap-1.5"
+              onClick={() => setStatusMessage(null)}
+              className="text-current opacity-70 hover:opacity-100 transition-opacity"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingJobs ? 'animate-spin' : ''}`} />
-              <span>Atualizar</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
+        )}
 
-          {loadingJobs && jobs.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 flex flex-col items-center gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-[#1E81FE]" />
-              <span className="text-xs font-medium">Carregando histórico do Supabase...</span>
+        {/* SECTION 1: VAGAS ATIVAS NA ABLER */}
+        <section className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
+                <Briefcase className="w-4 h-4" /> Integração Oficial Abler ATS
+              </div>
+              <h2 className="text-2xl font-extrabold text-[#111317]">Vagas Abertas na Empresa</h2>
+              <p className="text-sm text-[#5F6673]">Selecione uma vaga para gerar os 4 cards PNG de divulgação (Feed, WhatsApp, Story, LinkedIn)</p>
             </div>
-          ) : jobs.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 text-sm border-2 border-dashed border-slate-200 rounded-2xl">
-              Nenhum BrandKit gerado até o momento. Cadastre a primeira vaga no formulário acima!
+
+            {/* Search and Filters */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative min-w-[260px]">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A94A3]" />
+                <input
+                  type="text"
+                  placeholder="Buscar por título ou cidade..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D7DEE7] rounded-xl text-sm font-medium text-[#111317] placeholder:text-[#8A94A3] focus:outline-none focus:border-[#1E81FE] focus:ring-2 focus:ring-[#1E81FE]/15 shadow-sm transition-all"
+                />
+              </div>
+
+              <select
+                value={selectedRegime}
+                onChange={(e) => setSelectedRegime(e.target.value)}
+                className="bg-white border border-[#D7DEE7] rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#111317] focus:outline-none focus:border-[#1E81FE] shadow-sm"
+              >
+                <option value="all">Todos os Contratos</option>
+                <option value="CLT">CLT</option>
+                <option value="ESTAGIO">Estágio</option>
+                <option value="PJ">PJ</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Vacancies Grid */}
+          {loadingVacancies ? (
+            <div className="bg-white rounded-2xl border border-[#D7DEE7] p-12 text-center shadow-sm">
+              <Loader2 className="w-8 h-8 text-[#1E81FE] animate-spin mx-auto mb-3" />
+              <p className="text-sm font-semibold text-[#5F6673]">Carregando vagas da Abler API V2...</p>
+            </div>
+          ) : filteredVacancies.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-[#D7DEE7] p-12 text-center shadow-sm">
+              <Briefcase className="w-10 h-10 text-[#8A94A3] mx-auto mb-3" />
+              <h3 className="font-bold text-base text-[#111317]">Nenhuma vaga encontrada</h3>
+              <p className="text-sm text-[#5F6673] mt-1">Nenhuma vaga ativa corresponde aos seus filtros de busca.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 hover:border-slate-300 transition-all space-y-4"
-                >
-                  {/* Job Header Row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVacancies.map((vacancy) => {
+                const isEstagio = vacancy.contractingRegime.toUpperCase() === 'ESTAGIO';
+                const isPJ = vacancy.contractingRegime.toUpperCase() === 'PJ';
+
+                return (
+                  <div
+                    key={vacancy.id}
+                    className="bg-white rounded-2xl border border-[#D7DEE7] p-6 shadow-sm hover:shadow-md hover:border-[#B2D3FF] transition-all flex flex-direction flex-col justify-between group relative overflow-hidden"
+                  >
+                    {/* Top Corner Blue Accent */}
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E81FE]/10 rounded-bl-full pointer-events-none group-hover:bg-[#1E81FE] transition-all duration-300" />
+
                     <div>
-                      <h4 className="font-bold text-sm text-[#111317]">
-                        {job.copy_data?.headline || job.extracted_data?.title || 'Vaga Abler'}
-                      </h4>
-                      <a
-                        href={job.job_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-[#1E81FE] font-medium hover:underline inline-flex items-center gap-1"
-                      >
-                        <LinkIcon className="w-3 h-3" />
-                        <span className="truncate max-w-xs">{job.job_url}</span>
-                      </a>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <span className="text-[11px] text-gray-400">
-                        {new Date(job.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      {job.status === 'completed' && (
-                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${getRemainingHoursInfo(job).colorClass}`}>
-                          {getRemainingHoursInfo(job).label}
+                      {/* Status Badges */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                          isEstagio
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : isPJ
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {vacancy.contractingRegime}
                         </span>
-                      )}
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                          job.status === 'completed' && !getRemainingHoursInfo(job).isExpired
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : job.status === 'expired' || (job.status === 'completed' && getRemainingHoursInfo(job).isExpired)
-                            ? 'bg-slate-200 text-slate-700'
-                            : job.status === 'failed'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-amber-100 text-amber-800 animate-pulse'
-                        }`}
-                      >
-                        {job.status === 'completed' && !getRemainingHoursInfo(job).isExpired
-                          ? 'Concluído'
-                          : job.status === 'expired' || (job.status === 'completed' && getRemainingHoursInfo(job).isExpired)
-                          ? 'Expirado'
-                          : job.status === 'scraping'
-                          ? '🔍 Extraindo Vaga'
-                          : job.status === 'generating_ai'
-                          ? '🧠 Gerando IA'
-                          : job.status === 'rendering_arts'
-                          ? '🎨 Desenhando Artes'
-                          : job.status === 'uploading_and_mailing'
-                          ? '📧 Enviando E-mail'
-                          : job.status === 'failed'
-                          ? 'Falhou'
-                          : 'Processando'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Asset Downloads & Actions */}
-                  {job.status === 'completed' && job.asset_urls && !getRemainingHoursInfo(job).isExpired && (
-                    <div className="pt-3 border-t border-slate-200/60 space-y-3">
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="font-bold text-gray-500 text-[11px] uppercase tracking-wider mr-1">Baixar Artes:</span>
-                        <a
-                          href={job.asset_urls.feed}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-[#1E81FE] text-gray-700 hover:text-[#1E81FE] font-medium transition-all inline-flex items-center gap-1"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Feed (1080x1350)</span>
-                        </a>
-                        <a
-                          href={job.asset_urls.whatsapp}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-[#1E81FE] text-gray-700 hover:text-[#1E81FE] font-medium transition-all inline-flex items-center gap-1"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>WhatsApp (1080x1080)</span>
-                        </a>
-                        <a
-                          href={job.asset_urls.story}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-[#1E81FE] text-gray-700 hover:text-[#1E81FE] font-medium transition-all inline-flex items-center gap-1"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Story (1080x1920)</span>
-                        </a>
-                        <a
-                          href={job.asset_urls.linkedin}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-[#1E81FE] text-gray-700 hover:text-[#1E81FE] font-medium transition-all inline-flex items-center gap-1"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>LinkedIn (1200x627)</span>
-                        </a>
+                        <span className="text-[11px] font-mono font-medium text-[#5F6673] bg-[#FAFAFC] border border-[#D7DEE7] px-2.5 py-1 rounded-full">
+                          Vaga #{vacancy.id}
+                        </span>
                       </div>
 
-                      {/* Copy caption */}
-                      {job.copy_data?.socialCaption && (
+                      {/* Title */}
+                      <h3 className="font-extrabold text-lg text-[#111317] group-hover:text-[#1E81FE] transition-colors line-clamp-2 mb-4 leading-snug">
+                        {vacancy.title}
+                      </h3>
+
+                      {/* Detail Rows */}
+                      <div className="space-y-2.5 mb-6 text-xs text-[#5F6673] font-medium">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => copyToClipboard(job.copy_data!.socialCaption, job.id)}
-                            className="px-2.5 py-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 text-gray-700 text-xs font-semibold transition-all inline-flex items-center gap-1"
-                          >
-                            {copiedCaptionId === job.id ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                <span className="text-emerald-700">Legenda Copiada!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5 text-gray-500" />
-                                <span>Copiar Legenda</span>
-                              </>
-                            )}
-                          </button>
+                          <MapPin className="w-4 h-4 text-[#8A94A3] shrink-0" />
+                          <span className="truncate">{vacancy.location} ({vacancy.workType})</span>
                         </div>
-                      )}
-
-                      {/* Resend Form */}
-                      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        <input
-                          type="email"
-                          placeholder="Novo e-mail de destino..."
-                          value={resendEmails[job.id] || ''}
-                          onChange={(e) =>
-                            setResendEmails((prev) => ({ ...prev, [job.id]: e.target.value }))
-                          }
-                          className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-[#111317] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1E81FE]"
-                        />
-                        <button
-                          onClick={() => handleResend(job)}
-                          disabled={resendingId === job.id || !resendEmails[job.id]}
-                          className="px-4 py-1.5 rounded-xl bg-[#1E81FE] hover:bg-[#196edb] text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-                        >
-                          {resendingId === job.id ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>Enviando...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Send className="w-3.5 h-3.5" />
-                              <span>Reenviar BrandKit</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Resend status alert */}
-                      {resendStatus[job.id]?.message && (
-                        <div
-                          className={`text-xs font-semibold p-2 rounded-lg ${
-                            resendStatus[job.id].success
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
-                        >
-                          {resendStatus[job.id].message}
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-[#8A94A3] shrink-0" />
+                          <span className="font-semibold text-[#111317]">
+                            {isEstagio ? 'Bolsa: ' : isPJ ? 'Remuneração: ' : 'Salário: '}
+                            {vacancy.salary}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Expired Job View */}
-                  {(job.status === 'expired' || (job.status === 'completed' && getRemainingHoursInfo(job).isExpired)) && (
-                    <div className="pt-3 border-t border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="text-xs text-slate-500 font-medium">
-                        ⚠️ <span className="font-semibold text-slate-700">Artes expiradas (48h):</span> Os arquivos PNG foram removidos do servidor após 48 horas por política de retenção.
                       </div>
-                      <button
-                        onClick={() => handleRegenerate(job)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#1E81FE] hover:bg-[#196edb] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Regerar Kit (1-Clique)</span>
-                      </button>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {/* Action Button */}
+                    <button
+                      onClick={() => openGenerateModal(vacancy)}
+                      className="w-full bg-[#111317] hover:bg-[#1E81FE] text-white font-bold text-sm py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm group-hover:shadow-md"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#1E81FE] group-hover:text-white transition-colors" />
+                      Gerar Kit de Divulgação
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
 
-      </div>
+        {/* MODAL: CONFIRMAR ENVIO DE E-MAIL E GERAR KIT */}
+        {selectedVacancy && (
+          <div className="fixed inset-0 z-50 bg-[#111317]/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-lg w-full p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              
+              {/* Close Button */}
+              {!generating && (
+                <button
+                  onClick={closeModal}
+                  className="absolute top-6 right-6 text-[#8A94A3] hover:text-[#111317] transition-colors p-1"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              )}
 
-      {/* Footer */}
-      <footer className="max-w-5xl mx-auto w-full text-center py-4 text-xs text-gray-400">
-        Jobz BrandKit Engine &copy; {new Date().getFullYear()} — Desenvolvido com Next.js & TailwindCSS
-      </footer>
-    </main>
+              {/* Modal Content */}
+              <div className="space-y-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 font-mono text-xs font-bold text-[#1E81FE] uppercase tracking-wider bg-[#EBF3FF] px-3 py-1 rounded-full border border-[#B2D3FF] mb-3">
+                    <Sparkles className="w-3.5 h-3.5" /> Kit de Divulgação em 1-Clique
+                  </div>
+                  <h3 className="text-2xl font-extrabold text-[#111317] leading-tight">
+                    {selectedVacancy.title}
+                  </h3>
+                  <p className="text-xs text-[#5F6673] font-medium mt-1">
+                    Vaga #{selectedVacancy.id} • {selectedVacancy.location} ({selectedVacancy.contractingRegime})
+                  </p>
+                </div>
+
+                <form onSubmit={handleStartGeneration} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#5F6673] mb-2 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-[#1E81FE]" /> E-mail de Destino do Recrutador
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="seu.email@jobz.com.br"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      disabled={generating}
+                      className="w-full px-4 py-3 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-semibold text-[#111317] placeholder:text-[#8A94A3] focus:outline-none focus:border-[#1E81FE] focus:bg-white transition-all disabled:opacity-50"
+                    />
+                    <p className="text-[11px] text-[#8A94A3] mt-1.5">
+                      As 4 artes (Feed, WhatsApp, Story, LinkedIn) no padrão oficial do Brandbook serão enviadas para este e-mail.
+                    </p>
+                  </div>
+
+                  {/* Progress Box during generation */}
+                  {generating && (
+                    <div className="bg-[#FAFAFC] rounded-2xl border border-[#D7DEE7] p-5 space-y-3">
+                      <div className="flex items-center justify-between text-xs font-bold text-[#111317]">
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 text-[#1E81FE] animate-spin" />
+                          Gerando artes no padrão Jobz...
+                        </span>
+                        <span className="font-mono text-[#1E81FE]">{pipelineStep}</span>
+                      </div>
+                      <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden">
+                        <div className="bg-[#1E81FE] h-full transition-all duration-500 animate-pulse w-3/4" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    {!generating && (
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className="px-5 py-3 text-sm font-bold text-[#5F6673] hover:text-[#111317] transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={generating || !recipientEmail}
+                      className="bg-[#1E81FE] hover:bg-blue-600 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md shadow-[#1E81FE]/25 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {generating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Enviar Kit de Artes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 2: HISTÓRICO DE KITS GERADOS & DOWNLOADS (Expira em 48h) */}
+        <section className="space-y-6">
+          <div>
+            <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
+              <Clock className="w-4 h-4 text-[#1E81FE]" /> Histórico & Expiração Automática
+            </div>
+            <h2 className="text-2xl font-extrabold text-[#111317]">Kits Gerados Recentemente</h2>
+            <p className="text-sm text-[#5F6673]">Artes PNG permanecem disponíveis para download imediato por 48 horas</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#D7DEE7] shadow-sm overflow-hidden">
+            {jobs.length === 0 ? (
+              <div className="p-12 text-center">
+                <ImageIcon className="w-10 h-10 text-[#8A94A3] mx-auto mb-3" />
+                <h3 className="font-bold text-base text-[#111317]">Nenhum kit gerado ainda</h3>
+                <p className="text-sm text-[#5F6673] mt-1">Selecione uma vaga acima para gerar seu primeiro kit de divulgação.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[#EBF0F5]">
+                {jobs.map((job) => {
+                  const isExpired = job.status === 'expired';
+                  const isCompleted = job.status === 'completed';
+
+                  // Calculate hours left if expires_at is present
+                  let hoursLeft: number | null = null;
+                  if (job.expires_at) {
+                    const diffMs = new Date(job.expires_at).getTime() - Date.now();
+                    hoursLeft = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+                  }
+
+                  return (
+                    <div key={job.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-[#FAFAFC] transition-colors">
+                      <div className="space-y-2 max-w-xl">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                            isCompleted
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : isExpired
+                              ? 'bg-slate-100 text-slate-600 border-slate-300'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {isCompleted ? '✓ Concluído' : isExpired ? '⌛ Expirado (48h)' : job.status}
+                          </span>
+
+                          {hoursLeft !== null && !isExpired && (
+                            <span className="text-[11px] font-mono font-semibold text-[#1E81FE] bg-[#EBF3FF] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">
+                              ⌛ Expira em {hoursLeft}h
+                            </span>
+                          )}
+
+                          <span className="text-xs text-[#8A94A3] font-medium">
+                            Enviado para: <strong className="text-[#111317]">{job.recipient_email}</strong>
+                          </span>
+                        </div>
+
+                        <h4 className="font-extrabold text-base text-[#111317]">
+                          {job.copy_data?.headline || job.job_url}
+                        </h4>
+
+                        {job.copy_data?.highlights && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {job.copy_data.highlights.map((h, idx) => (
+                              <span key={idx} className="text-[11px] font-mono font-medium text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-md">
+                                {h}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Links & Download Buttons */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        {isCompleted && job.asset_urls && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <a
+                              href={job.asset_urls.feed}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3.5 py-2 bg-[#1E81FE] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                            >
+                              <Download className="w-3.5 h-3.5" /> Feed
+                            </a>
+                            <a
+                              href={job.asset_urls.whatsapp}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3.5 py-2 bg-[#25D366] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                            >
+                              <Download className="w-3.5 h-3.5" /> WhatsApp
+                            </a>
+                            <a
+                              href={job.asset_urls.story}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3.5 py-2 bg-[#E4405F] hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                            >
+                              <Download className="w-3.5 h-3.5" /> Story
+                            </a>
+                            <a
+                              href={job.asset_urls.linkedin}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3.5 py-2 bg-[#0A66C2] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                            >
+                              <Download className="w-3.5 h-3.5" /> LinkedIn
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Re-send Box */}
+                        {isCompleted && (
+                          <div className="flex items-center gap-1.5 bg-[#FAFAFC] p-1 border border-[#D7DEE7] rounded-xl">
+                            <input
+                              type="email"
+                              placeholder="Outro e-mail..."
+                              value={resendEmails[job.id] || ''}
+                              onChange={(e) => setResendEmails({ ...resendEmails, [job.id]: e.target.value })}
+                              className="w-32 px-2.5 py-1 bg-transparent text-xs font-medium text-[#111317] placeholder:text-[#8A94A3] focus:outline-none"
+                            />
+                            <button
+                              onClick={() => handleResend(job)}
+                              disabled={resendingId === job.id || !resendEmails[job.id]}
+                              className="px-3 py-1 bg-[#111317] hover:bg-[#1E81FE] text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                            >
+                              Reenviar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+      </main>
+    </div>
   );
 }

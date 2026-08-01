@@ -11,7 +11,7 @@ describe('Generate BrandKit API Route', () => {
     const res = await POST(reqWithoutEmail);
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toBe('jobUrl e recipientEmail são obrigatórios');
+    expect(json.error).toContain('recipientEmail');
   });
 
   it('should return 400 error if jobUrl is empty', async () => {
@@ -23,6 +23,6 @@ describe('Generate BrandKit API Route', () => {
     const res = await POST(reqEmptyUrl);
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toBe('jobUrl e recipientEmail são obrigatórios');
+    expect(json.error).toContain('recipientEmail');
   });
 });
