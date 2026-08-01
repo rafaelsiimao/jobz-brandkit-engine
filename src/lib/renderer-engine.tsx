@@ -124,9 +124,9 @@ function parseCardHighlights(highlights: string[] = []) {
     labelFinancial = 'REMUNERAÇÃO';
   }
 
-  const valueHours = truncateText(h1.replace(/^jornada(?:\s*de\s*est[áa]gio)?[:\s]*/i, ''), 60);
-  const valueFinancial = truncateText(h2.replace(/^(?:sal[áa]rio|remunera[çc][ãa]o|bolsa)[:\s]*/i, ''), 60);
-  const valueBenefits = truncateText(h3.replace(/^benef[íi]cios[:\s]*/i, ''), 70);
+  const valueHours = cleanText(h1.replace(/^jornada(?:\s*de\s*est[áa]gio)?[:\s]*/i, ''));
+  const valueFinancial = cleanText(h2.replace(/^(?:sal[áa]rio|remunera[çc][ãa]o|bolsa)[:\s]*/i, ''));
+  const valueBenefits = cleanText(h3.replace(/^benef[íi]cios[:\s]*/i, ''));
 
   return {
     modality,
@@ -217,7 +217,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
   const isEmail = copy.candidatureType === 'email';
   const emailAddress = copy.candidatureEmail || 'vagas@jobz.com.br';
   const showReqs = copy.showRequirements && !!copy.requirementsList;
-  const reqsText = truncateText(copy.requirementsList || '', 120);
+  const reqsText = cleanText(copy.requirementsList || '');
 
   // 1. Feed (1080 x 1350) - Canvas Background #F1F4F7
   const feedJsx = (

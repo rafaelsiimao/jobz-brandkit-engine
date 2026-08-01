@@ -494,13 +494,13 @@ export default function HomePage() {
                       />
                     </div>
 
-                    {/* Benefícios */}
+                    {/* Benefícios (Sem truncamento) */}
                     <div>
                       <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios
+                        <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios (Quebra Automática de Linha)
                       </label>
                       <textarea
-                        rows={2}
+                        rows={3}
                         required
                         value={formData.benefits}
                         onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
@@ -539,10 +539,10 @@ export default function HomePage() {
                       {formData.showRequirements && (
                         <div className="animate-in fade-in duration-150 pt-1">
                           <label className="block text-[11px] font-bold text-[#5F6673] uppercase tracking-wider mb-1">
-                            Requisitos Essenciais (Separados por • ou vírgula)
+                            Requisitos Essenciais (Quebra Automática de Linha)
                           </label>
                           <textarea
-                            rows={2}
+                            rows={3}
                             value={formData.requirementsList}
                             onChange={(e) => setFormData({ ...formData, requirementsList: e.target.value })}
                             disabled={generating}
@@ -653,11 +653,11 @@ export default function HomePage() {
                   </form>
                 </div>
 
-                {/* RIGHT COLUMN: LIVE CARD PREVIEW (NO TOP VACUUM GAP, PERFECT FIT SCALING) */}
-                <div className="lg:col-span-6 p-5 sm:p-6 bg-[#E5E9EE] flex flex-col justify-start items-center gap-3 overflow-y-auto min-h-[560px]">
+                {/* RIGHT COLUMN: LIVE CARD PREVIEW (STRICT ORDERED FLOW, ZERO OVERLAPPING) */}
+                <div className="lg:col-span-6 p-5 sm:p-6 bg-[#E5E9EE] flex flex-col justify-start items-center gap-4 overflow-y-auto">
                   
-                  {/* MULTI-FORMAT SELECTOR DROPDOWN / TABS */}
-                  <div className="w-full space-y-2 shrink-0">
+                  {/* MULTI-FORMAT SELECTOR TABS (ALWAYS TOP, RELATIVE Z-10) */}
+                  <div className="w-full space-y-2 shrink-0 relative z-10">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Prévia Ao Vivo em Multi-Formatos
@@ -721,8 +721,8 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Simulated Dynamic Live Card Container (No cuts, zero top vacuum gap) */}
-                  <div className="w-full flex-1 flex items-center justify-center min-h-[360px] py-1 shrink-0">
+                  {/* Simulated Dynamic Live Card Container (No cuts, zero overlapping, full multiline text) */}
+                  <div className="w-full flex items-center justify-center py-2 shrink-0 my-auto relative z-0">
                     <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
                       formData.previewFormat === 'story'
                         ? 'max-w-[285px] aspect-[9/16] p-4 text-xs'
@@ -758,21 +758,21 @@ export default function HomePage() {
                             <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
                               <Clock className="w-3 h-3 text-[#1E81FE]" /> {labelHoursText}
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-4 line-clamp-1 text-xs">{formData.schedule}</div>
+                            <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.schedule}</div>
                           </div>
 
                           <div>
                             <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
                               <Wallet className="w-3 h-3 text-[#1E81FE]" /> {labelFinancialText}
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-4 line-clamp-1 text-xs">{formData.salary}</div>
+                            <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.salary}</div>
                           </div>
 
                           <div>
                             <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
                               <Gift className="w-3 h-3 text-[#1E81FE]" /> BENEFÍCIOS
                             </div>
-                            <div className="font-semibold text-[#111317] pl-4 line-clamp-2 text-xs">{formData.benefits}</div>
+                            <div className="font-semibold text-[#111317] pl-4 text-xs break-words leading-snug">{formData.benefits}</div>
                           </div>
 
                           {formData.showRequirements && formData.requirementsList && (
@@ -780,7 +780,7 @@ export default function HomePage() {
                               <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
                                 <ListChecks className="w-3 h-3 text-[#1E81FE]" /> REQUISITOS ESSENCIAIS
                               </div>
-                              <div className="font-semibold text-[#111317] pl-4 line-clamp-2 text-xs">{formData.requirementsList}</div>
+                              <div className="font-semibold text-[#111317] pl-4 text-xs break-words leading-snug">{formData.requirementsList}</div>
                             </div>
                           )}
                         </div>
