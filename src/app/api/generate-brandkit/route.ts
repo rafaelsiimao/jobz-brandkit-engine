@@ -1,85 +1,47 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { extractJobFromAbler } from '@/lib/scraper';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchVacancyDetailsFromAbler } from '@/lib/abler-api';
-import { generateBrandKitAI } from '@/lib/ai-engine';
 import { renderBrandKitPNGs } from '@/lib/renderer-engine';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
-import { ExtractedJobData, ContractType } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
+import { ContractType, CopyData, SourcingProfile } from '@/lib/types';
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   let jobId: string | null = null;
 
   try {
-    const { jobUrl, vacancyId, recipientEmail, customFields } = await request.json();
+    const body = await req.json();
+    const { vacancyId, recipientEmail, customFields } = body;
 
-    if ((!jobUrl && !vacancyId) || !recipientEmail) {
-      return NextResponse.json(
-        { error: 'É necessário informar a vaga (vacancyId ou jobUrl) e o recipientEmail' },
-        { status: 400 }
-      );
+    if (!vacancyId) {
+      return NextResponse.json({ error: 'ID da vaga Abler é obrigatório' }, { status: 400 });
     }
 
-    const effectiveJobUrl = jobUrl || `https://abler.com.br/vagas/${vacancyId}`;
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return NextResponse.json({ error: 'E-mail de destino inválido' }, { status: 400 });
+    }
 
-    // 1. Criar registro inicial no Supabase com status 'pending' e expiração em 48 horas
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    let dbJob: any = null;
-    let dbError: any = null;
-
-    const resWithExpires = await supabase
+    // 1. Criar registro no banco Supabase
+    const { data: dbJob, error: createError } = await supabase
       .from('brandkit_jobs')
-      .insert([{ job_url: effectiveJobUrl, recipient_email: recipientEmail, status: 'pending', expires_at: expiresAt }])
+      .insert({
+        job_url: `https://abler.com.br/vagas/${vacancyId}`,
+        recipient_email: recipientEmail,
+        status: 'scraping',
+      })
       .select()
       .single();
 
-    if (resWithExpires.error && (resWithExpires.error.message?.includes('expires_at') || resWithExpires.error.code === 'PGRST204')) {
-      const resFallback = await supabase
-        .from('brandkit_jobs')
-        .insert([{ job_url: effectiveJobUrl, recipient_email: recipientEmail, status: 'pending' }])
-        .select()
-        .single();
-      dbJob = resFallback.data;
-      dbError = resFallback.error;
+    if (createError || !dbJob) {
+      console.warn('Aviso: Supabase indisponível, gerando kit em modo direto:', createError?.message);
+      jobId = `job_${Date.now()}`;
     } else {
-      dbJob = resWithExpires.data;
-      dbError = resWithExpires.error;
+      jobId = dbJob.id;
     }
 
-    if (dbError || !dbJob) {
-      throw new Error(`Erro no Supabase DB: ${dbError?.message || 'Falha ao criar registro da vaga'}`);
-    }
+    // 2. Extração rápida via Abler API V2
+    const extractedData = await fetchVacancyDetailsFromAbler(String(vacancyId));
 
-    jobId = dbJob.id;
-
-    // Etapa 1: Obter dados da Vaga (API Oficial da Abler V2 com fallback)
-    await supabase.from('brandkit_jobs').update({ status: 'scraping' }).eq('id', jobId);
-
-    let extractedData: ExtractedJobData;
-
-    if (vacancyId) {
-      try {
-        extractedData = await fetchVacancyDetailsFromAbler(String(vacancyId));
-      } catch (err: any) {
-        console.warn(`Falha ao buscar via Abler API V2 para id #${vacancyId}, tentando fallback scraper:`, err?.message);
-        extractedData = await extractJobFromAbler(effectiveJobUrl);
-      }
-    } else {
-      const numericIdMatch = jobUrl?.match(/-(\d+)(?:\/|$|\?)/) || jobUrl?.match(/vagas\/(\d+)/);
-      if (numericIdMatch && numericIdMatch[1]) {
-        try {
-          extractedData = await fetchVacancyDetailsFromAbler(numericIdMatch[1]);
-        } catch {
-          extractedData = await extractJobFromAbler(jobUrl);
-        }
-      } else {
-        extractedData = await extractJobFromAbler(jobUrl);
-      }
-    }
-
-    // Apply custom field overrides from recruiter's Preview Modal edits
+    // Aplicar substituições personalizadas do modal de edição da recrutadora
     if (customFields) {
       if (customFields.title) extractedData.title = customFields.title;
       if (customFields.contractType) extractedData.contractType = customFields.contractType as ContractType;
@@ -90,57 +52,59 @@ export async function POST(request: Request) {
       if (customFields.modality) extractedData.modality = customFields.modality;
     }
 
-    await delay(200);
+    // 3. Montar objeto CopyData instantaneamente (sem chamadas lentas de IA)
+    const modalityLoc = `${customFields?.modality || extractedData.modality} | ${customFields?.location || extractedData.location}`;
+    const scheduleStr = `Jornada: ${customFields?.schedule || extractedData.schedule}`;
+    const salaryStr = `${extractedData.contractType === 'ESTAGIO' ? 'Bolsa' : extractedData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}: ${customFields?.salary || extractedData.salary}`;
+    const benefitsStr = `Benefícios: ${Array.isArray(customFields?.benefits) ? customFields.benefits.join(', ') : extractedData.benefits.join(', ')}`;
 
-    // Etapa 2: Inteligência de Recrutamento & Copy (IA Profiler)
-    await supabase
-      .from('brandkit_jobs')
-      .update({ status: 'generating_ai', extracted_data: extractedData })
-      .eq('id', jobId);
+    const copy: CopyData = {
+      headline: customFields?.title || extractedData.title,
+      subheadline: modalityLoc,
+      highlights: [modalityLoc, scheduleStr, salaryStr, benefitsStr],
+      ctaText: 'Candidate-se em: jobz.com.br/vagas',
+      socialCaption: `Confira a vaga de ${extractedData.title} na Jobz Carreira!`,
+      candidatureType: customFields?.candidatureType || 'platform',
+      candidatureEmail: customFields?.candidatureEmail || recipientEmail,
+      showRequirements: typeof customFields?.showRequirements === 'boolean' ? customFields.showRequirements : true,
+      requirementsList: customFields?.requirementsList || (extractedData.requirements?.join(' • ') || 'Ensino Superior Completo • Pacote Office • Boa Comunicação'),
+    };
 
-    const { sourcing, copy } = await generateBrandKitAI(extractedData);
+    const sourcing: SourcingProfile = {
+      idealCandidate: `Profissional qualificado para o cargo de ${extractedData.title}.`,
+      hardSkills: extractedData.requirements || [],
+      softSkills: ['Boa Comunicação', 'Trabalho em Equipe'],
+      companyExpectations: 'Comprometimento com metas e excelência.',
+      sourcingChannels: {
+        universities: [],
+        facebookGroups: [],
+        whatsappTelegramCommunities: [],
+        linkedinSearchQueries: [],
+        specializedPlatforms: [],
+      },
+      coldOutreachTemplates: {
+        linkedinInmail: '',
+        whatsappDirect: '',
+      },
+      screeningQuestions: [],
+      recommendedUniversities: [],
+      linkedinHashtags: [],
+    };
 
-    // Ensure custom fields strictly override final copy highlights and candidature/requirements settings
-    if (customFields) {
-      if (customFields.title) copy.headline = customFields.title;
-      if (customFields.candidatureType) copy.candidatureType = customFields.candidatureType;
-      if (customFields.candidatureEmail) copy.candidatureEmail = customFields.candidatureEmail;
-      if (typeof customFields.showRequirements === 'boolean') copy.showRequirements = customFields.showRequirements;
-      if (customFields.requirementsList) copy.requirementsList = customFields.requirementsList;
-
-      const modalityLoc = `${customFields.modality || extractedData.modality} | ${customFields.location || extractedData.location}`;
-      const scheduleStr = `Jornada: ${customFields.schedule || extractedData.schedule}`;
-      const salaryStr = `${extractedData.contractType === 'ESTAGIO' ? 'Bolsa' : extractedData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}: ${customFields.salary || extractedData.salary}`;
-      const benefitsStr = `Benefícios: ${Array.isArray(customFields.benefits) ? customFields.benefits.join(', ') : extractedData.benefits.join(', ')}`;
-
-      copy.highlights = [modalityLoc, scheduleStr, salaryStr, benefitsStr];
-    }
-
-    await delay(200);
-
-    // Etapa 3: Renderização das Artes PNG (Card Oficial Brandbook Jobz Carreira)
-    await supabase
-      .from('brandkit_jobs')
-      .update({ status: 'rendering_arts', sourcing_profile: sourcing, copy_data: copy })
-      .eq('id', jobId);
-
+    // 4. Renderização síncrona ultra-rápida das artes PNG
     const pngBuffers = await renderBrandKitPNGs(copy);
-    await delay(200);
 
-    // Etapa 4: Upload para Storage & Envio do Kit por E-mail
-    await supabase.from('brandkit_jobs').update({ status: 'uploading_and_mailing' }).eq('id', jobId);
-
+    // 5. Upload & Envio do E-mail
     const assetUrls = await uploadAssetsAndSendEmail(
-      dbJob.id,
+      jobId || `job_${Date.now()}`,
       recipientEmail,
       pngBuffers,
       sourcing,
       copy,
       extractedData
     );
-    await delay(100);
 
-    // Etapa Concluída com Sucesso!
+    // Atualizar estado concluído
     await supabase
       .from('brandkit_jobs')
       .update({
@@ -155,7 +119,7 @@ export async function POST(request: Request) {
       jobId,
       status: 'completed',
       assetUrls,
-      message: 'Kit de divulgação de vaga gerado e enviado com sucesso!'
+      message: 'Kit de divulgação de vaga gerado com sucesso em alta velocidade!'
     });
 
   } catch (err: any) {

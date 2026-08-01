@@ -240,7 +240,7 @@ export default function HomePage() {
               <h1 className="font-extrabold text-xl tracking-tight text-[#111317] flex items-center gap-2">
                 Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes V2</span>
               </h1>
-              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação de Vagas com Preview Multi-Formatos</p>
+              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação de Vagas com Geração Instantânea</p>
             </div>
           </div>
 
@@ -387,16 +387,16 @@ export default function HomePage() {
         {/* MODAL DE PREVIEW E EDIÇÃO EM TEMPO REAL */}
         {selectedVacancy && (
           <div className="fixed inset-0 z-50 bg-[#111317]/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full my-8 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full my-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[95vh]">
               
               {/* Modal Header */}
-              <div className="p-6 border-b border-[#D7DEE7] flex items-center justify-between bg-[#FAFAFC]">
+              <div className="p-5 border-b border-[#D7DEE7] flex items-center justify-between bg-[#FAFAFC] shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white font-bold">
                     <Edit3 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-extrabold text-[#111317]">Prévia & Edição Interativa do Card</h3>
+                    <h3 className="text-lg font-extrabold text-[#111317]">Prévia & Edição Interativa do Card</h3>
                     <p className="text-xs text-[#5F6673]">Edite qualquer campo à esquerda para ver a arte atualizar em tempo real à direita</p>
                   </div>
                 </div>
@@ -406,7 +406,7 @@ export default function HomePage() {
                     onClick={closePreviewModal}
                     className="p-2 text-[#8A94A3] hover:text-[#111317] hover:bg-[#EBF0F5] rounded-xl transition-all"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
@@ -415,15 +415,15 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto flex-1">
                 
                 {/* LEFT COLUMN: EDIT FORM */}
-                <div className="lg:col-span-6 p-6 sm:p-8 space-y-5 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white">
-                  <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-3">
+                <div className="lg:col-span-6 p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white overflow-y-auto">
+                  <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-2">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] flex items-center gap-1.5">
                       <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis da Arte
                     </span>
                     <span className="text-xs font-mono text-[#8A94A3]">Vaga #{selectedVacancy.id}</span>
                   </div>
 
-                  <form onSubmit={handleConfirmAndGenerate} className="space-y-4">
+                  <form onSubmit={handleConfirmAndGenerate} className="space-y-3.5">
                     {/* Título da Vaga */}
                     <div>
                       <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1">
@@ -509,7 +509,7 @@ export default function HomePage() {
                       />
                     </div>
 
-                    {/* BLUCO OPCIONAL DE REQUISITOS (TOGGLE ON/OFF) */}
+                    {/* BLOCO OPCIONAL DE REQUISITOS (TOGGLE ON/OFF) */}
                     <div className="pt-2 border-t border-[#EBF0F5] space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-[#111317] uppercase tracking-wider flex items-center gap-1.5">
@@ -619,7 +619,7 @@ export default function HomePage() {
                       </div>
 
                       {formData.candidatureType === 'email' && (
-                        <div className="pt-2 animate-in fade-in duration-150">
+                        <div className="pt-1 animate-in fade-in duration-150">
                           <label className="block text-[11px] font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
                             E-mail para Receber os Currículos
                           </label>
@@ -653,11 +653,11 @@ export default function HomePage() {
                   </form>
                 </div>
 
-                {/* RIGHT COLUMN: LIVE CARD PREVIEW WITH MULTI-FORMAT DROPDOWN */}
-                <div className="lg:col-span-6 p-6 sm:p-8 bg-[#E5E9EE] flex flex-col justify-between items-center overflow-y-auto">
+                {/* RIGHT COLUMN: LIVE CARD PREVIEW (NO TOP VACUUM GAP, PERFECT FIT SCALING) */}
+                <div className="lg:col-span-6 p-5 sm:p-6 bg-[#E5E9EE] flex flex-col justify-start items-center gap-3 overflow-y-auto min-h-[560px]">
                   
                   {/* MULTI-FORMAT SELECTOR DROPDOWN / TABS */}
-                  <div className="w-full mb-4 space-y-2">
+                  <div className="w-full space-y-2 shrink-0">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Prévia Ao Vivo em Multi-Formatos
@@ -721,116 +721,118 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Simulated Dynamic Live Card (#F1F4F7 Canvas) */}
-                  <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] p-6 shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
-                    formData.previewFormat === 'story'
-                      ? 'max-w-[320px] aspect-[9/16]'
-                      : formData.previewFormat === 'whatsapp'
-                      ? 'max-w-[380px] aspect-square'
-                      : formData.previewFormat === 'linkedin'
-                      ? 'max-w-[480px] aspect-[1.91/1]'
-                      : 'max-w-[390px] aspect-[1/1.25]'
-                  }`}>
-                    
-                    {/* Top Right Blue Accent Corner */}
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
+                  {/* Simulated Dynamic Live Card Container (No cuts, zero top vacuum gap) */}
+                  <div className="w-full flex-1 flex items-center justify-center min-h-[360px] py-1 shrink-0">
+                    <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
+                      formData.previewFormat === 'story'
+                        ? 'max-w-[285px] aspect-[9/16] p-4 text-xs'
+                        : formData.previewFormat === 'whatsapp'
+                        ? 'max-w-[360px] aspect-square p-5 text-xs'
+                        : formData.previewFormat === 'linkedin'
+                        ? 'max-w-[460px] aspect-[1.91/1] p-4 text-[11px]'
+                        : 'max-w-[370px] aspect-[1/1.25] p-5 text-xs'
+                    }`}>
+                      
+                      {/* Top Right Blue Accent Corner */}
+                      <div className="absolute top-0 right-0 w-14 h-14 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
 
-                    <div className="space-y-3">
-                      {/* Logo PNG Oficial */}
-                      <div className="flex items-center">
-                        <img src={JOBZ_LOGO_PNG_BASE64} className="h-7 w-auto" alt="Jobz Carreira" />
-                      </div>
-
-                      {/* Kicker */}
-                      <div className="text-[11px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
-                        {kickerText}
-                      </div>
-
-                      {/* Title (Ampliado com Maior Destaque Visual) */}
-                      <div className="text-2xl font-extrabold text-[#111317] leading-tight line-clamp-2">
-                        {formData.title || 'Título da Vaga'}
-                      </div>
-
-                      {/* Content Rows with Vector Icons */}
-                      <div className="space-y-2.5 pt-1 text-xs">
-                        <div>
-                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-[#1E81FE]" /> {labelHoursText}
-                          </div>
-                          <div className="font-extrabold text-[#111317] pl-4 line-clamp-1">{formData.schedule}</div>
+                      <div className="space-y-2.5">
+                        {/* Logo PNG Oficial */}
+                        <div className="flex items-center">
+                          <img src={JOBZ_LOGO_PNG_BASE64} className="h-6 w-auto" alt="Jobz Carreira" />
                         </div>
 
-                        <div>
-                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
-                            <Wallet className="w-3 h-3 text-[#1E81FE]" /> {labelFinancialText}
-                          </div>
-                          <div className="font-extrabold text-[#111317] pl-4 line-clamp-1">{formData.salary}</div>
+                        {/* Kicker */}
+                        <div className="text-[10px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
+                          {kickerText}
                         </div>
 
-                        <div>
-                          <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
-                            <Gift className="w-3 h-3 text-[#1E81FE]" /> BENEFÍCIOS
-                          </div>
-                          <div className="font-semibold text-[#111317] pl-4 line-clamp-2">{formData.benefits}</div>
+                        {/* Title */}
+                        <div className="text-xl font-extrabold text-[#111317] leading-tight line-clamp-2">
+                          {formData.title || 'Título da Vaga'}
                         </div>
 
-                        {formData.showRequirements && formData.requirementsList && (
-                          <div className="animate-in fade-in duration-150">
-                            <div className="font-bold text-[#8A94A3] text-[10px] tracking-wider uppercase flex items-center gap-1">
-                              <ListChecks className="w-3 h-3 text-[#1E81FE]" /> REQUISITOS ESSENCIAIS
+                        {/* Content Rows with Vector Icons */}
+                        <div className="space-y-2 pt-0.5">
+                          <div>
+                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-[#1E81FE]" /> {labelHoursText}
                             </div>
-                            <div className="font-semibold text-[#111317] pl-4 line-clamp-2">{formData.requirementsList}</div>
+                            <div className="font-extrabold text-[#111317] pl-4 line-clamp-1 text-xs">{formData.schedule}</div>
+                          </div>
+
+                          <div>
+                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
+                              <Wallet className="w-3 h-3 text-[#1E81FE]" /> {labelFinancialText}
+                            </div>
+                            <div className="font-extrabold text-[#111317] pl-4 line-clamp-1 text-xs">{formData.salary}</div>
+                          </div>
+
+                          <div>
+                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
+                              <Gift className="w-3 h-3 text-[#1E81FE]" /> BENEFÍCIOS
+                            </div>
+                            <div className="font-semibold text-[#111317] pl-4 line-clamp-2 text-xs">{formData.benefits}</div>
+                          </div>
+
+                          {formData.showRequirements && formData.requirementsList && (
+                            <div className="animate-in fade-in duration-150">
+                              <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
+                                <ListChecks className="w-3 h-3 text-[#1E81FE]" /> REQUISITOS ESSENCIAIS
+                              </div>
+                              <div className="font-semibold text-[#111317] pl-4 line-clamp-2 text-xs">{formData.requirementsList}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Footer Pills & Dynamic Banner */}
+                      <div className="space-y-1.5 w-full pt-2">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[9px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
+                            {formData.modality}
+                          </span>
+                          <span className="text-[9px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                            {formData.location}
+                          </span>
+                          <span className="text-[9px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                            Aberta
+                          </span>
+                        </div>
+
+                        {formData.candidatureType === 'email' ? (
+                          <div className="space-y-0.5">
+                            <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[9px] font-bold py-0.5 px-1.5 rounded-md text-center">
+                              📄 Aceitamos somente currículos em formato PDF
+                            </div>
+                            <div className="bg-[#111317] text-white rounded-lg py-1.5 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                              <span>👉 Envie seu CV para:</span>
+                              <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-[#111317] text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                            <span>👉 Candidate-se em:</span>
+                            <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
                           </div>
                         )}
                       </div>
+
                     </div>
-
-                    {/* Card Footer Pills & Dynamic Banner */}
-                    <div className="space-y-2 w-full pt-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
-                          {formData.modality}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
-                          {formData.location}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
-                          Aberta
-                        </span>
-                      </div>
-
-                      {formData.candidatureType === 'email' ? (
-                        <div className="space-y-1">
-                          <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[10px] font-bold py-1 px-2 rounded-lg text-center">
-                            📄 Aceitamos somente currículos em formato PDF
-                          </div>
-                          <div className="bg-[#111317] text-white rounded-xl py-2 px-3 text-center text-xs font-bold flex items-center justify-center gap-1">
-                            <span>👉 Envie seu CV para:</span>
-                            <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-[#111317] text-white rounded-xl py-2.5 px-3 text-center text-xs font-bold flex items-center justify-center gap-1">
-                          <span>👉 Candidate-se em:</span>
-                          <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
-                        </div>
-                      )}
-                    </div>
-
                   </div>
 
                   {/* Submit Button */}
-                  <div className="w-full pt-4">
+                  <div className="w-full pt-2 shrink-0">
                     <button
                       type="button"
                       onClick={handleConfirmAndGenerate}
                       disabled={generating || !formData.recipientEmail}
-                      className="w-full bg-[#1E81FE] hover:bg-blue-600 text-white font-extrabold text-sm py-4 px-6 rounded-2xl transition-all shadow-lg shadow-[#1E81FE]/30 flex items-center justify-center gap-2.5 disabled:opacity-50"
+                      className="w-full bg-[#1E81FE] hover:bg-blue-600 text-white font-extrabold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-lg shadow-[#1E81FE]/30 flex items-center justify-center gap-2.5 disabled:opacity-50"
                     >
                       {generating ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
-                          Gerando artes & Enviando e-mail...
+                          Gerando artes instantaneamente...
                         </>
                       ) : (
                         <>
@@ -847,7 +849,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* MODAL DE CONFIRMAÇÃO COM 4 BOTÕES DE DOWNLOAD DIRETO */}
+        {/* MODAL DE CONFIRMAÇÃO COM BOTÕES DE DOWNLOAD DIRETO */}
         {showSuccessModal && statusMessage?.type === 'success' && (
           <div className="fixed inset-0 z-50 bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-lg w-full p-8 text-center relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">

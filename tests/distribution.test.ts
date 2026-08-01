@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { generateEmailHtml } from '../src/lib/distribution';
 import { SourcingProfile, CopyData, AssetUrls } from '../src/lib/types';
 
-describe('Email Template Generator (v2.0 Dossier)', () => {
-  it('should render HTML email with Jobz sourcing intelligence dossier', () => {
+describe('Email Template Generator (v2.0 Clean Arts Delivery)', () => {
+  it('should render clean HTML email with Jobz Carreira arts delivery and download buttons', () => {
     const mockCopy: CopyData = {
       headline: 'Vaga Teste',
       subheadline: 'Local Teste',
@@ -17,16 +17,16 @@ describe('Email Template Generator (v2.0 Dossier)', () => {
       softSkills: ['Comunicação', 'Proatividade'],
       companyExpectations: 'Espera autonomia e resultados.',
       sourcingChannels: {
-        universities: ['UFES', 'UVV'],
-        facebookGroups: ['Vagas ES'],
-        whatsappTelegramCommunities: ['Grupo Devs'],
-        linkedinSearchQueries: ['"react" AND "vitória"'],
-        specializedPlatforms: ['GitHub'],
+        universities: [],
+        facebookGroups: [],
+        whatsappTelegramCommunities: [],
+        linkedinSearchQueries: [],
+        specializedPlatforms: [],
       },
-      coldOutreachTemplates: { linkedinInmail: 'Inmail', whatsappDirect: 'Whats' },
-      screeningQuestions: ['Pergunta 1'],
-      recommendedUniversities: ['UFES'],
-      linkedinHashtags: ['#Jobz'],
+      coldOutreachTemplates: { linkedinInmail: '', whatsappDirect: '' },
+      screeningQuestions: [],
+      recommendedUniversities: [],
+      linkedinHashtags: [],
     };
     const mockUrls: AssetUrls = {
       feed: 'http://img/feed.png',
@@ -38,21 +38,15 @@ describe('Email Template Generator (v2.0 Dossier)', () => {
     const html = generateEmailHtml(mockCopy, mockSourcing, mockUrls);
 
     // Core sections exist
-    expect(html).toContain('Dossier de Inteligência de Recrutamento');
-    expect(html).toContain('Perfil do Candidato Ideal');
-    expect(html).toContain('Matriz de Competências');
-    expect(html).toContain('Onde Encontrar o Candidato Ideal');
-    expect(html).toContain('Playbook de Abordagem');
-    expect(html).toContain('Perguntas de Triagem');
+    expect(html).toContain('Kit Oficial de Divulgação de Vaga');
+    expect(html).toContain('Suas Artes PNG Estão Prontas');
+    expect(html).toContain('Clique para Baixar em Alta Resolução');
 
-    // Data content
+    // Image URLs & Buttons
     expect(html).toContain('http://img/feed.png');
     expect(html).toContain('http://img/whatsapp.png');
     expect(html).toContain('http://img/story.png');
     expect(html).toContain('http://img/linkedin.png');
-    expect(html).toContain('Perfil ideal teste');
     expect(html).toContain('Vaga Teste');
-    expect(html).toContain('React');
-    expect(html).toContain('Comunicação');
   });
 });
