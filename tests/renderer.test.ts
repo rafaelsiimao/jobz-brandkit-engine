@@ -11,35 +11,35 @@ describe('Official Jobz Carreira Card Template (v2.0)', () => {
     socialCaption: 'Legenda mock para redes sociais'
   };
 
-  it('should generate valid feed HTML containing official Jobz logo SVG, blue corner element and CTA string', () => {
+  it('should generate valid feed HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateFeedHtml(mockCopy);
-    expect(html).toContain('#F2F5F8');
+    expect(html).toContain('#FFFFFF');
     expect(html).toContain('#111317');
     expect(html).toContain('#1E81FE');
     expect(html).toContain('Plus Jakarta Sans');
-    expect(html).toContain('jobz-carreira-logo-preto.svg');
+    expect(html).toContain('data:image/png;base64');
     expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
     expect(html).toContain('1080px');
     expect(html).toContain('1350px');
   });
 
-  it('should generate valid whatsapp HTML containing official Jobz logo SVG and CTA string', () => {
+  it('should generate valid whatsapp HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateWhatsappHtml(mockCopy);
-    expect(html).toContain('jobz-carreira-logo-preto.svg');
+    expect(html).toContain('data:image/png;base64');
     expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
     expect(html).toContain('1080px');
   });
 
-  it('should generate valid story HTML containing official Jobz logo SVG and CTA string', () => {
+  it('should generate valid story HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateStoryHtml(mockCopy);
-    expect(html).toContain('jobz-carreira-logo-preto.svg');
+    expect(html).toContain('data:image/png;base64');
     expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
     expect(html).toContain('1920px');
   });
 
-  it('should generate valid linkedin HTML containing official Jobz logo SVG and CTA string', () => {
+  it('should generate valid linkedin HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateLinkedinHtml(mockCopy);
-    expect(html).toContain('jobz-carreira-logo-preto.svg');
+    expect(html).toContain('data:image/png;base64');
     expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
     expect(html).toContain('1200px');
     expect(html).toContain('627px');

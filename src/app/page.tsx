@@ -16,10 +16,9 @@ import {
   DollarSign,
   Edit3,
   Eye,
-  Check,
-  Building2,
-  Clock,
-  Award
+  FileText,
+  Globe,
+  Inbox
 } from 'lucide-react';
 import { AblerVacancyItem } from '@/lib/abler-api';
 import { JOBZ_LOGO_PNG_BASE64 } from '@/lib/logo-png-base64';
@@ -33,6 +32,8 @@ interface EditFormState {
   modality: string;
   location: string;
   recipientEmail: string;
+  candidatureType: 'platform' | 'email';
+  candidatureEmail: string;
 }
 
 export default function HomePage() {
@@ -44,7 +45,6 @@ export default function HomePage() {
 
   // Preview & Edit Modal State
   const [selectedVacancy, setSelectedVacancy] = useState<AblerVacancyItem | null>(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [formData, setFormData] = useState<EditFormState>({
     title: '',
     contractType: 'CLT',
@@ -54,6 +54,8 @@ export default function HomePage() {
     modality: 'Presencial',
     location: '',
     recipientEmail: '',
+    candidatureType: 'platform',
+    candidatureEmail: '',
   });
 
   // Processing & Success Modal State
@@ -81,10 +83,14 @@ export default function HomePage() {
     loadVacancies();
 
     const savedEmail = localStorage.getItem('jobz_recipient_email') || 'rafael.simao@jobz.com.br';
-    setFormData((prev) => ({ ...prev, recipientEmail: savedEmail }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      recipientEmail: savedEmail,
+      candidatureEmail: savedEmail
+    }));
   }, []);
 
-  // Open Preview Modal & Pre-fill Form (purely local state, zero requests)
+  // Open Preview Modal & Pre-fill Form
   const openPreviewModal = (vacancy: AblerVacancyItem) => {
     setSelectedVacancy(vacancy);
     setStatusMessage(null);
@@ -108,6 +114,8 @@ export default function HomePage() {
       modality: vacancy.workType.includes('Remoto') ? 'Remoto' : vacancy.workType.includes('Híbrido') ? 'Híbrido' : 'Presencial',
       location: vacancy.location || 'Vila Velha / ES',
       recipientEmail: savedEmail,
+      candidatureType: 'platform',
+      candidatureEmail: savedEmail,
     });
   };
 
@@ -141,6 +149,8 @@ export default function HomePage() {
             benefits: [formData.benefits],
             modality: formData.modality,
             location: formData.location,
+            candidatureType: formData.candidatureType,
+            candidatureEmail: formData.candidatureEmail,
           },
         }),
       });
@@ -149,8 +159,8 @@ export default function HomePage() {
 
       if (res.ok) {
         setGenerating(false);
-        setSelectedVacancy(null); // Close preview modal
-        setShowSuccessModal(true); // Open clear success modal
+        setSelectedVacancy(null);
+        setShowSuccessModal(true);
         setStatusMessage({
           type: 'success',
           title: 'Kit de Artes Enviado com Sucesso! 🚀',
@@ -186,7 +196,6 @@ export default function HomePage() {
     return matchesSearch && matchesRegime;
   });
 
-  // Dynamic Kicker & Labels for Live Card Preview
   const kickerText = formData.contractType === 'ESTAGIO' 
     ? 'VAGA ABERTA · ESTÁGIO' 
     : formData.contractType === 'PJ' 
@@ -209,7 +218,7 @@ export default function HomePage() {
               <h1 className="font-extrabold text-xl tracking-tight text-[#111317] flex items-center gap-2">
                 Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes V2</span>
               </h1>
-              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação com Preview e Edição em Tempo Real</p>
+              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação de Vagas com Preview em Tempo Real</p>
             </div>
           </div>
 
@@ -384,7 +393,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto flex-1">
                 
                 {/* LEFT COLUMN: EDIT FORM */}
-                <div className="lg:col-span-6 p-6 sm:p-8 space-y-6 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white">
+                <div className="lg:col-span-6 p-6 sm:p-8 space-y-5 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white">
                   <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-3">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] flex items-center gap-1.5">
                       <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis do Card
@@ -404,7 +413,7 @@ export default function HomePage() {
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
                       />
                     </div>
 
@@ -442,7 +451,7 @@ export default function HomePage() {
                         value={formData.schedule}
                         onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
                       />
                     </div>
 
@@ -457,7 +466,7 @@ export default function HomePage() {
                         value={formData.salary}
                         onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-sm font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
                       />
                     </div>
 
@@ -472,7 +481,7 @@ export default function HomePage() {
                         value={formData.benefits}
                         onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all resize-none"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all resize-none"
                       />
                     </div>
 
@@ -486,7 +495,7 @@ export default function HomePage() {
                           value={formData.modality}
                           onChange={(e) => setFormData({ ...formData, modality: e.target.value })}
                           disabled={generating}
-                          className="w-full px-3 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                          className="w-full px-3 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                         >
                           <option value="Presencial">Presencial</option>
                           <option value="Híbrido">Híbrido</option>
@@ -504,15 +513,69 @@ export default function HomePage() {
                           value={formData.location}
                           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                           disabled={generating}
-                          className="w-full px-3 py-2.5 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                          className="w-full px-3 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                         />
                       </div>
                     </div>
 
-                    {/* Destinatário do E-mail */}
-                    <div className="pt-2">
+                    {/* SELEÇÃO DO CANAL DE CANDIDATURA */}
+                    <div className="pt-2 space-y-2 border-t border-[#EBF0F5]">
+                      <label className="block text-xs font-bold text-[#111317] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <Inbox className="w-3.5 h-3.5 text-[#1E81FE]" /> Canal de Recebimento de Candidaturas
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, candidatureType: 'platform' })}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                            formData.candidatureType === 'platform'
+                              ? 'bg-[#111317] text-white border-[#111317] shadow-sm'
+                              : 'bg-[#FAFAFC] text-[#5F6673] border-[#D7DEE7] hover:bg-white'
+                          }`}
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          Plataforma Jobz
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, candidatureType: 'email' })}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                            formData.candidatureType === 'email'
+                              ? 'bg-[#1E81FE] text-white border-[#1E81FE] shadow-sm'
+                              : 'bg-[#FAFAFC] text-[#5F6673] border-[#D7DEE7] hover:bg-white'
+                          }`}
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          E-mail Direto
+                        </button>
+                      </div>
+
+                      {/* E-mail de Recebimento de CVs quando selecionar E-mail Direto */}
+                      {formData.candidatureType === 'email' && (
+                        <div className="pt-2 animate-in fade-in duration-150">
+                          <label className="block text-[11px] font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
+                            E-mail para Receber os Currículos
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={formData.candidatureEmail}
+                            onChange={(e) => setFormData({ ...formData, candidatureEmail: e.target.value })}
+                            disabled={generating}
+                            placeholder="vagas@jobz.com.br"
+                            className="w-full px-3.5 py-2 bg-[#EBF3FF] border border-[#B2D3FF] rounded-xl text-xs font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                          />
+                          <p className="text-[11px] text-[#1E81FE] font-medium mt-1 flex items-center gap-1">
+                            <FileText className="w-3 h-3" /> A arte exibirá o aviso obrigatório: <strong>Aceitamos apenas currículos em PDF.</strong>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Destinatário do E-mail do Recrutador (onde o Kit vai ser entregue) */}
+                    <div className="pt-2 border-t border-[#EBF0F5]">
                       <label className="block text-xs font-bold text-[#1E81FE] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Mail className="w-3.5 h-3.5" /> E-mail de Envio do Kit
+                        <Mail className="w-3.5 h-3.5" /> Enviar Kit para meu E-mail
                       </label>
                       <input
                         type="email"
@@ -520,23 +583,23 @@ export default function HomePage() {
                         value={formData.recipientEmail}
                         onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
                         disabled={generating}
-                        className="w-full px-4 py-2.5 bg-[#EBF3FF] border border-[#B2D3FF] rounded-xl text-sm font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                       />
                     </div>
                   </form>
                 </div>
 
-                {/* RIGHT COLUMN: LIVE CARD PREVIEW */}
-                <div className="lg:col-span-6 p-6 sm:p-8 bg-[#F2F5F8] flex flex-col justify-between items-center">
+                {/* RIGHT COLUMN: LIVE CARD PREVIEW (100% CANVAS, NO OUTER FRAME) */}
+                <div className="lg:col-span-6 p-6 sm:p-8 bg-[#F8FAFC] flex flex-col justify-between items-center">
                   <div className="w-full mb-3 flex items-center justify-between">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
-                      <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Visualização em Tempo Real (Card Feed 1080x1350)
+                      <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Visualização ao Vivo (100% Canvas da Arte)
                     </span>
-                    <span className="text-[11px] font-mono text-[#1E81FE] font-bold">100% Fiel ao PNG</span>
+                    <span className="text-[11px] font-mono text-[#1E81FE] font-bold">Sem Borda Externa</span>
                   </div>
 
-                  {/* Simulated Live Card */}
-                  <div className="w-full max-w-[420px] aspect-[1/1.25] bg-white rounded-3xl border border-[#D7DEE7] p-7 shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+                  {/* Simulated Live Card (100% Canvas Fill) */}
+                  <div className="w-full max-w-[420px] aspect-[1/1.25] bg-white border border-[#D7DEE7] p-7 shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300">
                     
                     {/* Top Right Blue Accent Corner */}
                     <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
@@ -574,8 +637,8 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Card Footer Pills & Banner */}
-                    <div className="space-y-3 w-full pt-3">
+                    {/* Card Footer Pills & Dynamic Banner */}
+                    <div className="space-y-2.5 w-full pt-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
                           {formData.modality}
@@ -588,10 +651,22 @@ export default function HomePage() {
                         </span>
                       </div>
 
-                      <div className="bg-[#111317] text-white rounded-xl py-2 px-3 text-center text-xs font-bold flex items-center justify-center gap-1">
-                        <span>👉 Candidate-se em:</span>
-                        <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
-                      </div>
+                      {formData.candidatureType === 'email' ? (
+                        <div className="space-y-1">
+                          <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[10px] font-bold py-1 px-2 rounded-lg text-center">
+                            📄 Aceitamos somente currículos em formato PDF
+                          </div>
+                          <div className="bg-[#111317] text-white rounded-xl py-2 px-3 text-center text-xs font-bold flex items-center justify-center gap-1">
+                            <span>👉 Envie seu CV para:</span>
+                            <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-[#111317] text-white rounded-xl py-2.5 px-3 text-center text-xs font-bold flex items-center justify-center gap-1">
+                          <span>👉 Candidate-se em:</span>
+                          <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
+                        </div>
+                      )}
                     </div>
 
                   </div>

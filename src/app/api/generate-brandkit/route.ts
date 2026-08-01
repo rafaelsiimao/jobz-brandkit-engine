@@ -100,10 +100,12 @@ export async function POST(request: Request) {
 
     const { sourcing, copy } = await generateBrandKitAI(extractedData);
 
-    // Ensure custom fields strictly override final copy highlights
+    // Ensure custom fields strictly override final copy highlights and candidature settings
     if (customFields) {
       if (customFields.title) copy.headline = customFields.title;
-      
+      if (customFields.candidatureType) copy.candidatureType = customFields.candidatureType;
+      if (customFields.candidatureEmail) copy.candidatureEmail = customFields.candidatureEmail;
+
       const modalityLoc = `${customFields.modality || extractedData.modality} | ${customFields.location || extractedData.location}`;
       const scheduleStr = `Jornada: ${customFields.schedule || extractedData.schedule}`;
       const salaryStr = `${extractedData.contractType === 'ESTAGIO' ? 'Bolsa' : extractedData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}: ${customFields.salary || extractedData.salary}`;

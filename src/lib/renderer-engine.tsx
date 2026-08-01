@@ -2,12 +2,9 @@ import React from 'react';
 import { ImageResponse } from 'next/og';
 import { CopyData } from './types';
 import { FONT_PLUS_JAKARTA_SANS_BOLD_BASE64 } from './font-data';
+import { JOBZ_LOGO_PNG_BASE64 } from './logo-png-base64';
 
 const fontBuffer = Buffer.from(FONT_PLUS_JAKARTA_SANS_BOLD_BASE64, 'base64');
-const LOGO_SVG_URL = 'https://jobz.com.br/brandbook/jobz-carreira/assets/jobz-carreira-logo-preto.svg';
-const CTA_FOOTER_TEXT = 'Candidate-se em: jobz.com.br/vagas';
-
-import { JOBZ_LOGO_PNG_BASE64 } from './logo-png-base64';
 
 const JobzLogoPng = ({ height = 50 }: { height?: number }) => {
   const width = Math.round(height * (206.91 / 100));
@@ -63,9 +60,9 @@ function truncateText(str: string, maxLen: number): string {
 function parseCardHighlights(highlights: string[] = []) {
   const safeHighlights = Array.isArray(highlights) ? highlights : [];
   const h0 = cleanText(safeHighlights[0] || 'Presencial | Vitória / ES');
-  const h1 = cleanText(safeHighlights[1] || 'Jornada: 40h semanais');
+  const h1 = cleanText(safeHighlights[1] || 'Jornada: Segunda a Sexta • 08h às 17:30h');
   const h2 = cleanText(safeHighlights[2] || 'Salário: Compatível com o mercado');
-  const h3 = cleanText(safeHighlights[3] || 'Benefícios: Vale Transporte + VR');
+  const h3 = cleanText(safeHighlights[3] || 'Benefícios: Vale Refeição + VT + Plano de Saúde');
 
   // Extract modality
   let modality = 'Presencial';
@@ -74,10 +71,10 @@ function parseCardHighlights(highlights: string[] = []) {
 
   // Extract location
   const locParts = h0.split('|');
-  const location = truncateText(locParts[1] || locParts[0] || 'Brasil', 35);
+  const location = truncateText(locParts[1] || locParts[0] || 'Brasil', 40);
 
   // Extract contract type / kicker
-  let contractKicker = 'OPORTUNIDADE · VAGA ABERTA';
+  let contractKicker = 'OPORTUNIDADE · CLT';
   if (/est[áa]gio/i.test(h1) || /est[áa]gio/i.test(h2) || /est[áa]gio/i.test(h0)) {
     contractKicker = 'VAGA ABERTA · ESTÁGIO';
   } else if (/pj\b|prestador/i.test(h2) || /pj\b|prestador/i.test(h0)) {
@@ -101,9 +98,9 @@ function parseCardHighlights(highlights: string[] = []) {
   }
 
   // Values
-  const valueHours = truncateText(h1.replace(/^jornada(?:\s*de\s*est[áa]gio)?[:\s]*/i, ''), 50);
-  const valueFinancial = truncateText(h2.replace(/^(?:sal[áa]rio|remunera[çc][ãa]o|bolsa)[:\s]*/i, ''), 50);
-  const valueBenefits = truncateText(h3.replace(/^benef[íi]cios[:\s]*/i, ''), 55);
+  const valueHours = truncateText(h1.replace(/^jornada(?:\s*de\s*est[áa]gio)?[:\s]*/i, ''), 60);
+  const valueFinancial = truncateText(h2.replace(/^(?:sal[áa]rio|remunera[çc][ãa]o|bolsa)[:\s]*/i, ''), 60);
+  const valueBenefits = truncateText(h3.replace(/^benef[íi]cios[:\s]*/i, ''), 70);
 
   return {
     modality,
@@ -120,6 +117,10 @@ function parseCardHighlights(highlights: string[] = []) {
 export function generateFeedHtml(copy: CopyData): string {
   const parsed = parseCardHighlights(copy.highlights);
   const headline = truncateText(copy.headline, 60);
+  const isEmail = copy.candidatureType === 'email';
+  const ctaLine = isEmail 
+    ? `👉 Envie seu CV para: ${copy.candidatureEmail || 'vagas@jobz.com.br'} (Apenas em PDF)` 
+    : `👉 Candidate-se em: jobz.com.br/vagas`;
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -129,14 +130,14 @@ export function generateFeedHtml(copy: CopyData): string {
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
     body {
-      width: 1080px; height: 1350px; background-color: #F2F5F8; color: #111317;
+      width: 1080px; height: 1350px; background-color: #FFFFFF; color: #111317;
       display: flex; flex-direction: column; justify-content: space-between; padding: 80px 70px;
     }
   </style>
 </head>
 <body>
   <div>
-    <img src="${LOGO_SVG_URL}" alt="Jobz Carreira" />
+    <img src="${JOBZ_LOGO_PNG_BASE64}" alt="Jobz Carreira" style="height: 54px;" />
     <div style="color: #1E81FE;">${parsed.contractKicker}</div>
     <h1>${headline}</h1>
     <div>${parsed.labelHours}: ${parsed.valueHours}</div>
@@ -144,7 +145,7 @@ export function generateFeedHtml(copy: CopyData): string {
     <div>BENEFÍCIOS: ${parsed.valueBenefits}</div>
     <div>${parsed.modality} | ${parsed.location}</div>
   </div>
-  <div>👉 ${CTA_FOOTER_TEXT}</div>
+  <div>${ctaLine}</div>
 </body>
 </html>`;
 }
@@ -186,397 +187,378 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
   const headline = truncateText(copy.headline || 'Oportunidade de Emprego', 65);
   const parsed = parseCardHighlights(copy.highlights);
 
-  // 1. Feed (1080 x 1350)
+  const isEmail = copy.candidatureType === 'email';
+  const emailAddress = copy.candidatureEmail || 'vagas@jobz.com.br';
+
+  // 1. Feed (1080 x 1350) - 100% Canvas, Zero Outer Gray Frame
   const feedJsx = (
     <div
       style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F2F5F8',
+        width: '1080px',
+        height: '1350px',
+        backgroundColor: '#FFFFFF',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '70px 60px',
+        justifyContent: 'space-between',
+        padding: '72px 64px',
+        position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
+        overflow: 'hidden',
       }}
     >
-      {/* Official Jobz Carreira Card Container */}
+      {/* Top Right Blue Corner Accent Element */}
       <div
         style={{
-          width: '920px',
-          height: '1150px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '36px',
-          border: '1px solid #D7DEE7',
-          padding: '64px 56px',
+          position: 'absolute',
+          right: '0px',
+          top: '0px',
+          width: '160px',
+          height: '160px',
+          borderRadius: '0 0 0 160px',
+          backgroundColor: '#1E81FE',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 16px 48px rgba(17, 19, 23, 0.08)',
         }}
-      >
-        {/* Proprietary Blue Corner Element */}
-        <div
-          style={{
-            position: 'absolute',
-            right: '-30px',
-            top: '-30px',
-            width: '140px',
-            height: '140px',
-            borderRadius: '0 0 0 140px',
-            backgroundColor: '#1E81FE',
-            display: 'flex',
-          }}
-        />
+      />
 
-        {/* Card Header & Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {/* Logo Top Left - Native JSX SVG */}
-          <div style={{ display: 'flex', marginBottom: '32px' }}>
-            <JobzLogoPng height={54} />
+      {/* Main Content Area */}
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        {/* Logo Top Left */}
+        <div style={{ display: 'flex', marginBottom: '40px' }}>
+          <JobzLogoPng height={58} />
+        </div>
+
+        {/* Kicker */}
+        <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2.5px', marginBottom: '24px' }}>
+          {parsed.contractKicker}
+        </div>
+
+        {/* Headline */}
+        <div style={{ fontSize: '56px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '52px' }}>
+          {headline}
+        </div>
+
+        {/* Highlight Rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginBottom: '48px' }}>
+          {/* Row 1: Hours */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+            <div style={{ fontSize: '30px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueHours}</div>
           </div>
 
-          {/* Monospace Kicker */}
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '20px' }}>
-            {parsed.contractKicker}
+          {/* Row 2: Financial */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+            <div style={{ fontSize: '30px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueFinancial}</div>
           </div>
 
-          {/* Job Title */}
-          <div style={{ fontSize: '50px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '40px' }}>
-            {headline}
+          {/* Row 3: Benefits */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+            <div style={{ fontSize: '30px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueBenefits}</div>
           </div>
+        </div>
+      </div>
 
-          {/* Detail Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
-            {/* Row 1: Hours */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
-            </div>
-
-            {/* Row 2: Financial */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
-            </div>
-
-            {/* Row 3: Benefits */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-              <div style={{ fontSize: '26px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
-            </div>
+      {/* Footer Area */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', width: '100%' }}>
+        {/* Pills */}
+        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', paddingTop: '28px', borderTop: '2px solid #EBF0F5' }}>
+          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 700, display: 'flex' }}>
+            {parsed.modality}
+          </div>
+          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
+            {parsed.location}
+          </div>
+          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
+            Vaga Aberta
           </div>
         </div>
 
-        {/* Card Footer: Pill Tags & CTA Banner */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-          {/* Pill Tags */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '24px', borderTop: '1px solid #EBF0F5' }}>
-            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 700, display: 'flex' }}>
-              {parsed.modality}
+        {/* CTA Footer Banner */}
+        {isEmail ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', borderRadius: '16px', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '18px', fontWeight: 700, textAlign: 'center' }}>
+              📄 Aceitamos somente currículos em formato PDF
             </div>
-            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
-              {parsed.location}
-            </div>
-            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
-              Aberta
+            <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '22px', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '24px', fontWeight: 700 }}>
+              <span>👉 Envie seu CV para:</span>
+              <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
             </div>
           </div>
-
-          {/* Dark Footer CTA Banner */}
-          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '20px', padding: '22px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '22px', fontWeight: 700 }}>
+        ) : (
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '22px', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '24px', fontWeight: 700 }}>
             <span>👉 Candidate-se em:</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 
-  // 2. WhatsApp (1080 x 1080)
+  // 2. WhatsApp (1080 x 1080) - 100% Canvas, Zero Outer Gray Frame
   const whatsappJsx = (
     <div
       style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F2F5F8',
+        width: '1080px',
+        height: '1080px',
+        backgroundColor: '#FFFFFF',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '50px 40px',
+        justifyContent: 'space-between',
+        padding: '56px 56px',
+        position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
+        overflow: 'hidden',
       }}
     >
       <div
         style={{
-          width: '940px',
-          height: '940px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '32px',
-          border: '1px solid #D7DEE7',
-          padding: '48px 44px',
+          position: 'absolute',
+          right: '0px',
+          top: '0px',
+          width: '140px',
+          height: '140px',
+          borderRadius: '0 0 0 140px',
+          backgroundColor: '#1E81FE',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 12px 36px rgba(17, 19, 23, 0.08)',
         }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            right: '-24px',
-            top: '-24px',
-            width: '120px',
-            height: '120px',
-            borderRadius: '0 0 0 120px',
-            backgroundColor: '#1E81FE',
-            display: 'flex',
-          }}
-        />
+      />
 
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          <div style={{ display: 'flex', marginBottom: '24px' }}>
-            <JobzLogoPng height={46} />
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div style={{ display: 'flex', marginBottom: '32px' }}>
+          <JobzLogoPng height={50} />
+        </div>
+
+        <div style={{ fontSize: '20px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '18px' }}>
+          {parsed.contractKicker}
+        </div>
+
+        <div style={{ fontSize: '46px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '36px' }}>
+          {headline}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+            <div style={{ fontSize: '25px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
           </div>
 
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1.5px', marginBottom: '14px' }}>
-            {parsed.contractKicker}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+            <div style={{ fontSize: '25px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
           </div>
 
-          <div style={{ fontSize: '42px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '28px' }}>
-            {headline}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+            <div style={{ fontSize: '25px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
           </div>
+        </div>
+      </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{ fontSize: '14px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{ fontSize: '14px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{ fontSize: '14px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-              <div style={{ fontSize: '22px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
-            </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '20px', borderTop: '2px solid #EBF0F5' }}>
+          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 700, display: 'flex' }}>
+            {parsed.modality}
+          </div>
+          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
+            {parsed.location}
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '18px', borderTop: '1px solid #EBF0F5' }}>
-            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '8px 16px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, display: 'flex' }}>
-              {parsed.modality}
+        {isEmail ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', borderRadius: '12px', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, textAlign: 'center' }}>
+              📄 Aceitamos somente currículos em formato PDF
             </div>
-            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '8px 16px', borderRadius: '999px', fontSize: '16px', fontWeight: 600, display: 'flex' }}>
-              {parsed.location}
+            <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '18px', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '21px', fontWeight: 700 }}>
+              <span>👉 Envie seu CV para:</span>
+              <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
             </div>
           </div>
-
-          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '16px', padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '19px', fontWeight: 700 }}>
+        ) : (
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '18px', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '21px', fontWeight: 700 }}>
             <span>👉 Candidate-se em:</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 
-  // 3. Story (1080 x 1920)
+  // 3. Story (1080 x 1920) - 100% Canvas, Zero Outer Gray Frame
   const storyJsx = (
     <div
       style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F2F5F8',
+        width: '1080px',
+        height: '1920px',
+        backgroundColor: '#FFFFFF',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '90px 60px',
+        justifyContent: 'space-between',
+        padding: '110px 80px',
+        position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
+        overflow: 'hidden',
       }}
     >
       <div
         style={{
-          width: '920px',
-          height: '1680px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '40px',
-          border: '1px solid #D7DEE7',
-          padding: '80px 64px',
+          position: 'absolute',
+          right: '0px',
+          top: '0px',
+          width: '220px',
+          height: '220px',
+          borderRadius: '0 0 0 220px',
+          backgroundColor: '#1E81FE',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(17, 19, 23, 0.08)',
         }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            right: '-36px',
-            top: '-36px',
-            width: '160px',
-            height: '160px',
-            borderRadius: '0 0 0 160px',
-            backgroundColor: '#1E81FE',
-            display: 'flex',
-          }}
-        />
+      />
 
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          <div style={{ display: 'flex', marginBottom: '40px' }}>
-            <JobzLogoPng height={64} />
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div style={{ display: 'flex', marginBottom: '56px' }}>
+          <JobzLogoPng height={72} />
+        </div>
+
+        <div style={{ fontSize: '28px', fontWeight: 700, color: '#1E81FE', letterSpacing: '3px', marginBottom: '32px' }}>
+          {parsed.contractKicker}
+        </div>
+
+        <div style={{ fontSize: '68px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '72px' }}>
+          {headline}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', marginBottom: '64px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+            <div style={{ fontSize: '38px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueHours}</div>
           </div>
 
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#1E81FE', letterSpacing: '2px', marginBottom: '24px' }}>
-            {parsed.contractKicker}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+            <div style={{ fontSize: '38px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueFinancial}</div>
           </div>
 
-          <div style={{ fontSize: '58px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '56px' }}>
-            {headline}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+            <div style={{ fontSize: '38px', color: '#111317', fontWeight: 700, lineHeight: 1.25 }}>{parsed.valueBenefits}</div>
           </div>
+        </div>
+      </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', marginBottom: '48px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-              <div style={{ fontSize: '32px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-              <div style={{ fontSize: '32px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-              <div style={{ fontSize: '32px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
-            </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', paddingTop: '36px', borderTop: '2px solid #EBF0F5' }}>
+          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 700, display: 'flex' }}>
+            {parsed.modality}
+          </div>
+          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 600, display: 'flex' }}>
+            {parsed.location}
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', paddingTop: '32px', borderTop: '1px solid #EBF0F5' }}>
-            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '14px 28px', borderRadius: '999px', fontSize: '22px', fontWeight: 700, display: 'flex' }}>
-              {parsed.modality}
+        {isEmail ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', borderRadius: '18px', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700, textAlign: 'center' }}>
+              📄 Aceitamos somente currículos em formato PDF
             </div>
-            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '14px 28px', borderRadius: '999px', fontSize: '22px', fontWeight: 600, display: 'flex' }}>
-              {parsed.location}
+            <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '28px', padding: '32px 40px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '28px', fontWeight: 700 }}>
+              <span>👉 Envie seu CV para:</span>
+              <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
             </div>
           </div>
-
-          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '24px', padding: '28px 36px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '26px', fontWeight: 700 }}>
+        ) : (
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '28px', padding: '32px 40px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '28px', fontWeight: 700 }}>
             <span>👉 Candidate-se em:</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 
-  // 4. LinkedIn (1200 x 627)
+  // 4. LinkedIn (1200 x 627) - 100% Canvas, Zero Outer Gray Frame
   const linkedinJsx = (
     <div
       style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F2F5F8',
+        width: '1200px',
+        height: '627px',
+        backgroundColor: '#FFFFFF',
         color: '#111317',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '30px 40px',
+        justifyContent: 'space-between',
+        padding: '44px 52px',
+        position: 'relative',
         fontFamily: 'Plus Jakarta Sans',
+        overflow: 'hidden',
       }}
     >
       <div
         style={{
-          width: '1120px',
-          height: '560px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '24px',
-          border: '1px solid #D7DEE7',
-          padding: '36px 40px',
+          position: 'absolute',
+          right: '0px',
+          top: '0px',
+          width: '120px',
+          height: '120px',
+          borderRadius: '0 0 0 120px',
+          backgroundColor: '#1E81FE',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 10px 30px rgba(17, 19, 23, 0.08)',
         }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            right: '-20px',
-            top: '-20px',
-            width: '100px',
-            height: '100px',
-            borderRadius: '0 0 0 100px',
-            backgroundColor: '#1E81FE',
-            display: 'flex',
-          }}
-        />
+      />
 
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <JobzLogoPng height={36} />
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1px', marginRight: '70px' }}>
-              {parsed.contractKicker}
-            </div>
-          </div>
-
-          <div style={{ fontSize: '34px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '20px' }}>
-            {headline}
-          </div>
-
-          <div style={{ display: 'flex', gap: '32px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-              <div style={{ fontSize: '12px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
-              <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-              <div style={{ fontSize: '12px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
-              <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-              <div style={{ fontSize: '12px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
-              <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
-            </div>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <JobzLogoPng height={42} />
+          <div style={{ fontSize: '16px', fontWeight: 700, color: '#1E81FE', letterSpacing: '1.5px', marginRight: '80px' }}>
+            {parsed.contractKicker}
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: '14px', borderTop: '1px solid #EBF0F5' }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '6px 14px', borderRadius: '999px', fontSize: '14px', fontWeight: 700, display: 'flex' }}>
-              {parsed.modality}
-            </div>
-            <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '6px 14px', borderRadius: '999px', fontSize: '14px', fontWeight: 600, display: 'flex' }}>
-              {parsed.location}
-            </div>
+        <div style={{ fontSize: '38px', fontWeight: 800, color: '#111317', lineHeight: 1.15, marginBottom: '24px' }}>
+          {headline}
+        </div>
+
+        <div style={{ display: 'flex', gap: '36px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+            <div style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelHours}</div>
+            <div style={{ fontSize: '20px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueHours}</div>
           </div>
 
-          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '12px', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '16px', fontWeight: 700 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+            <div style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</div>
+            <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueFinancial}</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+            <div style={{ fontSize: '13px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>BENEFÍCIOS</div>
+            <div style={{ fontSize: '18px', color: '#111317', fontWeight: 700, lineHeight: 1.2 }}>{parsed.valueBenefits}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: '16px', borderTop: '2px solid #EBF0F5' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '8px 16px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'flex' }}>
+            {parsed.modality}
+          </div>
+          <div style={{ backgroundColor: '#FAFAFC', border: '1px solid #D7DEE7', color: '#5F6673', padding: '8px 16px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, display: 'flex' }}>
+            {parsed.location}
+          </div>
+        </div>
+
+        {isEmail ? (
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '14px', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px', fontWeight: 700 }}>
+            <span>👉 Envie seu CV (PDF) para:</span>
+            <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
+          </div>
+        ) : (
+          <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '14px', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px', fontWeight: 700 }}>
             <span>👉 Candidate-se em:</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

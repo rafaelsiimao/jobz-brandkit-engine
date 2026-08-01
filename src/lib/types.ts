@@ -1,5 +1,6 @@
 export type ContractType = 'ESTAGIO' | 'CLT' | 'PJ';
 export type SeniorityLevel = 'Estágio' | 'Júnior' | 'Pleno' | 'Sênior' | 'Especialista';
+export type CandidatureType = 'platform' | 'email';
 
 export interface ExtractedJobData {
   title: string;
@@ -13,6 +14,8 @@ export interface ExtractedJobData {
   contractType: ContractType;
   seniorityLevel: SeniorityLevel;
   rawDescription: string;
+  candidatureType?: CandidatureType;
+  candidatureEmail?: string;
 }
 
 export interface SourcingChannels {
@@ -45,6 +48,8 @@ export interface CopyData {
   highlights: string[];
   ctaText: string;
   socialCaption: string;
+  candidatureType?: CandidatureType;
+  candidatureEmail?: string;
 }
 
 export interface AssetUrls {
