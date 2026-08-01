@@ -37,12 +37,13 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
     }
 
     const json = await res.json();
-    const data = Array.isArray(json.data) ? json.data : [];
+    const data = Array.isArray(json?.data) ? json.data : [];
 
     return data.map((item: any) => {
-      const attrs = item.attributes || {};
-      const cities = attrs.search_cities_term || [];
-      const cityName = cities[0]?.full_name || cities[0]?.name || 'Espírito Santo';
+      const attrs = item?.attributes || {};
+      const cities = Array.isArray(attrs.search_cities_term) ? attrs.search_cities_term : [];
+      const firstCity = cities[0] || {};
+      const cityName = firstCity.full_name || firstCity.name || 'Espírito Santo';
 
       const workTypes = Array.isArray(attrs.work_type_formatted) && attrs.work_type_formatted.length > 0
         ? attrs.work_type_formatted.join(' / ')
@@ -56,7 +57,7 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
       }
 
       return {
-        id: String(item.id),
+        id: String(item?.id || Math.random()),
         title: attrs.title || 'Vaga Sem Título',
         slug: attrs.slug || '',
         status: attrs.status || 'Ativa',
@@ -85,7 +86,7 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
   }
 
   const json = await res.json();
-  const attrs = json.data?.attributes || {};
+  const attrs = json?.data?.attributes || {};
 
   const title = attrs.title || 'Vaga Sem Título';
   
@@ -99,8 +100,9 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
   }
 
   // Location mapping
-  const cities = attrs.search_cities_term || [];
-  let location = cities[0]?.full_name || cities[0]?.name || 'Vitória / ES';
+  const cities = Array.isArray(attrs.search_cities_term) ? attrs.search_cities_term : [];
+  const firstCity = cities[0] || {};
+  let location = firstCity.full_name || firstCity.name || 'Vitória / ES';
   if (modality === 'Remoto' && !location.includes('Remoto')) {
     location = `${location} (Remoto)`;
   }
@@ -147,9 +149,9 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     location,
     modality,
     salary,
-    benefits,
+    benefits: Array.isArray(benefits) && benefits.length > 0 ? benefits : ['Vale Refeição', 'Vale Transporte'],
     schedule,
-    requirements: requirements.length > 0 ? requirements : ['Formação ou experiência relevante'],
+    requirements: Array.isArray(requirements) && requirements.length > 0 ? requirements : ['Formação ou experiência relevante'],
     activities: ['Executar atribuições e entregas do cargo com excelência'],
     contractType,
     seniorityLevel: attrs.seniority_level_formatted || 'Pleno',

@@ -257,7 +257,7 @@ export async function uploadAssetsAndSendEmail(
     console.error('Aviso no upload de assets para o Storage:', err?.message);
   }
 
-  const getPublicUrl = (path: string) => supabase.storage.from('brandkit-arts').getPublicUrl(path).data.publicUrl;
+  const getPublicUrl = (path: string) => supabase.storage.from('brandkit-arts').getPublicUrl(path)?.data?.publicUrl || '';
 
   const urls: AssetUrls = {
     feed: getPublicUrl(feedPath),
