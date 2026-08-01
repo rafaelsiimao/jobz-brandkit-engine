@@ -212,6 +212,9 @@ export function generateEmailHtml(
           <!-- Section 7: Artes para Download -->
           <div style="margin-bottom: 16px;">
             <h2 style="color: #111317; font-size: 18px; font-weight: 700; margin-bottom: 16px;">🎨 Kit de Artes para Divulgação</h2>
+            <div style="margin-bottom: 20px; text-align: center;">
+              <img src="${urls.feed}" alt="Preview do Card da Vaga" style="max-width: 100%; border-radius: 16px; border: 1px solid #D7DEE7; box-shadow: 0 8px 24px rgba(17,19,23,0.08);" />
+            </div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
               <a href="${urls.feed}" target="_blank" style="display:inline-block;background:#1E81FE;color:#FFFFFF;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📥 Feed (1080×1350)</a>
               <a href="${urls.whatsapp}" target="_blank" style="display:inline-block;background:#25D366;color:#FFFFFF;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📥 WhatsApp (1080×1080)</a>
