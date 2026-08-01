@@ -83,10 +83,9 @@ export default function HomePage() {
     setFormData((prev) => ({ ...prev, recipientEmail: savedEmail }));
   }, []);
 
-  // Open Preview Modal & Pre-fill Form
-  const openPreviewModal = async (vacancy: AblerVacancyItem) => {
+  // Open Preview Modal & Pre-fill Form (purely local state, zero requests)
+  const openPreviewModal = (vacancy: AblerVacancyItem) => {
     setSelectedVacancy(vacancy);
-    setLoadingDetails(true);
     setStatusMessage(null);
 
     const savedEmail = localStorage.getItem('jobz_recipient_email') || 'rafael.simao@jobz.com.br';
@@ -109,20 +108,6 @@ export default function HomePage() {
       location: vacancy.location || 'Vila Velha / ES',
       recipientEmail: savedEmail,
     });
-
-    // Try fetching full details from Abler API V2 for even higher precision
-    try {
-      const res = await fetch(`/api/generate-brandkit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vacancyId: vacancy.id, recipientEmail: savedEmail, dryRunOnly: true }),
-      });
-      // Details pre-filled nicely
-    } catch {
-      // Fallback to list attributes
-    } finally {
-      setLoadingDetails(false);
-    }
   };
 
   const closePreviewModal = () => {
