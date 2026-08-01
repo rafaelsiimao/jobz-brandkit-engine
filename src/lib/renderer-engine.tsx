@@ -45,6 +45,13 @@ const CheckListIcon = ({ size = 22, color = '#1E81FE' }: { size?: number; color?
   </svg>
 );
 
+const MapPinIcon = ({ size = 22, color = '#1E81FE' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
 function decodeUnicodeEscapes(str: string): string {
   if (!str) return '';
   let decoded = str.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
@@ -256,8 +263,15 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       </div>
 
       {/* Headline */}
-      <div style={{ fontSize: '64px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '40px' }}>
+      <div style={{ fontSize: '64px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '20px' }}>
         {headline}
+      </div>
+
+      {/* Modalidade pill — logo abaixo do titulo */}
+      <div style={{ display: 'flex', marginBottom: '36px' }}>
+        <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '10px 22px', borderRadius: '999px', fontSize: '20px', fontWeight: 700, display: 'flex' }}>
+          {parsed.modality}
+        </div>
       </div>
 
       {/* Highlight Rows — flex:1 expands to fill vertical space */}
@@ -281,7 +295,16 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
             <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{parsed.valueFinancial}</div>
           </div>
 
-          {/* Row 3: Benefits */}
+          {/* Row 3: Location */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MapPinIcon size={22} color="#1E81FE" />
+              <span style={{ fontSize: '18px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>LOCALIZAÇÃO</span>
+            </div>
+            <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{parsed.location}</div>
+          </div>
+
+          {/* Row 4: Benefits */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <GiftIcon size={22} color="#1E81FE" />
@@ -290,7 +313,7 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
             <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '30px' }}>{parsed.valueBenefits}</div>
           </div>
 
-          {/* Row 4: Requisitos Opcionais */}
+          {/* Row 5: Requisitos Opcionais */}
           {showReqs && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -303,21 +326,8 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
         </div>
       </div>
 
-      {/* Footer Area */}
+      {/* Footer — apenas CTA, sem pills */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-        {/* Pills */}
-        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', paddingTop: '24px', borderTop: '2px solid #D7DEE7' }}>
-          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 700, display: 'flex' }}>
-            {parsed.modality}
-          </div>
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
-            {parsed.location}
-          </div>
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '12px 24px', borderRadius: '999px', fontSize: '20px', fontWeight: 600, display: 'flex' }}>
-            Vaga Aberta
-          </div>
-        </div>
-
         {/* CTA Footer Banner */}
         {isEmail ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
@@ -378,8 +388,15 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
           {parsed.contractKicker}
         </div>
 
-        <div style={{ fontSize: '50px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '32px' }}>
+        <div style={{ fontSize: '50px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '14px' }}>
           {headline}
+        </div>
+
+        {/* Modalidade pill */}
+        <div style={{ display: 'flex', marginBottom: '24px' }}>
+          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '8px 18px', borderRadius: '999px', fontSize: '17px', fontWeight: 700, display: 'flex' }}>
+            {parsed.modality}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
@@ -397,6 +414,14 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
               <span style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</span>
             </div>
             <div style={{ fontSize: '24px', color: '#111317', fontWeight: 700, lineHeight: 1.2, paddingLeft: '28px' }}>{parsed.valueFinancial}</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MapPinIcon size={20} color="#1E81FE" />
+              <span style={{ fontSize: '16px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>LOCALIZAÇÃO</span>
+            </div>
+            <div style={{ fontSize: '24px', color: '#111317', fontWeight: 700, lineHeight: 1.2, paddingLeft: '28px' }}>{parsed.location}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -420,15 +445,6 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '16px', borderTop: '2px solid #D7DEE7' }}>
-          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 700, display: 'flex' }}>
-            {parsed.modality}
-          </div>
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '10px 20px', borderRadius: '999px', fontSize: '18px', fontWeight: 600, display: 'flex' }}>
-            {parsed.location}
-          </div>
-        </div>
-
         {isEmail ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
             <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', borderRadius: '12px', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, textAlign: 'center' }}>
@@ -488,8 +504,15 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
           {parsed.contractKicker}
         </div>
 
-        <div style={{ fontSize: '72px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '64px' }}>
+        <div style={{ fontSize: '72px', fontWeight: 800, color: '#111317', lineHeight: 1.12, marginBottom: '28px' }}>
           {headline}
+        </div>
+
+        {/* Modalidade pill */}
+        <div style={{ display: 'flex', marginBottom: '48px' }}>
+          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '14px 28px', borderRadius: '999px', fontSize: '22px', fontWeight: 700, display: 'flex' }}>
+            {parsed.modality}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '42px', marginBottom: '56px' }}>
@@ -507,6 +530,14 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
               <span style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>{parsed.labelFinancial}</span>
             </div>
             <div style={{ fontSize: '36px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '36px' }}>{parsed.valueFinancial}</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <MapPinIcon size={26} color="#1E81FE" />
+              <span style={{ fontSize: '22px', color: '#8A94A3', fontWeight: 700, letterSpacing: '1px' }}>LOCALIZAÇÃO</span>
+            </div>
+            <div style={{ fontSize: '36px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '36px' }}>{parsed.location}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -530,14 +561,6 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', paddingTop: '32px', borderTop: '2px solid #D7DEE7' }}>
-          <div style={{ backgroundColor: '#EBF3FF', border: '1px solid #B2D3FF', color: '#1E81FE', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 700, display: 'flex' }}>
-            {parsed.modality}
-          </div>
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D7DEE7', color: '#5F6673', padding: '16px 32px', borderRadius: '999px', fontSize: '24px', fontWeight: 600, display: 'flex' }}>
-            {parsed.location}
-          </div>
-        </div>
 
         {isEmail ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>

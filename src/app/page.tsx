@@ -737,6 +737,13 @@ export default function HomePage() {
                           {formData.title || 'Título da Vaga'}
                         </div>
 
+                        {/* Modalidade Tag */}
+                        <div className="pt-0.5">
+                          <span className="text-[9px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full inline-block">
+                            {formData.modality || 'Presencial'}
+                          </span>
+                        </div>
+
                         {/* Content Rows with Vector Icons */}
                         <div className="space-y-2 pt-0.5">
                           <div>
@@ -751,6 +758,13 @@ export default function HomePage() {
                               <Wallet className="w-3 h-3 text-[#1E81FE]" /> {labelFinancialText}
                             </div>
                             <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.salary}</div>
+                          </div>
+
+                          <div>
+                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-[#1E81FE]" /> LOCALIZAÇÃO
+                            </div>
+                            <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.location}</div>
                           </div>
 
                           <div>
@@ -771,20 +785,8 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* Card Footer Pills & Dynamic Banner */}
-                      <div className="space-y-1.5 w-full pt-2">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <span className="text-[9px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
-                            {formData.modality}
-                          </span>
-                          <span className="text-[9px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
-                            {formData.location}
-                          </span>
-                          <span className="text-[9px] font-semibold text-[#5F6673] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
-                            Aberta
-                          </span>
-                        </div>
-
+                      {/* Card Footer Dynamic Banner */}
+                      <div className="w-full pt-2">
                         {formData.candidatureType === 'email' ? (
                           <div className="space-y-0.5">
                             <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[9px] font-bold py-0.5 px-1.5 rounded-md text-center">
