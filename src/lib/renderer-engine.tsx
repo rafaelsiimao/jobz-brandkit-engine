@@ -56,10 +56,11 @@ function truncateText(str: string, maxLen: number): string {
 }
 
 function parseCardHighlights(highlights: string[] = []) {
-  const h0 = cleanText(highlights[0] || 'Presencial | Vitória / ES');
-  const h1 = cleanText(highlights[1] || 'Jornada: 40h semanais');
-  const h2 = cleanText(highlights[2] || 'Salário: Compatível com o mercado');
-  const h3 = cleanText(highlights[3] || 'Benefícios: Vale Transporte + VR');
+  const safeHighlights = Array.isArray(highlights) ? highlights : [];
+  const h0 = cleanText(safeHighlights[0] || 'Presencial | Vitória / ES');
+  const h1 = cleanText(safeHighlights[1] || 'Jornada: 40h semanais');
+  const h2 = cleanText(safeHighlights[2] || 'Salário: Compatível com o mercado');
+  const h3 = cleanText(safeHighlights[3] || 'Benefícios: Vale Transporte + VR');
 
   // Extract modality
   let modality = 'Presencial';
