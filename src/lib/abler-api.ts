@@ -26,6 +26,17 @@ function getAblerHeaders() {
   };
 }
 
+export function cleanBenefits(raw: string): string[] {
+  if (!raw) return [];
+  const text = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  // Ignorar anotações internas do recrutador, e-mails, telefones, faixas salariais e nomes de contato
+  const isInternalNote = /@|\+?\d{8,}|alinhamento|confirmar|cliente|validar|hunting|faturar|faixa\s*salarial|s[óo]cio|contador|representante|contato/i.test(text);
+  if (isInternalNote || text.length < 3) return [];
+  
+  return [text];
+}
+
 export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
   try {
     const res = await fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies?per_page=50`, {
@@ -57,9 +68,8 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
         salaryStr = `R$ ${Number(attrs.salary).toLocaleString('pt-BR')}`;
       }
 
-      const rawB = attrs.benefits_without_tags || attrs.benefits || attrs.additional_info_without_tags || attrs.additional_info || '';
-      const isInternal = /alinhamento|confirmar|cliente|validar|hunting|faturar/i.test(rawB);
-      const bList = (rawB && !isInternal) ? [rawB.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()] : [];
+      const rawB = attrs.benefits_without_tags || attrs.benefits || attrs.job_benefits || '';
+      const bList = cleanBenefits(rawB);
 
       return {
         id: String(item?.id || Math.random()),
@@ -151,14 +161,9 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     ? reqsText.split('\n').map((s: string) => s.replace(/<[^>]+>/g, '').trim()).filter((s: string) => s.length > 3)
     : ['Experiência técnica na área', 'Boa comunicação interpessoal'];
 
-  // Benefits parsing with internal notes filter
-  const rawBenefits = attrs.benefits_without_tags || attrs.benefits || attrs.additional_info_without_tags || attrs.additional_info || '';
-  const isInternalNote = /alinhamento|confirmar|cliente|validar|hunting|faturar/i.test(rawBenefits);
-
-  let benefits: string[] = [];
-  if (rawBenefits && !isInternalNote) {
-    benefits = [rawBenefits.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()];
-  }
+  // Benefits parsing with cleanBenefits filter (exclui anotações internas do cliente)
+  const rawBenefits = attrs.benefits_without_tags || attrs.benefits || attrs.job_benefits || '';
+  const benefits = cleanBenefits(rawBenefits);
 
   const rawDescription = attrs.role_description_without_tags || attrs.description || title;
 
