@@ -28,13 +28,44 @@ function getAblerHeaders() {
 
 export function cleanBenefits(raw: string): string[] {
   if (!raw) return [];
-  const text = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  
-  // Ignorar anotações internas do recrutador, e-mails, telefones, faixas salariais e nomes de contato
-  const isInternalNote = /@|\+?\d{8,}|alinhamento|confirmar|cliente|validar|hunting|faturar|faixa\s*salarial|s[óo]cio|contador|representante|contato/i.test(text);
-  if (isInternalNote || text.length < 3) return [];
-  
-  return [text];
+  const clean = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (clean.length < 3) return [];
+
+  const benefitKeywords = [
+    /alimenta[çc][ãa]o/i,
+    /refei[çc][ãa]o/i,
+    /vale/i,
+    /plano\s*de\s*sa[úu]de/i,
+    /conv[êe]nio/i,
+    /unimed/i,
+    /odontol[óo]gico/i,
+    /seguro/i,
+    /aux[íi]lio/i,
+    /\bvt\b/i,
+    /\bvr\b/i,
+    /\bva\b/i,
+    /recesso/i,
+    /flex[íi]vel/i,
+    /home\s*office/i,
+    /gympass/i,
+    /totalpass/i,
+    /comiss[ãa]o/i,
+    /bonifica[çc][ãa]o/i,
+    /plr/i,
+  ];
+
+  const sentences = clean.split(/[.;\n]/).map(s => s.trim()).filter(Boolean);
+  const matchedBenefits: string[] = [];
+
+  for (const sentence of sentences) {
+    const isContactInfo = /@|\+?\d{8,}|s[óo]cio|contador|representante|hunting|alinhamento|confirmar|faturar/i.test(sentence);
+    const hasBenefit = benefitKeywords.some(kw => kw.test(sentence));
+    if (hasBenefit && !isContactInfo && sentence.length > 2) {
+      matchedBenefits.push(sentence);
+    }
+  }
+
+  return matchedBenefits;
 }
 
 export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
@@ -68,7 +99,13 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
         salaryStr = `R$ ${Number(attrs.salary).toLocaleString('pt-BR')}`;
       }
 
-      const rawB = attrs.benefits_without_tags || attrs.benefits || attrs.job_benefits || '';
+      const rawB = [
+        attrs.benefits_without_tags,
+        attrs.benefits,
+        attrs.job_benefits,
+        attrs.additional_info_without_tags,
+      ].filter(Boolean).join(' ; ');
+
       const bList = cleanBenefits(rawB);
 
       return {
@@ -161,9 +198,16 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     ? reqsText.split('\n').map((s: string) => s.replace(/<[^>]+>/g, '').trim()).filter((s: string) => s.length > 3)
     : ['Experiência técnica na área', 'Boa comunicação interpessoal'];
 
-  // Benefits parsing with cleanBenefits filter (exclui anotações internas do cliente)
-  const rawBenefits = attrs.benefits_without_tags || attrs.benefits || attrs.job_benefits || '';
-  const benefits = cleanBenefits(rawBenefits);
+  // Benefits parsing inteligente (extrai benefícios reais e filtra anotações de contato)
+  const rawBenefitsSources = [
+    attrs.benefits_without_tags,
+    attrs.benefits,
+    attrs.job_benefits,
+    attrs.additional_info_without_tags,
+    attrs.additional_info
+  ].filter(Boolean).join(' ; ');
+
+  const benefits = cleanBenefits(rawBenefitsSources);
 
   const rawDescription = attrs.role_description_without_tags || attrs.description || title;
 
