@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { AblerVacancyItem } from '@/lib/abler-api';
 import { JOBZ_LOGO_PNG_BASE64 } from '@/lib/logo-png-base64';
+import { JOBZ_FAVICON_PNG_BASE64 } from '@/lib/favicon-png-base64';
 import { AssetUrls } from '@/lib/types';
 
 interface EditFormState {
@@ -229,26 +230,37 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#F2F5F8] text-[#111317] font-sans antialiased selection:bg-[#1E81FE] selection:text-white">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-[#D7DEE7] shadow-sm">
+      <header className="sticky top-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-b border-[#D7DEE7] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white shadow-md shadow-[#1E81FE]/25">
-              <Sparkles className="w-5 h-5" />
+          <div className="flex items-center gap-3.5">
+            {/* Favicon Icon Box — 'j' estilizado */}
+            <div className="w-11 h-11 rounded-2xl bg-white border border-[#D7DEE7] p-1.5 flex items-center justify-center shadow-sm shrink-0">
+              <img src={JOBZ_FAVICON_PNG_BASE64} alt="Jobz Icon" className="w-full h-full object-contain" />
             </div>
+
             <div>
-              <h1 className="font-extrabold text-xl tracking-tight text-[#111317] flex items-center gap-2">
-                Jobz Carreira <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">Artes V2</span>
-              </h1>
-              <p className="text-xs text-[#5F6673] font-medium">Gerador de Kits de Divulgação de Vagas com Geração Instantânea</p>
+              <div className="flex items-center gap-2.5">
+                {/* Logo PNG Oficial Jobz Carreira */}
+                <img src={JOBZ_LOGO_PNG_BASE64} alt="Jobz Carreira" className="h-6 w-auto" />
+                <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">
+                  Artes V2
+                </span>
+                {/* Live Status Pulse */}
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  API Abler Conectada
+                </span>
+              </div>
+              <p className="text-xs text-[#5F6673] font-medium mt-0.5">Gerador de Kits de Divulgação de Vagas com Geração Instantânea</p>
             </div>
           </div>
 
           <button
             onClick={loadVacancies}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#5F6673] hover:text-[#111317] bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl hover:bg-white transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-[#5F6673] hover:text-[#111317] bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl hover:bg-white transition-all shadow-sm group"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loadingVacancies ? 'animate-spin' : ''}`} />
-            Sincronizar Abler
+            <RefreshCw className={`w-3.5 h-3.5 text-[#1E81FE] group-hover:rotate-180 transition-transform ${loadingVacancies ? 'animate-spin' : ''}`} />
+            <span>Sincronizar Abler</span>
           </button>
         </div>
       </header>
@@ -285,27 +297,43 @@ export default function HomePage() {
 
             {/* Search and Filters */}
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="relative min-w-[260px]">
+              {/* Quick Filter Chips */}
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#D7DEE7] shadow-sm">
+                {(['all', 'CLT', 'ESTAGIO', 'PJ'] as const).map((regime) => (
+                  <button
+                    key={regime}
+                    type="button"
+                    onClick={() => setSelectedRegimeFilter(regime)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      selectedRegimeFilter === regime
+                        ? 'bg-[#1E81FE] text-white shadow-xs'
+                        : 'text-[#5F6673] hover:bg-[#FAFAFC]'
+                    }`}
+                  >
+                    {regime === 'all' ? 'Todas' : regime === 'ESTAGIO' ? 'Estágio' : regime}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative min-w-[240px]">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A94A3]" />
                 <input
                   type="text"
-                  placeholder="Buscar por título ou cidade..."
+                  placeholder="Buscar vaga ou cidade..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#D7DEE7] rounded-xl text-sm font-medium text-[#111317] placeholder:text-[#8A94A3] focus:outline-none focus:border-[#1E81FE] focus:ring-2 focus:ring-[#1E81FE]/15 shadow-sm transition-all"
+                  className="w-full pl-10 pr-8 py-2 bg-white border border-[#D7DEE7] rounded-xl text-sm font-medium text-[#111317] placeholder:text-[#8A94A3] focus:outline-none focus:border-[#1E81FE] focus:ring-2 focus:ring-[#1E81FE]/15 shadow-sm transition-all"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A94A3] hover:text-[#111317]"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-
-              <select
-                value={selectedRegimeFilter}
-                onChange={(e) => setSelectedRegimeFilter(e.target.value)}
-                className="bg-white border border-[#D7DEE7] rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#111317] focus:outline-none focus:border-[#1E81FE] shadow-sm"
-              >
-                <option value="all">Todos os Contratos</option>
-                <option value="CLT">CLT</option>
-                <option value="ESTAGIO">Estágio</option>
-                <option value="PJ">PJ</option>
-              </select>
             </div>
           </div>
 
@@ -462,50 +490,107 @@ export default function HomePage() {
                     </div>
 
                     {/* Jornada */}
+                    {/* Jornada com Quick-Fill Presets */}
                     <div>
-                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-[#1E81FE]" />
-                        {formData.contractType === 'ESTAGIO' ? 'Jornada de Estágio' : 'Jornada de Trabalho'}
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-[#5F6673] uppercase tracking-wider flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-[#1E81FE]" />
+                          {formData.contractType === 'ESTAGIO' ? 'Jornada de Estágio' : 'Jornada de Trabalho'}
+                        </label>
+                      </div>
                       <input
                         type="text"
                         required
                         value={formData.schedule}
                         onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all mb-1.5"
                       />
+                      {/* Presets Rápidos */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(formData.contractType === 'ESTAGIO'
+                          ? ['6h diárias (30h semanais)', '5h diárias (25h semanais)']
+                          : ['Segunda a Sexta • 08h às 17:30h', 'Segunda a Sexta • 08h às 18h', 'Escala 12x36', 'Horário Flexível']
+                        ).map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, schedule: preset })}
+                            className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] hover:bg-[#D2E4FF] px-2 py-0.5 rounded-md transition-all"
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {/* Salário / Bolsa / Remuneração */}
+                    {/* Salário / Bolsa / Remuneração com Quick-Fill Presets */}
                     <div>
-                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5 text-[#1E81FE]" />
-                        {formData.contractType === 'ESTAGIO' ? 'Bolsa' : formData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-[#5F6673] uppercase tracking-wider flex items-center gap-1">
+                          <Wallet className="w-3.5 h-3.5 text-[#1E81FE]" />
+                          {formData.contractType === 'ESTAGIO' ? 'Bolsa' : formData.contractType === 'PJ' ? 'Remuneração' : 'Salário'}
+                        </label>
+                      </div>
                       <input
                         type="text"
                         required
                         value={formData.salary}
                         onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all mb-1.5"
                       />
+                      {/* Presets Rápidos */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(formData.contractType === 'ESTAGIO'
+                          ? ['Bolsa a combinar', 'Compatível com o mercado', 'R$ 1.200', 'R$ 1.500']
+                          : ['Compatível com o mercado', 'A combinar', 'R$ 2.500', 'R$ 4.000', 'R$ 6.000']
+                        ).map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, salary: preset })}
+                            className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] hover:bg-[#D2E4FF] px-2 py-0.5 rounded-md transition-all"
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {/* Benefícios (Sem truncamento) */}
+                    {/* Benefícios com Quick-Fill Presets */}
                     <div>
-                      <label className="block text-xs font-bold text-[#5F6673] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios (Quebra Automática de Linha)
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-[#5F6673] uppercase tracking-wider flex items-center gap-1">
+                          <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios (Quebra Automática)
+                        </label>
+                      </div>
                       <textarea
-                        rows={3}
+                        rows={2}
                         required
                         value={formData.benefits}
                         onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                         disabled={generating}
-                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all resize-none"
+                        className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-semibold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none transition-all resize-none mb-1.5"
                       />
+                      {/* Presets Rápidos */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(formData.contractType === 'ESTAGIO'
+                          ? ['Auxílio Transporte + Recesso Remunerado', 'Bolsa Auxílio + VT']
+                          : formData.contractType === 'PJ'
+                          ? ['Horário Flexível + Home Office', 'Remuneração Atrativa']
+                          : ['Vale Refeição / Alimentação + Vale Transporte + Plano de Saúde', 'VR + VA + VT + Plano de Saúde + Odonto']
+                        ).map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, benefits: preset })}
+                            className="text-[10px] font-bold text-[#1E81FE] bg-[#EBF3FF] hover:bg-[#D2E4FF] px-2 py-0.5 rounded-md transition-all"
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* BLOCO OPCIONAL DE REQUISITOS (TOGGLE ON/OFF) */}
