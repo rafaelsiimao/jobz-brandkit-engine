@@ -665,7 +665,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Format Selector Tabs */}
-                    <div className="grid grid-cols-4 gap-1.5 p-1 bg-white rounded-2xl border border-[#D7DEE7] shadow-sm">
+                    <div className="grid grid-cols-3 gap-1.5 p-1 bg-white rounded-2xl border border-[#D7DEE7] shadow-sm">
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, previewFormat: 'feed' })}
