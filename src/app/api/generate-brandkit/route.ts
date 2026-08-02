@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
       showRequirements: typeof customFields?.showRequirements === 'boolean' ? customFields.showRequirements : true,
       requirementsList: customFields?.requirementsList || (extractedData.requirements?.join(' • ') || 'Ensino Superior Completo • Pacote Office • Boa Comunicação'),
       customCtaPrefix: customFields?.customCtaPrefix,
+      contractType: extractedData.contractType,
     };
 
     const sourcing: SourcingProfile = {

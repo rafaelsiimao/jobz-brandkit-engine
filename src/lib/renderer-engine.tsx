@@ -96,7 +96,7 @@ function truncateText(str: string, maxLen: number): string {
   return cleaned.slice(0, maxLen - 3).trim() + '...';
 }
 
-function parseCardHighlights(highlights: string[] = []) {
+function parseCardHighlights(highlights: string[] = [], contractTypeInput?: string) {
   const safeHighlights = Array.isArray(highlights) ? highlights : [];
   const h0 = cleanText(safeHighlights[0] || 'Presencial | Vitória / ES');
   const h1 = cleanText(safeHighlights[1] || 'Jornada: Segunda a Sexta • 08h às 17:30h');
@@ -110,10 +110,12 @@ function parseCardHighlights(highlights: string[] = []) {
   const locParts = h0.split('|');
   const location = truncateText(locParts[1] || locParts[0] || 'Brasil', 40);
 
+  const ctUpper = (contractTypeInput || '').toUpperCase();
+
   let contractKicker = 'OPORTUNIDADE · CLT';
-  if (/est[áa]gio/i.test(h1) || /est[áa]gio/i.test(h2) || /est[áa]gio/i.test(h0)) {
+  if (ctUpper === 'ESTAGIO' || /est[áa]gio/i.test(h1) || /est[áa]gio/i.test(h2) || /est[áa]gio/i.test(h0)) {
     contractKicker = 'VAGA ABERTA · ESTÁGIO';
-  } else if (/pj\b|prestador/i.test(h2) || /pj\b|prestador/i.test(h0)) {
+  } else if (ctUpper === 'PJ' || /pj\b|prestador|remunera[çc][ãa]o/i.test(h2) || /pj\b|prestador/i.test(h0)) {
     contractKicker = 'CONTRATO PRESTADOR · PJ';
   } else if (/clt/i.test(h0) || /clt/i.test(h2)) {
     contractKicker = 'OPORTUNIDADE · CLT';
@@ -148,7 +150,7 @@ function parseCardHighlights(highlights: string[] = []) {
 }
 
 export function generateFeedHtml(copy: CopyData): string {
-  const parsed = parseCardHighlights(copy.highlights);
+  const parsed = parseCardHighlights(copy.highlights, copy.contractType);
   const headline = truncateText(copy.headline, 60);
   const isEmail = copy.candidatureType === 'email';
   const rawCustom = (copy.customCtaPrefix || '').trim();
@@ -220,7 +222,7 @@ async function renderJsxToBuffer(element: React.ReactElement, width: number, hei
 
 export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer; story: Buffer; whatsapp: Buffer }> {
   const headline = truncateText(copy.headline || 'Oportunidade de Emprego', 65);
-  const parsed = parseCardHighlights(copy.highlights);
+  const parsed = parseCardHighlights(copy.highlights, copy.contractType);
 
   const isEmail = copy.candidatureType === 'email';
   const emailAddress = copy.candidatureEmail || 'vagas@jobz.com.br';

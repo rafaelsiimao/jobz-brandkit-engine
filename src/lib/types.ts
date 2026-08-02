@@ -56,6 +56,7 @@ export interface CopyData {
   showRequirements?: boolean;
   requirementsList?: string;
   customCtaPrefix?: string;
+  contractType?: ContractType;
 }
 
 export interface AssetUrls {
