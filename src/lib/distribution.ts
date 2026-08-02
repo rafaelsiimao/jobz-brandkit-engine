@@ -13,6 +13,16 @@ function getContractBadge(contractType: string): { label: string; color: string;
   }
 }
 
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function generateEmailHtml(
   copy: CopyData,
   sourcing: SourcingProfile,
@@ -20,7 +30,11 @@ export function generateEmailHtml(
   extractedData?: ExtractedJobData
 ): string {
   const badge = getContractBadge(extractedData?.contractType || 'CLT');
-  const highlights = copy.highlights || [];
+  const safeHeadline = escapeHtml(copy.headline || '');
+  const safeSubheadline = escapeHtml(copy.subheadline || '');
+  const safeIdealCandidate = escapeHtml(sourcing.idealCandidate || '');
+  const safeCaption = escapeHtml(copy.socialCaption || '');
+  const highlights = (copy.highlights || []).map(h => escapeHtml(h));
 
   return `
     <!DOCTYPE html>
@@ -46,7 +60,7 @@ export function generateEmailHtml(
             <div style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 999px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">
               ${badge.label}
             </div>
-            <h1 style="color: #111317; font-size: 26px; margin: 8px 0 12px 0; font-weight: 800; line-height: 1.2;">${copy.headline}</h1>
+            <h1 style="color: #111317; font-size: 26px; margin: 8px 0 12px 0; font-weight: 800; line-height: 1.2;">${safeHeadline}</h1>
             
             <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
               ${highlights.map(h => `<span style="display:inline-block;background:#F1F4F7;color:#5F6673;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;">${h}</span>`).join('')}

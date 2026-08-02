@@ -15,4 +15,8 @@ CREATE TABLE IF NOT EXISTS public.brandkit_jobs (
 -- Enable RLS and set public policies (safe idempotent query)
 ALTER TABLE public.brandkit_jobs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public insert and select" ON public.brandkit_jobs;
-CREATE POLICY "Allow public insert and select" ON public.brandkit_jobs FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public insert" ON public.brandkit_jobs;
+DROP POLICY IF EXISTS "Allow public select" ON public.brandkit_jobs;
+
+CREATE POLICY "Allow public insert" ON public.brandkit_jobs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public select" ON public.brandkit_jobs FOR SELECT USING (true);

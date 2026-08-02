@@ -3,22 +3,42 @@ import { fetchVacancyDetailsFromAbler } from '@/lib/abler-api';
 import { renderBrandKitPNGs } from '@/lib/renderer-engine';
 import { uploadAssetsAndSendEmail } from '@/lib/distribution';
 import { supabase } from '@/lib/supabase';
+import { z } from 'zod';
 import { ContractType, CopyData, SourcingProfile } from '@/lib/types';
+
+const generateBrandkitSchema = z.object({
+  vacancyId: z
+    .union([z.string(), z.number()], {
+      required_error: 'ID da vaga Abler é obrigatório',
+      invalid_type_error: 'ID da vaga Abler é obrigatório',
+    })
+    .transform((val) => String(val).trim())
+    .refine((val) => val.length > 0 && /^[a-zA-Z0-9_-]+$/.test(val), {
+      message: 'ID da vaga Abler é obrigatório',
+    }),
+  recipientEmail: z
+    .string({
+      required_error: 'E-mail de destino inválido',
+      invalid_type_error: 'E-mail de destino inválido',
+    })
+    .trim()
+    .email('E-mail de destino inválido'),
+  customFields: z.record(z.any()).optional(),
+});
 
 export async function POST(req: NextRequest) {
   let jobId: string | null = null;
 
   try {
     const body = await req.json();
-    const { vacancyId, recipientEmail, customFields } = body;
+    const parseResult = generateBrandkitSchema.safeParse(body);
 
-    if (!vacancyId) {
-      return NextResponse.json({ error: 'ID da vaga Abler é obrigatório' }, { status: 400 });
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors[0]?.message || 'Parâmetros de requisição inválidos';
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    if (!recipientEmail || !recipientEmail.includes('@')) {
-      return NextResponse.json({ error: 'E-mail de destino inválido' }, { status: 400 });
-    }
+    const { vacancyId, recipientEmail, customFields } = parseResult.data;
 
     // 1. Criar registro no banco Supabase
     const { data: dbJob, error: createError } = await supabase
