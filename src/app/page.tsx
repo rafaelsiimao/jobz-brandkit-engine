@@ -33,6 +33,8 @@ import {
 import { AblerVacancyItem } from '@/lib/abler-api';
 import { JOBZ_LOGO_PNG_BASE64 } from '@/lib/logo-png-base64';
 import { JOBZ_FAVICON_PNG_BASE64 } from '@/lib/favicon-png-base64';
+import { ContractType, ExtractedJobData } from '@/lib/types';
+import { triggerSuccessConfetti } from '@/lib/confetti';
 import { AssetUrls } from '@/lib/types';
 
 interface EditFormState {
@@ -198,6 +200,7 @@ export default function HomePage() {
           setGeneratedAssets(data.assetUrls);
         }
         setShowSuccessModal(true);
+        triggerSuccessConfetti();
         setStatusMessage({
           type: 'success',
           title: 'Artes Geradas com Sucesso! 🚀',
