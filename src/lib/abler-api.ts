@@ -129,10 +129,40 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
   }
 }
 
+// Cache simples do catálogo de benefícios para evitar chamada duplicada
+let benefitsCatalogCache: Map<string, string> | null = null;
+
+async function fetchBenefitsCatalog(): Promise<Map<string, string>> {
+  if (benefitsCatalogCache) return benefitsCatalogCache;
+  try {
+    const res = await fetch(`${ABLER_BASE_URL}/api/company/v1/collections/benefits`, {
+      headers: getAblerHeaders(),
+      next: { revalidate: 3600 }, // cache por 1h
+    });
+    if (!res.ok) return new Map();
+    const json = await res.json();
+    const map = new Map<string, string>();
+    if (Array.isArray(json?.data)) {
+      for (const item of json.data) {
+        const id = String(item?.id || '');
+        const name = item?.attributes?.name || '';
+        if (id && name) map.set(id, name);
+      }
+    }
+    benefitsCatalogCache = map;
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
 export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<ExtractedJobData> {
-  const res = await fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies/${vacancyId}?include=vacancies_benefits`, {
-    headers: getAblerHeaders(),
-  });
+  const [res, benefitsMap] = await Promise.all([
+    fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies/${vacancyId}?include=vacancies_benefits`, {
+      headers: getAblerHeaders(),
+    }),
+    fetchBenefitsCatalog(),
+  ]);
 
   if (!res.ok) {
     throw new Error(`Vaga #${vacancyId} não encontrada na Abler (Status ${res.status})`);
@@ -199,12 +229,12 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     ? reqsText.split('\n').map((s: string) => s.replace(/<[^>]+>/g, '').trim()).filter((s: string) => s.length > 3)
     : ['Experiência técnica na área', 'Boa comunicação interpessoal'];
 
-  // 1. Tenta pegar benefícios estruturados do relacionamento vacancies_benefits (include=vacancies_benefits)
+  // 1. Tenta pegar benefícios estruturados via include=vacancies_benefits + catálogo de nomes
   const structuredBenefits: string[] = included
-    .filter((inc: any) => inc?.type === 'vacancies_benefit' || inc?.type === 'benefit')
+    .filter((inc: any) => inc?.type === 'vacancies_benefit')
     .map((inc: any) => {
-      const name = inc?.attributes?.benefit?.name || inc?.attributes?.name || '';
-      return name.trim();
+      const benefitId = String(inc?.attributes?.benefit_id || '');
+      return benefitsMap.get(benefitId) || '';
     })
     .filter((name: string) => name.length > 1);
 
