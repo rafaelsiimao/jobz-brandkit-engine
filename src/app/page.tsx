@@ -256,16 +256,13 @@ export default function HomePage() {
               <div className="flex items-center gap-2.5">
                 {/* Logo PNG Oficial Jobz Carreira */}
                 <img src={JOBZ_LOGO_PNG_BASE64} alt="Jobz Carreira" className="h-6 w-auto" />
-                <span className="text-xs font-mono font-bold bg-[#EBF3FF] text-[#1E81FE] px-2.5 py-0.5 rounded-full border border-[#B2D3FF]">
-                  Artes V2
-                </span>
                 {/* Live Status Pulse */}
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   API Abler Conectada
                 </span>
               </div>
-              <p className="text-xs text-[#5F6673] font-medium mt-0.5">Gerador de Kits de Divulgação de Vagas com Geração Instantânea</p>
+              <p className="text-xs text-[#5F6673] font-medium mt-0.5">Transforme suas vagas em artes prontas para Instagram e WhatsApp</p>
             </div>
           </div>
 
@@ -303,10 +300,10 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
-                <Briefcase className="w-4 h-4" /> Integração Oficial Abler ATS API V2
+                <Briefcase className="w-4 h-4" /> Integração Direta com a Abler
               </div>
-              <h2 className="text-2xl font-extrabold text-[#111317]">Vagas Abertas da Empresa</h2>
-              <p className="text-sm text-[#5F6673]">Selecione uma vaga para visualizar a prévia em tempo real e personalizar o kit de artes</p>
+              <h2 className="text-2xl font-extrabold text-[#111317]">Vagas Abertas da Jobz</h2>
+              <p className="text-sm text-[#5F6673]">Escolha uma vaga abaixo para personalizar o conteúdo e gerar o kit de artes em 1 clique</p>
             </div>
 
             {/* Search and Filters */}
@@ -760,7 +757,6 @@ export default function HomePage() {
                       <span className="text-xs font-extrabold uppercase tracking-wider text-[#5F6673] flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-[#1E81FE]" /> Prévia Ao Vivo em Multi-Formatos
                       </span>
-                      <span className="text-[11px] font-mono text-[#1E81FE] font-bold">Fundo #F1F4F7</span>
                     </div>
 
                     {/* Format Selector Tabs */}
