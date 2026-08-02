@@ -995,24 +995,34 @@ export default function HomePage() {
                       </div>
 
                       {/* Card Footer Dynamic Banner */}
-                      <div className="w-full pt-2">
-                        {formData.candidatureType === 'email' ? (
-                          <div className="space-y-0.5">
-                            <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[9px] font-bold py-0.5 px-1.5 rounded-md text-center">
-                              📄 Aceitamos somente currículos em formato PDF
-                            </div>
-                            <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-1.5 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
-                              <span>👉 Envie seu CV para:</span>
-                              <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
-                            </div>
+                      {(() => {
+                        const defaultLivePrefix = formData.candidatureType === 'email' ? '👉 Envie seu CV para:' : '👉 Candidate-se em:';
+                        const rawCustom = (formData.customCtaPrefix || '').trim();
+                        const livePrefix = rawCustom
+                          ? (rawCustom.startsWith('👉') ? rawCustom : `👉 ${rawCustom}`)
+                          : defaultLivePrefix;
+
+                        return (
+                          <div className="w-full pt-2">
+                            {formData.candidatureType === 'email' ? (
+                              <div className="space-y-0.5">
+                                <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[9px] font-bold py-0.5 px-1.5 rounded-md text-center">
+                                  📄 Aceitamos somente currículos em formato PDF
+                                </div>
+                                <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-1.5 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                                  <span>{livePrefix}</span>
+                                  <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                                <span>{livePrefix}</span>
+                                <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
-                            <span>👉 Candidate-se em:</span>
-                            <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
-                          </div>
-                        )}
-                      </div>
+                        );
+                      })()}
 
                     </div>
                   </div>
