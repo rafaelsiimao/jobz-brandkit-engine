@@ -745,41 +745,56 @@ export default function HomePage() {
                         </div>
 
                         {/* Content Rows with Vector Icons */}
-                        <div className="space-y-2 pt-0.5">
+                        <div className="space-y-2.5 pt-0.5">
                           <div>
-                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-[#1E81FE]" /> {labelHoursText}
+                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
+                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
+                                <Clock className="w-2.5 h-2.5 text-[#1E81FE]" />
+                              </div>
+                              <span>{labelHoursText}</span>
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.schedule}</div>
+                            <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.schedule}</div>
                           </div>
 
                           <div>
-                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
-                              <Wallet className="w-3 h-3 text-[#1E81FE]" /> {labelFinancialText}
+                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
+                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
+                                <Wallet className="w-2.5 h-2.5 text-[#1E81FE]" />
+                              </div>
+                              <span>{labelFinancialText}</span>
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.salary}</div>
+                            <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.salary}</div>
                           </div>
 
                           <div>
-                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-[#1E81FE]" /> LOCALIZAÇÃO
+                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
+                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
+                                <MapPin className="w-2.5 h-2.5 text-[#1E81FE]" />
+                              </div>
+                              <span>LOCALIZAÇÃO</span>
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-4 text-xs break-words">{formData.location}</div>
+                            <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.location}</div>
                           </div>
 
                           <div>
-                            <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
-                              <Gift className="w-3 h-3 text-[#1E81FE]" /> BENEFÍCIOS
+                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
+                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
+                                <Gift className="w-2.5 h-2.5 text-[#1E81FE]" />
+                              </div>
+                              <span>BENEFÍCIOS</span>
                             </div>
-                            <div className="font-semibold text-[#111317] pl-4 text-xs break-words leading-snug">{formData.benefits}</div>
+                            <div className="font-semibold text-[#111317] pl-5 text-xs break-words leading-snug">{formData.benefits}</div>
                           </div>
 
                           {formData.showRequirements && formData.requirementsList && (
                             <div className="animate-in fade-in duration-150">
-                              <div className="font-bold text-[#8A94A3] text-[9px] tracking-wider uppercase flex items-center gap-1">
-                                <ListChecks className="w-3 h-3 text-[#1E81FE]" /> REQUISITOS ESSENCIAIS
+                              <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
+                                <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
+                                  <ListChecks className="w-2.5 h-2.5 text-[#1E81FE]" />
+                                </div>
+                                <span>REQUISITOS ESSENCIAIS</span>
                               </div>
-                              <div className="font-semibold text-[#111317] pl-4 text-xs break-words leading-snug">{formData.requirementsList}</div>
+                              <div className="font-semibold text-[#111317] pl-5 text-xs break-words leading-snug">{formData.requirementsList}</div>
                             </div>
                           )}
                         </div>
@@ -792,13 +807,13 @@ export default function HomePage() {
                             <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[9px] font-bold py-0.5 px-1.5 rounded-md text-center">
                               📄 Aceitamos somente currículos em formato PDF
                             </div>
-                            <div className="bg-[#111317] text-white rounded-lg py-1.5 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                            <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-1.5 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
                               <span>👉 Envie seu CV para:</span>
                               <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="bg-[#111317] text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                          <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
                             <span>👉 Candidate-se em:</span>
                             <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
                           </div>
