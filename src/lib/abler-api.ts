@@ -130,7 +130,7 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
 }
 
 export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<ExtractedJobData> {
-  const res = await fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies/${vacancyId}`, {
+  const res = await fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies/${vacancyId}?include=vacancies_benefits`, {
     headers: getAblerHeaders(),
   });
 
@@ -140,6 +140,7 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
 
   const json = await res.json();
   const attrs = json?.data?.attributes || {};
+  const included: any[] = Array.isArray(json?.included) ? json.included : [];
 
   const title = attrs.title || 'Vaga Sem Título';
   
@@ -198,7 +199,16 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     ? reqsText.split('\n').map((s: string) => s.replace(/<[^>]+>/g, '').trim()).filter((s: string) => s.length > 3)
     : ['Experiência técnica na área', 'Boa comunicação interpessoal'];
 
-  // Benefits parsing inteligente (extrai benefícios reais e filtra anotações de contato)
+  // 1. Tenta pegar benefícios estruturados do relacionamento vacancies_benefits (include=vacancies_benefits)
+  const structuredBenefits: string[] = included
+    .filter((inc: any) => inc?.type === 'vacancies_benefit' || inc?.type === 'benefit')
+    .map((inc: any) => {
+      const name = inc?.attributes?.benefit?.name || inc?.attributes?.name || '';
+      return name.trim();
+    })
+    .filter((name: string) => name.length > 1);
+
+  // 2. Fallback: extrai de campos de texto livre da vaga
   const rawBenefitsSources = [
     attrs.benefits_without_tags,
     attrs.benefits,
@@ -206,11 +216,13 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     attrs.additional_info_without_tags,
     attrs.additional_info
   ].filter(Boolean).join(' ; ');
-
   const parsedBenefits = cleanBenefits(rawBenefitsSources);
 
+  // 3. Fallback final: defaults por tipo de contrato
   let benefits: string[];
-  if (parsedBenefits.length > 0) {
+  if (structuredBenefits.length > 0) {
+    benefits = structuredBenefits;
+  } else if (parsedBenefits.length > 0) {
     benefits = parsedBenefits;
   } else if (contractType === 'ESTAGIO') {
     benefits = ['Vale Transporte', 'Vale Refeição', 'Plano de Saúde', 'Auxílio Educação'];
