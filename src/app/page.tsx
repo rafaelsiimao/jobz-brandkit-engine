@@ -150,6 +150,15 @@ export default function HomePage() {
     e.preventDefault();
     if (!selectedVacancy || !formData.recipientEmail) return;
 
+    if (!formData.recipientEmail.toLowerCase().endsWith('@jobz.com.br')) {
+      setStatusMessage({
+        type: 'error',
+        title: 'Acesso Restrito 🔒',
+        text: 'Apenas e-mails corporativos @jobz.com.br têm permissão para gerar kits de divulgação.',
+      });
+      return;
+    }
+
     localStorage.setItem('jobz_recipient_email', formData.recipientEmail);
 
     setGenerating(true);
@@ -842,6 +851,12 @@ export default function HomePage() {
                               {formData.recipientEmail.split('@')[0]}@jobz.com.br
                             </span>
                           </button>
+                        )}
+                      {formData.recipientEmail &&
+                        !formData.recipientEmail.toLowerCase().endsWith('@jobz.com.br') && (
+                          <div className="mt-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                            <span>⚠️ Apenas e-mails @jobz.com.br têm autorização para gerar kits.</span>
+                          </div>
                         )}
                     </div>
                   </form>

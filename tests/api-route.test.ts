@@ -25,4 +25,16 @@ describe('Generate BrandKit API Route', () => {
     const json = await res.json();
     expect(json.error).toContain('ID da vaga Abler é obrigatório');
   });
+
+  it('should return 400 error if recipientEmail is not a @jobz.com.br domain', async () => {
+    const reqExternalEmail = new Request('http://localhost:3000/api/generate-brandkit', {
+      method: 'POST',
+      body: JSON.stringify({ vacancyId: '383534', recipientEmail: 'usuario@gmail.com' }),
+    });
+
+    const res = await POST(reqExternalEmail);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain('Apenas e-mails corporativos @jobz.com.br');
+  });
 });

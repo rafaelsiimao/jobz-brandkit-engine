@@ -22,7 +22,10 @@ const generateBrandkitSchema = z.object({
       invalid_type_error: 'E-mail de destino inválido',
     })
     .trim()
-    .email('E-mail de destino inválido'),
+    .email('E-mail de destino inválido')
+    .refine((email) => email.toLowerCase().endsWith('@jobz.com.br'), {
+      message: 'Acesso restrito: Apenas e-mails corporativos @jobz.com.br são autorizados.',
+    }),
   customFields: z.record(z.any()).optional(),
 });
 
