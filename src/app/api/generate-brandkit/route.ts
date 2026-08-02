@@ -5,6 +5,7 @@ import { uploadAssetsAndSendEmail } from '@/lib/distribution';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 import { ContractType, CopyData, SourcingProfile } from '@/lib/types';
+import { buildCleanSocialCaption } from '@/lib/ai-engine';
 
 const generateBrandkitSchema = z.object({
   vacancyId: z
@@ -86,7 +87,12 @@ export async function POST(req: NextRequest) {
       subheadline: modalityLoc,
       highlights: [modalityLoc, scheduleStr, salaryStr, benefitsStr],
       ctaText: 'Candidate-se em: jobz.com.br/vagas',
-      socialCaption: `Confira a vaga de ${extractedData.title} na Jobz Carreira!`,
+      socialCaption: buildCleanSocialCaption(
+        extractedData,
+        customFields?.customCtaPrefix,
+        customFields?.candidatureType || 'platform',
+        customFields?.candidatureEmail || recipientEmail
+      ),
       candidatureType: customFields?.candidatureType || 'platform',
       candidatureEmail: customFields?.candidatureEmail || recipientEmail,
       showRequirements: typeof customFields?.showRequirements === 'boolean' ? customFields.showRequirements : true,

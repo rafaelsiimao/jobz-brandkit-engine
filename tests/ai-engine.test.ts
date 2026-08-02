@@ -68,4 +68,27 @@ describe('AI Engine Schemas & Generation (v2.0)', () => {
     expect(copy.highlights[1]).toContain('Jornada de Estágio');
     expect(copy.highlights[2]).toContain('Bolsa');
   });
+
+  it('should generate clean structured social caption with 3 hashtags and dynamic CTA', async () => {
+    const { buildCleanSocialCaption } = await import('../src/lib/ai-engine');
+    const mockData: ExtractedJobData = {
+      title: 'Analista de RH Pleno',
+      location: 'Vitória / ES',
+      modality: 'Híbrido',
+      salary: 'R$ 5.000',
+      benefits: ['VR', 'VA'],
+      schedule: '08h às 17h',
+      requirements: ['Ensino Superior Completo', 'Experiência em DSR', 'Boa Comunicação'],
+      activities: ['Triagem de candidatos'],
+      contractType: 'CLT',
+      seniorityLevel: 'Pleno',
+      rawDescription: 'Vaga de RH.',
+    };
+
+    const caption = buildCleanSocialCaption(mockData, undefined, 'email', 'recrutamento@jobz.com.br');
+    expect(caption).toContain('🚀 VAGA ABERTA NA JOBZ: Analista de RH Pleno');
+    expect(caption).toContain('📌 RESUMO DA OPORTUNIDADE:');
+    expect(caption).toContain('👉 Envie seu CV para: recrutamento@jobz.com.br');
+    expect(caption).toContain('#Jobz #Vagas #AnalistadeRHPleno');
+  });
 });

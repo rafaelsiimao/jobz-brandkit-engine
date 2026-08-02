@@ -38,6 +38,56 @@ function getContractLabel(ct: string): string {
   return 'CLT (Carteira Assinada)';
 }
 
+export function buildCleanSocialCaption(
+  data: ExtractedJobData,
+  customCta?: string,
+  candidatureType?: string,
+  candidatureEmail?: string
+): string {
+  const isEstagio = data.contractType === 'ESTAGIO';
+  const isPJ = data.contractType === 'PJ';
+  const contractLabel = isEstagio ? 'Estágio' : isPJ ? 'PJ / Prestador' : 'CLT';
+  const labelFinancialPrefix = isEstagio ? 'Bolsa' : isPJ ? 'Remuneração' : 'Salário';
+
+  const titleClean = (data.title || 'Vaga de Emprego').trim();
+  const titleHashtag = '#' + titleClean.replace(/[^a-zA-Z0-9]/g, '');
+
+  const reqsList = Array.isArray(data.requirements) && data.requirements.length > 0
+    ? data.requirements.slice(0, 3).map(r => `• ${r}`).join('\n')
+    : '• Experiência prévia na área';
+
+  const benefitsText = Array.isArray(data.benefits) && data.benefits.length > 0
+    ? data.benefits.slice(0, 3).join(' + ')
+    : 'Compatível com o mercado';
+
+  const rawCustom = (customCta || '').trim();
+  let ctaLine = '';
+  if (rawCustom) {
+    ctaLine = rawCustom.startsWith('👉') ? rawCustom : `👉 ${rawCustom}`;
+  } else if (candidatureType === 'email') {
+    ctaLine = `👉 Envie seu CV para: ${candidatureEmail || 'vagas@jobz.com.br'} (Apenas em PDF)`;
+  } else {
+    ctaLine = `👉 Candidate-se em: jobz.com.br/vagas`;
+  }
+
+  return `🚀 VAGA ABERTA NA JOBZ: ${titleClean}
+
+📌 RESUMO DA OPORTUNIDADE:
+📍 Local: ${data.location || 'Brasil'} (${data.modality || 'Presencial'})
+💼 Modelo: ${contractLabel}
+⏰ Jornada: ${data.schedule || 'Horário comercial'}
+💰 ${labelFinancialPrefix}: ${data.salary || 'A combinar'}
+🎁 Benefícios: ${benefitsText}
+
+🎯 REQUISITOS:
+${reqsList}
+
+👉 COMO SE CANDIDATAR:
+${ctaLine}
+
+#Jobz #Vagas ${titleHashtag}`;
+}
+
 export async function generateBrandKitAI(extractedData: ExtractedJobData): Promise<{ sourcing: SourcingProfile; copy: CopyData }> {
   const safeData: ExtractedJobData = {
     title: extractedData?.title || 'Vaga de Emprego',
@@ -96,17 +146,23 @@ Analise esta vaga extraída da plataforma Abler ATS e gere um Dossier de Intelig
 
 ## Instruções IMPORTANTES (Zero Alucinação)
 1. **Modalidade**: Mantenha ESTRITAMENTE a modalidade real ("${safeData.modality}"). NUNCA altere presencial para remoto.
-2. **hardSkills**: Liste as 5 a 8 competências TÉCNICAS mais relevantes.
-3. **softSkills**: Liste as 4 a 6 competências COMPORTAMENTAIS mais relevantes.
-4. **companyExpectations**: Descreva em 2-3 frases o que a empresa espera do candidato.
-5. **sourcingChannels**: Forneça canais REAIS e específicos para encontrar candidatos:
-   ${isEstagio ? '- **universities**: Liste faculdades relevantes da região (ex: UFES, UVV, FAESA, PUC, Multivix, IFES, etc.).' : '- **universities**: Lista vazia [] pois não se aplica a vagas CLT/PJ.'}
-   - **facebookGroups**: Liste 3-5 nomes de grupos reais do Facebook para a área/região.
-   - **whatsappTelegramCommunities**: Liste 2-3 tipos de comunidades de WhatsApp/Telegram relevantes.
-   - **linkedinSearchQueries**: Forneça 2-3 strings de busca booleana para o LinkedIn Recruiter.
-   - **specializedPlatforms**: Liste plataformas específicas (ex: GitHub, Behance, Catho, Indeed, Vagas.com).
-6. **screeningQuestions**: Crie 4-5 perguntas eliminatórias de triagem rápida.
-7. **coldOutreachTemplates**: Scripts de abordagem realistas para LinkedIn e WhatsApp.
+2. **socialCaption**: Crie a legenda de recrutamento direta para LinkedIn/redes sociais no formato enxuto exato:
+   🚀 VAGA ABERTA NA JOBZ: ${safeData.title}
+
+   📌 RESUMO DA OPORTUNIDADE:
+   📍 Local: ${safeData.location} (${safeData.modality})
+   💼 Modelo: ${getContractLabel(safeData.contractType)}
+   ⏰ Jornada: ${safeData.schedule}
+   💰 Salário/Bolsa: ${safeData.salary}
+   🎁 Benefícios: ${defaultBenefitsText}
+
+   🎯 REQUISITOS:
+   • ${safeData.requirements.slice(0, 3).join('\n   • ')}
+
+   👉 COMO SE CANDIDATAR:
+   👉 Candidate-se em: jobz.com.br/vagas
+
+   #Jobz #Vagas #${safeData.title.replace(/[^a-zA-Z0-9]/g, '')}
 
 Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o seguinte objeto:
 {
@@ -140,7 +196,7 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
       "Benefícios: ${defaultBenefitsText}"
     ],
     "ctaText": "Inscreva-se",
-    "socialCaption": "legenda completa para redes sociais com emojis e hashtags"
+    "socialCaption": "legenda completa para redes sociais conforme instrução"
   }
 }`;
 
@@ -196,7 +252,7 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
               subheadline: parsed.copy.subheadline || 'Oportunidade de Emprego',
               highlights: defaultHighlights,
               ctaText: 'Inscreva-se',
-              socialCaption: parsed.copy.socialCaption || 'Vaga aberta na Jobz! Candidate-se em: jobz.com.br/vagas',
+              socialCaption: parsed.copy.socialCaption || buildCleanSocialCaption(safeData),
             };
 
             return { sourcing, copy };
@@ -248,7 +304,7 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
     },
     screeningQuestions: generateScreeningQuestions(safeData),
     recommendedUniversities: isEstagio ? ['UFES', 'UVV', 'FAESA', 'PUC', 'Multivix'] : [],
-    linkedinHashtags: ['#Jobz', '#Recrutamento', `#${safeData.title.replace(/[^a-zA-Z0-9]/g, '')}`, '#VagasCapixabas'],
+    linkedinHashtags: ['#Jobz', '#Vagas', `#${safeData.title.replace(/[^a-zA-Z0-9]/g, '')}`],
   };
 
   const copy: CopyData = {
@@ -258,7 +314,7 @@ Responda ESTRITAMENTE em formato JSON (sem markdown, sem crases) contendo o segu
       : `${getContractLabel(safeData.contractType)} em ${safeData.location}`,
     highlights: defaultHighlights,
     ctaText: 'Inscreva-se',
-    socialCaption: `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${safeData.title}.\n📍 ${safeData.location} (${safeData.modality})\n⏰ ${safeData.schedule}\n💰 ${safeData.salary}\n📋 ${getContractLabel(safeData.contractType)}\n\nVenha fazer parte do nosso time. Candidate-se em: jobz.com.br/vagas\n\n#Vagas #Jobz #Recrutamento #Capixaba`
+    socialCaption: buildCleanSocialCaption(safeData),
   };
 
   return { sourcing, copy };
