@@ -110,22 +110,35 @@ export default function HomePage() {
     }));
   }, []);
 
-  const openPreviewModal = (vacancy: AblerVacancyItem) => {
+  const openPreviewModal = async (vacancy: AblerVacancyItem) => {
     setSelectedVacancy(vacancy);
     setStatusMessage(null);
 
     const savedEmail = localStorage.getItem('jobz_recipient_email') || '';
     const isEstagio = vacancy.contractingRegime.toUpperCase().includes('ESTAGIO') || /est[áa]gio/i.test(vacancy.title);
     const isPJ = vacancy.contractingRegime.toUpperCase().includes('PJ') || /pj\b/i.test(vacancy.title);
-
     const contractType = isEstagio ? 'ESTAGIO' : isPJ ? 'PJ' : 'CLT';
+
+    // Busca detalhes completos (com benefícios estruturados)
+    let benefitsStr = Array.isArray(vacancy.benefits) && vacancy.benefits.length > 0 ? vacancy.benefits.join(' + ') : '';
+    try {
+      const res = await fetch(`/api/vacancy-details?id=${vacancy.id}`);
+      if (res.ok) {
+        const details = await res.json();
+        if (Array.isArray(details.benefits) && details.benefits.length > 0) {
+          benefitsStr = details.benefits.join(' + ');
+        }
+      }
+    } catch {
+      // fallback: usa os dados da lista
+    }
 
     setFormData({
       title: vacancy.title,
       contractType,
       schedule: isEstagio ? '6h diárias (30h semanais)' : 'Segunda a Sexta • 08h às 17:30h',
       salary: vacancy.salary || (isEstagio ? 'Bolsa a combinar' : 'Compatível com o mercado'),
-      benefits: Array.isArray(vacancy.benefits) && vacancy.benefits.length > 0 ? vacancy.benefits.join(' + ') : '',
+      benefits: benefitsStr,
       modality: vacancy.workType.includes('Remoto') ? 'Remoto' : vacancy.workType.includes('Híbrido') ? 'Híbrido' : 'Presencial',
       location: vacancy.location || 'Vila Velha / ES',
       recipientEmail: savedEmail,
