@@ -151,9 +151,15 @@ export function generateFeedHtml(copy: CopyData): string {
   const parsed = parseCardHighlights(copy.highlights);
   const headline = truncateText(copy.headline, 60);
   const isEmail = copy.candidatureType === 'email';
+  const defaultPrefix = isEmail ? '👉 Envie seu CV para:' : '👉 Candidate-se em:';
+  const rawCustom = (copy.customCtaPrefix || '').trim();
+  const prefix = rawCustom
+    ? (rawCustom.startsWith('👉') ? rawCustom : `👉 ${rawCustom}`)
+    : defaultPrefix;
+
   const ctaLine = isEmail 
-    ? `👉 Envie seu CV para: ${copy.candidatureEmail || 'vagas@jobz.com.br'} (Apenas em PDF)` 
-    : `👉 Candidate-se em: jobz.com.br/vagas`;
+    ? `${prefix} ${copy.candidatureEmail || 'vagas@jobz.com.br'} (Apenas em PDF)` 
+    : `${prefix} jobz.com.br/vagas`;
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
