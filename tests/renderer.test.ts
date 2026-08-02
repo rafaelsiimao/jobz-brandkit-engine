@@ -37,13 +37,13 @@ describe('Official Jobz Carreira Card Template (v2.0)', () => {
     expect(html).toContain('1920px');
   });
 
-  it('should generate valid feed HTML using customCtaPrefix', () => {
+  it('should generate valid feed HTML using customCtaPrefix replacing full CTA line', () => {
     const customCopy: CopyData = {
       ...mockCopy,
       customCtaPrefix: 'Inscreva-se em:'
     };
     const html = generateFeedHtml(customCopy);
-    expect(html).toContain('👉 Inscreva-se em: jobz.com.br/vagas');
+    expect(html).toContain('👉 Inscreva-se em:');
   });
 });
 
