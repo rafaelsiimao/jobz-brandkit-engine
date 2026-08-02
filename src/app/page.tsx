@@ -427,17 +427,17 @@ export default function HomePage() {
 
         {/* MODAL DE PREVIEW E EDIÇÃO EM TEMPO REAL */}
         {selectedVacancy && (
-          <div className="fixed inset-0 z-50 bg-[#111317]/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full my-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[95vh]">
+          <div className="fixed inset-0 z-[100] bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative">
               
               {/* Modal Header */}
-              <div className="p-5 border-b border-[#D7DEE7] flex items-center justify-between bg-[#FAFAFC] shrink-0">
+              <div className="p-4 sm:p-5 border-b border-[#D7DEE7] flex items-center justify-between bg-[#FAFAFC] shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-[#1E81FE] flex items-center justify-center text-white font-bold shrink-0">
                     <Edit3 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-extrabold text-[#111317]">Prévia & Edição Interativa do Card</h3>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#111317]">Prévia & Edição Interativa do Card</h3>
                     <p className="text-xs text-[#5F6673]">Edite qualquer campo à esquerda para ver a arte atualizar em tempo real à direita</p>
                   </div>
                 </div>
@@ -445,7 +445,7 @@ export default function HomePage() {
                 {!generating && (
                   <button
                     onClick={closePreviewModal}
-                    className="p-2 text-[#8A94A3] hover:text-[#111317] hover:bg-[#EBF0F5] rounded-xl transition-all"
+                    className="p-2 text-[#8A94A3] hover:text-[#111317] hover:bg-[#EBF0F5] rounded-xl transition-all shrink-0"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -453,10 +453,10 @@ export default function HomePage() {
               </div>
 
               {/* Modal Body: Split Screen */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 flex-1 min-h-0 overflow-hidden">
                 
                 {/* LEFT COLUMN: EDIT FORM */}
-                <div className="lg:col-span-6 p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white overflow-y-auto">
+                <div className="lg:col-span-6 p-5 sm:p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white overflow-y-auto">
                   <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-2">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] flex items-center gap-1.5">
                       <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis da Arte
