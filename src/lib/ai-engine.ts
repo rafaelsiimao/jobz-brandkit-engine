@@ -38,6 +38,22 @@ function getContractLabel(ct: string): string {
   return 'CLT (Carteira Assinada)';
 }
 
+export function parseRequirementsList(reqs: string[] | string | undefined): string[] {
+  if (!reqs) return ['Experiência prévia na área'];
+  let rawList: string[] = [];
+  if (Array.isArray(reqs)) {
+    rawList = reqs.flatMap(r => String(r).split(/[;\n•]/));
+  } else if (typeof reqs === 'string') {
+    rawList = String(reqs).split(/[;\n•]/);
+  }
+
+  const cleaned = rawList
+    .map(r => r.replace(/^Requisitos\s*/i, '').replace(/^[•\-\*\s]+/, '').trim())
+    .filter(r => r.length > 2);
+
+  return cleaned.length > 0 ? cleaned : ['Experiência prévia na área'];
+}
+
 export function buildCleanSocialCaption(
   data: ExtractedJobData,
   customCta?: string,
@@ -52,9 +68,8 @@ export function buildCleanSocialCaption(
   const titleClean = (data.title || 'Vaga de Emprego').trim();
   const titleHashtag = '#' + titleClean.replace(/[^a-zA-Z0-9]/g, '');
 
-  const reqsList = Array.isArray(data.requirements) && data.requirements.length > 0
-    ? data.requirements.slice(0, 3).map(r => `• ${r}`).join('\n')
-    : '• Experiência prévia na área';
+  const parsedReqs = parseRequirementsList(data.requirements);
+  const reqsList = parsedReqs.slice(0, 5).map(r => `• ${r}`).join('\n');
 
   const benefitsText = Array.isArray(data.benefits) && data.benefits.length > 0
     ? data.benefits.slice(0, 3).join(' + ')

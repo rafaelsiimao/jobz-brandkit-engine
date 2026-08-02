@@ -67,15 +67,10 @@ export function generateEmailHtml(
 
           <hr style="border: 0; border-top: 1px solid #EBF0F5; margin: 28px 0;" />
 
-          <!-- Card Preview Image Showcase -->
+          <!-- Card Preview & Download Buttons -->
           <div style="margin-bottom: 28px; text-align: center;">
-            <div style="font-size: 13px; font-weight: 800; color: #111317; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1.5px;">🎨 Suas Artes Estão Prontas</div>
-            <img src="${urls.feed}" alt="Preview da Arte Feed" style="max-width: 100%; border-radius: 20px; border: 1px solid #D7DEE7; box-shadow: 0 12px 32px rgba(11,19,23,0.1);" />
-          </div>
-
-          <!-- Download Buttons Grid -->
-          <div style="margin-bottom: 28px;">
-            <div style="font-size: 12px; font-weight: 800; color: #5F6673; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; text-align: center;">📥 Baixe cada formato em 1 clique</div>
+            <div style="font-size: 14px; font-weight: 800; color: #111317; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.5px;">🎨 Suas Artes Estão Prontas</div>
+            <div style="font-size: 12px; font-weight: 700; color: #5F6673; margin-bottom: 16px;">Clique nos botões abaixo para baixar em alta resolução:</div>
             
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
               <tr>
