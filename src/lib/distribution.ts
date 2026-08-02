@@ -31,36 +31,34 @@ export function generateEmailHtml(
 ): string {
   const badge = getContractBadge(extractedData?.contractType || 'CLT');
   const safeHeadline = escapeHtml(copy.headline || '');
-  const safeSubheadline = escapeHtml(copy.subheadline || '');
-  const safeIdealCandidate = escapeHtml(sourcing.idealCandidate || '');
-  const safeCaption = escapeHtml(copy.socialCaption || '');
+  const safeCaption = escapeHtml(copy.socialCaption || `🚀 Oportunidade Aberta na Jobz!\n\nEstamos contratando: ${copy.headline}.\nCandidate-se em: jobz.com.br/vagas\n\n#Vagas #Jobz #Capixaba`);
   const highlights = (copy.highlights || []).map(h => escapeHtml(h));
 
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-BR">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background-color: #F2F5F8; padding: 24px; margin: 0; color: #111317;">
-      <div style="max-width: 600px; margin: 0 auto;">
+    <body style="font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background-color: #F2F5F8; padding: 24px 12px; margin: 0; color: #111317;">
+      <div style="max-width: 620px; margin: 0 auto;">
 
         <!-- Header Banner -->
         <div style="background: #111317; border-radius: 24px 24px 0 0; padding: 36px 32px; text-align: center;">
-          <div style="font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 6px;">Jobz Carreira</div>
-          <div style="font-size: 13px; color: #66A9FF; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Kit Oficial de Divulgação de Vaga</div>
+          <div style="font-size: 28px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 6px;">Jobz</div>
+          <div style="font-size: 12px; color: #66A9FF; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">Kit Oficial de Divulgação de Vaga</div>
         </div>
 
         <!-- Main Content Card -->
-        <div style="background: #FFFFFF; padding: 36px 32px; border-radius: 0 0 24px 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+        <div style="background: #FFFFFF; padding: 36px 32px; border-radius: 0 0 24px 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.06);">
 
           <!-- Contract Badge & Vacancy Title -->
           <div style="margin-bottom: 24px; text-align: center;">
-            <div style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 999px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">
+            <div style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; font-size: 11px; font-weight: 800; padding: 6px 14px; border-radius: 999px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">
               ${badge.label}
             </div>
-            <h1 style="color: #111317; font-size: 26px; margin: 8px 0 12px 0; font-weight: 800; line-height: 1.2;">${safeHeadline}</h1>
+            <h1 style="color: #111317; font-size: 26px; margin: 8px 0 12px 0; font-weight: 800; line-height: 1.25;">${safeHeadline}</h1>
             
             <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
               ${highlights.map(h => `<span style="display:inline-block;background:#F1F4F7;color:#5F6673;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;">${h}</span>`).join('')}
@@ -69,32 +67,32 @@ export function generateEmailHtml(
 
           <hr style="border: 0; border-top: 1px solid #EBF0F5; margin: 28px 0;" />
 
-          <!-- Card Preview Image -->
+          <!-- Card Preview Image Showcase -->
           <div style="margin-bottom: 28px; text-align: center;">
-            <div style="font-size: 14px; font-weight: 800; color: #111317; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px;">🎨 Suas Artes PNG Estão Prontas</div>
-            <img src="${urls.feed}" alt="Preview da Arte" style="max-width: 100%; border-radius: 20px; border: 1px solid #D7DEE7; box-shadow: 0 12px 32px rgba(11,19,23,0.1);" />
+            <div style="font-size: 13px; font-weight: 800; color: #111317; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1.5px;">🎨 Suas Artes Estão Prontas</div>
+            <img src="${urls.feed}" alt="Preview da Arte Feed" style="max-width: 100%; border-radius: 20px; border: 1px solid #D7DEE7; box-shadow: 0 12px 32px rgba(11,19,23,0.1);" />
           </div>
 
           <!-- Download Buttons Grid -->
-          <div style="margin-bottom: 24px;">
-            <div style="font-size: 13px; font-weight: 800; color: #5F6673; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; text-align: center;">📥 Clique para Baixar em Alta Resolução</div>
+          <div style="margin-bottom: 28px;">
+            <div style="font-size: 12px; font-weight: 800; color: #5F6673; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; text-align: center;">📥 Baixe cada formato em 1 clique</div>
             
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
               <tr>
-                <td width="50%" style="padding: 4px;">
-                  <a href="${urls.feed}" target="_blank" style="display:block;background:#1E81FE;color:#FFFFFF;padding:14px 16px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
+                <td width="50%" style="padding: 5px;">
+                  <a href="${urls.feed}" target="_blank" style="display:block;background:#1E81FE;color:#FFFFFF;padding:14px 12px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
                     📷 Feed (1080×1350)
                   </a>
                 </td>
-                <td width="50%" style="padding: 4px;">
-                  <a href="${urls.whatsapp}" target="_blank" style="display:block;background:#25D366;color:#FFFFFF;padding:14px 16px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
+                <td width="50%" style="padding: 5px;">
+                  <a href="${urls.whatsapp}" target="_blank" style="display:block;background:#111317;color:#FFFFFF;padding:14px 12px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
                     💬 WhatsApp (1080×1080)
                   </a>
                 </td>
               </tr>
               <tr>
-                <td width="50%" style="padding: 4px;">
-                  <a href="${urls.story}" target="_blank" style="display:block;background:#E4405F;color:#FFFFFF;padding:14px 16px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
+                <td width="50%" style="padding: 5px;">
+                  <a href="${urls.story}" target="_blank" style="display:block;background:#1E81FE;color:#FFFFFF;padding:14px 12px;border-radius:14px;font-size:13px;font-weight:800;text-decoration:none;text-align:center;">
                     📱 Story (1080×1920)
                   </a>
                 </td>
@@ -102,14 +100,23 @@ export function generateEmailHtml(
             </table>
           </div>
 
-          <div style="background: #EBF3FF; border: 1px solid #B2D3FF; color: #1E81FE; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 700; text-align: center;">
-            📎 Nota: Os 3 arquivos PNG também estão salvos e prontos para uso em alta definição.
+          <!-- Social Copywriting Box -->
+          <div style="margin-bottom: 28px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px;">
+            <div style="font-size: 12px; font-weight: 800; color: #1E81FE; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; display: flex; items-center; gap: 6px;">
+              📝 Legenda Pronta para Redes Sociais
+            </div>
+            <div style="font-size: 13px; color: #334155; line-height: 1.6; white-space: pre-wrap; font-family: monospace, sans-serif;">${safeCaption}</div>
+          </div>
+
+          <!-- Recruiter Tip Banner -->
+          <div style="background: #EBF3FF; border: 1px solid #B2D3FF; color: #1E81FE; padding: 14px 16px; border-radius: 14px; font-size: 12px; font-weight: 700; text-align: center; line-height: 1.4;">
+            💡 <strong>Dica Jobz:</strong> Poste nos horários de maior engajamento (09h, 12h e 18h) para aumentar o alcance orgânico da sua vaga.
           </div>
         </div>
 
         <!-- Footer -->
         <div style="text-align: center; padding: 24px; color: #8A94A3; font-size: 11px; font-weight: 600;">
-          Jobz Carreira • Gerador Oficial de Kits de Divulgação de Vagas
+          Jobz • Gerador Oficial de Kits de Divulgação de Vagas
         </div>
       </div>
     </body>
@@ -145,7 +152,7 @@ export async function uploadAssetsAndSendEmail(
     story: getPublicUrl(storyPath),
   };
 
-  const subject = `🚀 Kit de Artes da Vaga: ${copy.headline}`;
+  const subject = `🚀 Seu Kit de Divulgação está Pronto: ${copy.headline} | Jobz`;
   const htmlContent = generateEmailHtml(copy, sourcing, urls, extractedData);
 
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {

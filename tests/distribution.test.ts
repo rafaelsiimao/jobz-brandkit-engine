@@ -38,8 +38,8 @@ describe('Email Template Generator (v2.0 Clean Arts Delivery)', () => {
 
     // Core sections exist
     expect(html).toContain('Kit Oficial de Divulgação de Vaga');
-    expect(html).toContain('Suas Artes PNG Estão Prontas');
-    expect(html).toContain('Clique para Baixar em Alta Resolução');
+    expect(html).toContain('Suas Artes Estão Prontas');
+    expect(html).toContain('Baixe cada formato em 1 clique');
 
     // Image URLs & Buttons
     expect(html).toContain('http://img/feed.png');
