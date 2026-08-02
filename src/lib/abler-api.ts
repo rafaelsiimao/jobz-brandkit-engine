@@ -57,6 +57,10 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
         salaryStr = `R$ ${Number(attrs.salary).toLocaleString('pt-BR')}`;
       }
 
+      const rawB = attrs.benefits_without_tags || attrs.benefits || attrs.additional_info_without_tags || attrs.additional_info || '';
+      const isInternal = /alinhamento|confirmar|cliente|validar|hunting|faturar/i.test(rawB);
+      const bList = (rawB && !isInternal) ? [rawB.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()] : [];
+
       return {
         id: String(item?.id || Math.random()),
         title: attrs.title || 'Vaga Sem Título',
@@ -67,6 +71,7 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
         workType: workTypes,
         location: cityName,
         salary: salaryStr,
+        benefits: bList,
         createdAt: attrs.created_at || '',
         publishedAt: attrs.published_at || '',
       };
@@ -147,7 +152,7 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     : ['Experiência técnica na área', 'Boa comunicação interpessoal'];
 
   // Benefits parsing with internal notes filter
-  const rawBenefits = attrs.additional_info_without_tags || attrs.additional_info || '';
+  const rawBenefits = attrs.benefits_without_tags || attrs.benefits || attrs.additional_info_without_tags || attrs.additional_info || '';
   const isInternalNote = /alinhamento|confirmar|cliente|validar|hunting|faturar/i.test(rawBenefits);
 
   let benefits: string[] = [];
