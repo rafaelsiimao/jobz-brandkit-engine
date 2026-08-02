@@ -49,6 +49,7 @@ interface EditFormState {
   showRequirements: boolean;
   requirementsList: string;
   previewFormat: 'feed' | 'whatsapp' | 'story';
+  customCtaPrefix: string;
 }
 
 export default function HomePage() {
@@ -72,7 +73,9 @@ export default function HomePage() {
     showRequirements: true,
     requirementsList: 'Ensino Superior Completo • Pacote Office • Boa Comunicação',
     previewFormat: 'feed',
+    customCtaPrefix: '',
   });
+  const [showCtaCustomizer, setShowCtaCustomizer] = useState(false);
 
   const [generating, setGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; title: string; text: string } | null>(null);
@@ -97,7 +100,7 @@ export default function HomePage() {
   useEffect(() => {
     loadVacancies();
 
-    const savedEmail = localStorage.getItem('jobz_recipient_email') || 'rafael.simao@jobz.com.br';
+    const savedEmail = localStorage.getItem('jobz_recipient_email') || '';
     setFormData((prev) => ({ 
       ...prev, 
       recipientEmail: savedEmail,
@@ -109,7 +112,7 @@ export default function HomePage() {
     setSelectedVacancy(vacancy);
     setStatusMessage(null);
 
-    const savedEmail = localStorage.getItem('jobz_recipient_email') || 'rafael.simao@jobz.com.br';
+    const savedEmail = localStorage.getItem('jobz_recipient_email') || '';
     const isEstagio = vacancy.contractingRegime.toUpperCase().includes('ESTAGIO') || /est[áa]gio/i.test(vacancy.title);
     const isPJ = vacancy.contractingRegime.toUpperCase().includes('PJ') || /pj\b/i.test(vacancy.title);
 
@@ -133,7 +136,9 @@ export default function HomePage() {
       showRequirements: true,
       requirementsList: 'Ensino Superior Completo • Conhecimentos na Área • Boa Comunicação',
       previewFormat: 'feed',
+      customCtaPrefix: '',
     });
+    setShowCtaCustomizer(false);
   };
 
   const closePreviewModal = () => {
@@ -170,6 +175,7 @@ export default function HomePage() {
             candidatureEmail: formData.candidatureEmail,
             showRequirements: formData.showRequirements,
             requirementsList: formData.requirementsList,
+            customCtaPrefix: formData.customCtaPrefix,
           },
         }),
       });
@@ -713,6 +719,60 @@ export default function HomePage() {
                         </button>
                       </div>
 
+                      {/* Micro-customizador retrátil do texto do CTA */}
+                      <div className="mt-1.5">
+                        {!showCtaCustomizer && !formData.customCtaPrefix ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowCtaCustomizer(true)}
+                            className="text-[11px] font-bold text-[#1E81FE] hover:underline flex items-center gap-1"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            Personalizar chamada (ex: Candidate-se em:)
+                          </button>
+                        ) : (
+                          <div className="p-2.5 bg-[#F4F8FE] rounded-xl border border-[#B2D3FF] space-y-1.5 animate-in fade-in duration-150">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-[#1E81FE] uppercase tracking-wider">
+                                Texto Personalizado da Chamada
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowCtaCustomizer(false);
+                                  setFormData({ ...formData, customCtaPrefix: '' });
+                                }}
+                                className="text-[10px] font-bold text-[#5F6673] hover:text-[#111317] underline"
+                              >
+                                Resetar Padrão
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={formData.customCtaPrefix}
+                              onChange={(e) => setFormData({ ...formData, customCtaPrefix: e.target.value })}
+                              placeholder={formData.candidatureType === 'email' ? '👉 Envie seu CV para:' : '👉 Candidate-se em:'}
+                              className="w-full px-2.5 py-1.5 bg-white border border-[#D7DEE7] rounded-lg text-xs font-semibold text-[#111317] focus:border-[#1E81FE] focus:outline-none"
+                            />
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {(formData.candidatureType === 'email'
+                                ? ['Envie seu CV para:', 'Encaminhe seu currículo para:', 'Mande seu PDF para:']
+                                : ['Candidate-se em:', 'Inscreva-se em:', 'Confira e aplique em:', 'Saiba mais em:']
+                              ).map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, customCtaPrefix: preset })}
+                                  className="text-[10px] font-bold text-[#1E81FE] bg-white border border-[#B2D3FF] hover:bg-[#EBF3FF] px-2 py-0.5 rounded-md"
+                                >
+                                  + {preset}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       {formData.candidatureType === 'email' && (
                         <div className="pt-1 animate-in fade-in duration-150">
                           <label className="block text-[11px] font-bold text-[#1E81FE] uppercase tracking-wider mb-1">
@@ -724,9 +784,28 @@ export default function HomePage() {
                             value={formData.candidatureEmail}
                             onChange={(e) => setFormData({ ...formData, candidatureEmail: e.target.value })}
                             disabled={generating}
-                            placeholder="vagas@jobz.com.br"
+                            placeholder="seu.email@jobz.com.br"
                             className="w-full px-3.5 py-2 bg-[#EBF3FF] border border-[#B2D3FF] rounded-xl text-xs font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                           />
+                          {formData.candidatureEmail.includes('@') &&
+                            !formData.candidatureEmail.includes('@jobz.com.br') &&
+                            !formData.candidatureEmail.split('@')[1]?.includes('.') && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setFormData({
+                                    ...formData,
+                                    candidatureEmail: `${formData.candidatureEmail.split('@')[0]}@jobz.com.br`,
+                                  })
+                                }
+                                className="mt-1 text-[11px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] hover:bg-[#D2E4FF] px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 shadow-xs"
+                              >
+                                <span>✨ Completar:</span>
+                                <span className="underline font-mono">
+                                  {formData.candidatureEmail.split('@')[0]}@jobz.com.br
+                                </span>
+                              </button>
+                            )}
                         </div>
                       )}
                     </div>
@@ -742,8 +821,28 @@ export default function HomePage() {
                         value={formData.recipientEmail}
                         onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
                         disabled={generating}
+                        placeholder="seu.email@jobz.com.br"
                         className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                       />
+                      {formData.recipientEmail.includes('@') &&
+                        !formData.recipientEmail.includes('@jobz.com.br') &&
+                        !formData.recipientEmail.split('@')[1]?.includes('.') && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                recipientEmail: `${formData.recipientEmail.split('@')[0]}@jobz.com.br`,
+                              })
+                            }
+                            className="mt-1 text-[11px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] hover:bg-[#D2E4FF] px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 shadow-xs"
+                          >
+                            <span>✨ Completar:</span>
+                            <span className="underline font-mono">
+                              {formData.recipientEmail.split('@')[0]}@jobz.com.br
+                            </span>
+                          </button>
+                        )}
                     </div>
                   </form>
                 </div>

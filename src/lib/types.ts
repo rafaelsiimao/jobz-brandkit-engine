@@ -18,6 +18,7 @@ export interface ExtractedJobData {
   candidatureEmail?: string;
   showRequirements?: boolean;
   requirementsList?: string;
+  customCtaPrefix?: string;
 }
 
 export interface SourcingChannels {
@@ -54,6 +55,7 @@ export interface CopyData {
   candidatureEmail?: string;
   showRequirements?: boolean;
   requirementsList?: string;
+  customCtaPrefix?: string;
 }
 
 export interface AssetUrls {

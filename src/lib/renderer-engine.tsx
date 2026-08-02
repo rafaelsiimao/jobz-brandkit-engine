@@ -222,6 +222,12 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
   const showReqs = copy.showRequirements && !!copy.requirementsList;
   const reqsText = cleanText(copy.requirementsList || '');
 
+  const defaultPrefix = isEmail ? '👉 Envie seu CV para:' : '👉 Candidate-se em:';
+  const rawCustom = (copy.customCtaPrefix || '').trim();
+  const ctaPrefix = rawCustom
+    ? (rawCustom.startsWith('👉') ? rawCustom : `👉 ${rawCustom}`)
+    : defaultPrefix;
+
   // 1. Feed (1080 x 1350) - Canvas Background #F1F4F7
   const feedJsx = (
     <div
@@ -345,13 +351,13 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
               📄 Aceitamos somente currículos em formato PDF
             </div>
             <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '22px', border: '1px solid rgba(255, 255, 255, 0.15)', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '24px', fontWeight: 700 }}>
-              <span>👉 Envie seu CV para:</span>
+              <span>{ctaPrefix}</span>
               <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
             </div>
           </div>
         ) : (
             <div style={{ backgroundColor: '#111317', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFFFFF', borderRadius: '22px', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '24px', fontWeight: 700 }}>
-              <span>👉 Candidate-se em:</span>
+              <span>{ctaPrefix}</span>
               <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
             </div>
         )}
@@ -471,13 +477,13 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
               📄 Aceitamos somente currículos em formato PDF
             </div>
             <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.15)', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '21px', fontWeight: 700 }}>
-              <span>👉 Envie seu CV para:</span>
+              <span>{ctaPrefix}</span>
               <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
             </div>
           </div>
         ) : (
           <div style={{ backgroundColor: '#111317', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFFFFF', borderRadius: '18px', padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '21px', fontWeight: 700 }}>
-            <span>👉 Candidate-se em:</span>
+            <span>{ctaPrefix}</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
         )}
@@ -597,13 +603,13 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
               📄 Aceitamos somente currículos em formato PDF
             </div>
             <div style={{ backgroundColor: '#111317', color: '#FFFFFF', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.15)', padding: '32px 40px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '28px', fontWeight: 700 }}>
-              <span>👉 Envie seu CV para:</span>
+              <span>{ctaPrefix}</span>
               <span style={{ color: '#66A9FF' }}>{emailAddress}</span>
             </div>
           </div>
         ) : (
           <div style={{ backgroundColor: '#111317', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFFFFF', borderRadius: '28px', padding: '32px 40px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '28px', fontWeight: 700 }}>
-            <span>👉 Candidate-se em:</span>
+            <span>{ctaPrefix}</span>
             <span style={{ color: '#66A9FF' }}>jobz.com.br/vagas</span>
           </div>
         )}
