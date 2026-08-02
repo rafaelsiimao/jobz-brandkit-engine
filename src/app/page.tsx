@@ -212,8 +212,22 @@ export default function HomePage() {
       v.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.id.includes(searchQuery);
 
-    const matchesRegime =
-      selectedRegimeFilter === 'all' || v.contractingRegime.toUpperCase().includes(selectedRegimeFilter.toUpperCase());
+    const isVacancyEstagio =
+      /EST[ÁA]GIO|ESTAGI[ÁA]RI[OA]/i.test(v.contractingRegime || '') ||
+      /EST[ÁA]GIO|ESTAGI[ÁA]RI[OA]/i.test(v.title || '');
+
+    const isVacancyPJ =
+      /PJ\b|PRESTADOR/i.test(v.contractingRegime || '') ||
+      /\bPJ\b/i.test(v.title || '');
+
+    let matchesRegime = true;
+    if (selectedRegimeFilter === 'ESTAGIO') {
+      matchesRegime = isVacancyEstagio;
+    } else if (selectedRegimeFilter === 'PJ') {
+      matchesRegime = isVacancyPJ;
+    } else if (selectedRegimeFilter === 'CLT') {
+      matchesRegime = !isVacancyEstagio && !isVacancyPJ;
+    }
 
     return matchesSearch && matchesRegime;
   });
@@ -352,8 +366,8 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredVacancies.map((vacancy) => {
-                const isEstagio = vacancy.contractingRegime.toUpperCase().includes('ESTAGIO');
-                const isPJ = vacancy.contractingRegime.toUpperCase().includes('PJ');
+                const isEstagio = /EST[ÁA]GIO|ESTAGI[ÁA]RI[OA]/i.test(vacancy.contractingRegime || '') || /EST[ÁA]GIO|ESTAGI[ÁA]RI[OA]/i.test(vacancy.title || '');
+                const isPJ = /PJ\b|PRESTADOR/i.test(vacancy.contractingRegime || '') || /\bPJ\b/i.test(vacancy.title || '');
 
                 return (
                   <div
