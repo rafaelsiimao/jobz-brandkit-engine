@@ -207,7 +207,19 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     attrs.additional_info
   ].filter(Boolean).join(' ; ');
 
-  const benefits = cleanBenefits(rawBenefitsSources);
+  const parsedBenefits = cleanBenefits(rawBenefitsSources);
+
+  let benefits: string[];
+  if (parsedBenefits.length > 0) {
+    benefits = parsedBenefits;
+  } else if (contractType === 'ESTAGIO') {
+    benefits = ['Vale Transporte', 'Vale Refeição', 'Plano de Saúde', 'Auxílio Educação'];
+  } else if (contractType === 'PJ') {
+    benefits = ['Contrato PJ Flexível', 'Home Office', 'Pagamento via NF'];
+  } else {
+    // CLT
+    benefits = ['Vale Transporte', 'Vale Refeição', 'Plano de Saúde', 'Plano Odontológico'];
+  }
 
   const rawDescription = attrs.role_description_without_tags || attrs.description || title;
 
