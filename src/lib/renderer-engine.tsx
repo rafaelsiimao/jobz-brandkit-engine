@@ -322,16 +322,18 @@ export async function renderBrandKitPNGs(copy: CopyData): Promise<{ feed: Buffer
             <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '50px' }}>{parsed.location}</div>
           </div>
 
-          {/* Row 4: Benefits */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: '#EBF3FF', border: '1px solid #D2E4FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <GiftIcon size={20} color="#1E81FE" />
+          {/* Row 4: Benefits (only if present) */}
+          {!!parsed.valueBenefits && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: '#EBF3FF', border: '1px solid #D2E4FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GiftIcon size={20} color="#1E81FE" />
+                </div>
+                <span style={{ fontSize: '18px', color: '#717D8D', fontWeight: 700, letterSpacing: '1.5px' }}>BENEFÍCIOS</span>
               </div>
-              <span style={{ fontSize: '18px', color: '#717D8D', fontWeight: 700, letterSpacing: '1.5px' }}>BENEFÍCIOS</span>
+              <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '50px' }}>{parsed.valueBenefits}</div>
             </div>
-            <div style={{ fontSize: '28px', color: '#111317', fontWeight: 700, lineHeight: 1.25, paddingLeft: '50px' }}>{parsed.valueBenefits}</div>
-          </div>
+          )}
 
           {/* Row 5: Requisitos Opcionais */}
           {showReqs && (

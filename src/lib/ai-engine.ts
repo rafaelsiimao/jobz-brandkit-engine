@@ -71,9 +71,11 @@ export function buildCleanSocialCaption(
   const parsedReqs = parseRequirementsList(data.requirements);
   const reqsList = parsedReqs.slice(0, 5).map(r => `• ${r}`).join('\n');
 
-  const benefitsText = Array.isArray(data.benefits) && data.benefits.length > 0
-    ? data.benefits.slice(0, 3).join(' + ')
-    : 'Compatível com o mercado';
+  const benefitsText = Array.isArray(data.benefits) && data.benefits.filter(Boolean).length > 0
+    ? data.benefits.filter(Boolean).slice(0, 3).join(' + ')
+    : '';
+
+  const benefitsLine = benefitsText ? `🎁 Benefícios: ${benefitsText}\n` : '';
 
   const rawCustom = (customCta || '').trim();
   let ctaLine = '';
@@ -92,8 +94,7 @@ export function buildCleanSocialCaption(
 💼 Modelo: ${contractLabel}
 ⏰ Jornada: ${data.schedule || 'Horário comercial'}
 💰 ${labelFinancialPrefix}: ${data.salary || 'A combinar'}
-🎁 Benefícios: ${benefitsText}
-
+${benefitsLine}
 🎯 REQUISITOS:
 ${reqsList}
 
@@ -109,7 +110,7 @@ export async function generateBrandKitAI(extractedData: ExtractedJobData): Promi
     location: extractedData?.location || 'Brasil',
     modality: extractedData?.modality || 'Presencial',
     salary: extractedData?.salary || 'Compatível com o mercado',
-    benefits: Array.isArray(extractedData?.benefits) ? extractedData.benefits : ['Vale Transporte / Alimentação'],
+    benefits: Array.isArray(extractedData?.benefits) ? extractedData.benefits : [],
     schedule: extractedData?.schedule || 'Horário comercial',
     requirements: Array.isArray(extractedData?.requirements) ? extractedData.requirements : ['Experiência na área'],
     activities: Array.isArray(extractedData?.activities) ? extractedData.activities : ['Executar atividades da função'],
@@ -126,13 +127,13 @@ export async function generateBrandKitAI(extractedData: ExtractedJobData): Promi
 
   const defaultBenefitsText = safeData.benefits.length > 0
     ? safeData.benefits.slice(0, 2).join(' + ')
-    : 'Compatível com o mercado';
+    : '';
 
   const defaultHighlights = [
     `${safeData.modality} | ${safeData.location}`,
     `${labelHoursPrefix}${safeData.schedule}`,
     `${labelFinancialPrefix}${safeData.salary}`,
-    `Benefícios: ${defaultBenefitsText}`
+    ...(defaultBenefitsText ? [`Benefícios: ${defaultBenefitsText}`] : [])
   ];
 
   // If OPENAI_API_KEY is provided

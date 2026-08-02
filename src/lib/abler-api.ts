@@ -13,6 +13,7 @@ export interface AblerVacancyItem {
   workType: string;
   location: string;
   salary: string;
+  benefits?: string[];
   createdAt: string;
   publishedAt: string;
 }
@@ -152,15 +153,6 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
   let benefits: string[] = [];
   if (rawBenefits && !isInternalNote) {
     benefits = [rawBenefits.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()];
-  } else {
-    // If it was an internal note or empty, populate with standard benefits based on contract type
-    if (contractType === 'ESTAGIO') {
-      benefits = ['Bolsa auxílio compatível', 'Auxílio Transporte', 'Recesso Remunerado'];
-    } else if (contractType === 'PJ') {
-      benefits = ['Remuneração atrativa', 'Horário flexível', 'Ambiente colaborativo'];
-    } else {
-      benefits = ['Vale Refeição / Alimentação', 'Vale Transporte', 'Plano de Saúde'];
-    }
   }
 
   const rawDescription = attrs.role_description_without_tags || attrs.description || title;

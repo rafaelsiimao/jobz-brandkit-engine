@@ -125,11 +125,7 @@ export default function HomePage() {
       contractType,
       schedule: isEstagio ? '6h diárias (30h semanais)' : 'Segunda a Sexta • 08h às 17:30h',
       salary: vacancy.salary || (isEstagio ? 'Bolsa a combinar' : 'Compatível com o mercado'),
-      benefits: isEstagio 
-        ? 'Auxílio Transporte + Recesso Remunerado' 
-        : isPJ 
-        ? 'Horário Flexível + Home Office' 
-        : 'Vale Refeição / Alimentação + Vale Transporte + Plano de Saúde',
+      benefits: Array.isArray(vacancy.benefits) && vacancy.benefits.length > 0 ? vacancy.benefits.join(' + ') : '',
       modality: vacancy.workType.includes('Remoto') ? 'Remoto' : vacancy.workType.includes('Híbrido') ? 'Híbrido' : 'Presencial',
       location: vacancy.location || 'Vila Velha / ES',
       recipientEmail: savedEmail,
@@ -988,15 +984,17 @@ export default function HomePage() {
                             <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.location}</div>
                           </div>
 
-                          <div>
-                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
-                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
-                                <Gift className="w-2.5 h-2.5 text-[#1E81FE]" />
+                          {!!formData.benefits && (
+                            <div>
+                              <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
+                                <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
+                                  <Gift className="w-2.5 h-2.5 text-[#1E81FE]" />
+                                </div>
+                                <span>BENEFÍCIOS</span>
                               </div>
-                              <span>BENEFÍCIOS</span>
+                              <div className="font-semibold text-[#111317] pl-5 text-xs break-words leading-snug">{formData.benefits}</div>
                             </div>
-                            <div className="font-semibold text-[#111317] pl-5 text-xs break-words leading-snug">{formData.benefits}</div>
-                          </div>
+                          )}
 
                           {formData.showRequirements && formData.requirementsList && (
                             <div className="animate-in fade-in duration-150">
