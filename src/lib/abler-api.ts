@@ -158,7 +158,7 @@ async function fetchBenefitsCatalog(): Promise<Map<string, string>> {
 
 export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<ExtractedJobData> {
   const [res, benefitsMap] = await Promise.all([
-    fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies/${vacancyId}?include=vacancies_benefits`, {
+    fetch(`${ABLER_BASE_URL}/api/company/v1/vacancies/${vacancyId}?include=vacancies_benefits,responsible`, {
       headers: getAblerHeaders(),
     }),
     fetchBenefitsCatalog(),
@@ -171,6 +171,11 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
   const json = await res.json();
   const attrs = json?.data?.attributes || {};
   const included: any[] = Array.isArray(json?.included) ? json.included : [];
+
+  // Extract responsible recruiter from included company_user
+  const responsibleUser = included.find((inc: any) => inc?.type === 'company_user');
+  const responsibleEmail = responsibleUser?.attributes?.email || undefined;
+  const responsibleName = responsibleUser?.attributes?.name || undefined;
 
   const title = attrs.title || 'Vaga Sem Título';
   
@@ -277,5 +282,7 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
     contractType,
     seniorityLevel: attrs.seniority_level_formatted || 'Pleno',
     rawDescription,
+    responsibleEmail,
+    responsibleName,
   };
 }

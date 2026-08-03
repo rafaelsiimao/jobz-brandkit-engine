@@ -19,6 +19,8 @@ export interface ExtractedJobData {
   showRequirements?: boolean;
   requirementsList?: string;
   customCtaPrefix?: string;
+  responsibleEmail?: string;
+  responsibleName?: string;
 }
 
 export interface SourcingChannels {

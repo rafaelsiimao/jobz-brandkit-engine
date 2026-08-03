@@ -110,23 +110,34 @@ export default function HomePage() {
     }));
   }, []);
 
+  const [responsibleInfo, setResponsibleInfo] = useState<{ name?: string; email?: string } | null>(null);
+
   const openPreviewModal = async (vacancy: AblerVacancyItem) => {
     setSelectedVacancy(vacancy);
     setStatusMessage(null);
+    setResponsibleInfo(null);
 
     const savedEmail = localStorage.getItem('jobz_recipient_email') || '';
     const isEstagio = vacancy.contractingRegime.toUpperCase().includes('ESTAGIO') || /est[áa]gio/i.test(vacancy.title);
     const isPJ = vacancy.contractingRegime.toUpperCase().includes('PJ') || /pj\b/i.test(vacancy.title);
     const contractType = isEstagio ? 'ESTAGIO' : isPJ ? 'PJ' : 'CLT';
 
-    // Busca detalhes completos (com benefícios estruturados)
     let benefitsStr = Array.isArray(vacancy.benefits) && vacancy.benefits.length > 0 ? vacancy.benefits.join(' + ') : '';
+    let autoRecipientEmail = savedEmail;
+
     try {
       const res = await fetch(`/api/vacancy-details?id=${vacancy.id}`);
       if (res.ok) {
         const details = await res.json();
         if (Array.isArray(details.benefits) && details.benefits.length > 0) {
           benefitsStr = details.benefits.join(' + ');
+        }
+        if (details.responsibleEmail) {
+          autoRecipientEmail = details.responsibleEmail;
+          setResponsibleInfo({
+            name: details.responsibleName,
+            email: details.responsibleEmail,
+          });
         }
       }
     } catch {
@@ -141,9 +152,9 @@ export default function HomePage() {
       benefits: benefitsStr,
       modality: vacancy.workType.includes('Remoto') ? 'Remoto' : vacancy.workType.includes('Híbrido') ? 'Híbrido' : 'Presencial',
       location: vacancy.location || 'Vila Velha / ES',
-      recipientEmail: savedEmail,
+      recipientEmail: autoRecipientEmail,
       candidatureType: 'platform',
-      candidatureEmail: savedEmail,
+      candidatureEmail: autoRecipientEmail,
       showRequirements: true,
       requirementsList: 'Ensino Superior Completo • Conhecimentos na Área • Boa Comunicação',
       previewFormat: 'feed',
@@ -845,6 +856,11 @@ export default function HomePage() {
                         placeholder="seu.email@jobz.com.br"
                         className="w-full px-3.5 py-2 bg-[#FAFAFC] border border-[#D7DEE7] rounded-xl text-xs font-bold text-[#111317] focus:bg-white focus:border-[#1E81FE] focus:outline-none"
                       />
+                      {responsibleInfo?.email && (
+                        <div className="mt-1 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                          <span>👤 Preenchido automaticamente com o e-mail da responsável na Abler{responsibleInfo.name ? `: ${responsibleInfo.name}` : ''}</span>
+                        </div>
+                      )}
                       {formData.recipientEmail.includes('@') &&
                         !formData.recipientEmail.includes('@jobz.com.br') &&
                         !formData.recipientEmail.split('@')[1]?.includes('.') && (
