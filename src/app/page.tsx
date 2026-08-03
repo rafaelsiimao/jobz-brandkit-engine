@@ -168,6 +168,16 @@ export default function HomePage() {
     setSelectedVacancy(null);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedVacancy && !generating) {
+        closePreviewModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedVacancy, generating]);
+
   const handleConfirmAndGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVacancy || !formData.recipientEmail) return;
@@ -462,8 +472,14 @@ export default function HomePage() {
 
         {/* MODAL DE PREVIEW E EDIÇÃO EM TEMPO REAL */}
         {selectedVacancy && (
-          <div className="fixed inset-0 z-[100] bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden">
-            <div className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative">
+          <div
+            onClick={closePreviewModal}
+            className="fixed inset-0 z-[100] bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl border border-[#D7DEE7] shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative cursor-default"
+            >
               
               {/* Modal Header */}
               <div className="p-4 sm:p-5 border-b border-[#D7DEE7] flex items-center justify-between bg-[#FAFAFC] shrink-0">
