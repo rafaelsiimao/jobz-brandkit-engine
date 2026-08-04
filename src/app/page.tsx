@@ -972,96 +972,96 @@ export default function HomePage() {
                   </div>
 
                   {/* Simulated Dynamic Live Card Container (No cuts, zero overlapping, full multiline text) */}
-                  <div className="w-full flex items-center justify-center py-2 shrink-0 my-auto relative z-0">
+                  <div className="w-full flex items-center justify-center py-1 shrink-0 my-auto relative z-0">
                     <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
                       formData.previewFormat === 'story'
-                        ? 'max-w-[285px] aspect-[9/16] p-4 text-xs rounded-2xl'
+                        ? 'max-w-[270px] min-h-[480px] p-3.5 pb-0 text-xs rounded-2xl'
                         : formData.previewFormat === 'whatsapp'
-                        ? 'max-w-[340px] aspect-square p-4 text-xs rounded-2xl'
-                        : 'max-w-[340px] aspect-[1/1.25] p-4 text-xs rounded-2xl'
+                        ? 'max-w-[340px] min-h-[340px] p-3.5 pb-0 text-xs rounded-2xl'
+                        : 'max-w-[330px] min-h-[412px] p-3.5 pb-0 text-xs rounded-2xl'
                     }`}>
                       
                       {/* Top Right Blue Accent Corner */}
                       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
 
-                      <div className="space-y-2 relative z-10">
+                      <div className="space-y-1.5 relative z-10">
                         {/* Logo PNG Oficial */}
                         <div className="flex items-center">
-                          <img src={JOBZ_LOGO_PNG_BASE64} className="h-5 w-auto" alt="Jobz Carreira" />
+                          <img src={JOBZ_LOGO_PNG_BASE64} className="h-4.5 w-auto" alt="Jobz Carreira" />
                         </div>
 
                         {/* Kicker */}
-                        <div className="text-[9px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
+                        <div className="text-[8.5px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
                           {kickerText}
                         </div>
 
                         {/* Title — Mantém tamanho sem diminuir, quebrando linha */}
-                        <div className="text-base font-extrabold text-[#111317] leading-snug">
+                        <div className="text-xs font-extrabold text-[#111317] leading-snug line-clamp-2">
                           {formData.title || 'Título da Vaga'}
                         </div>
 
                         {/* Content Pills Stack */}
-                        <div className={`pt-1 ${formData.previewFormat === 'whatsapp' ? 'grid grid-cols-2 gap-1.5' : 'space-y-1.5'}`}>
+                        <div className={`pt-0.5 ${formData.previewFormat === 'whatsapp' ? 'grid grid-cols-2 gap-1' : 'space-y-1'}`}>
                           
                           {/* 1. Local */}
-                          <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
-                            <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                          <div className="bg-white rounded-lg p-1.5 shadow-xs border border-[#E2E8F0]">
+                            <div className="text-[7.5px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
                               <MapPin className="w-2.5 h-2.5 text-[#1E81FE]" />
                               <span>LOCAL</span>
                             </div>
-                            <div className="font-bold text-[#111317] text-[10px] truncate">{formData.location || 'Vitória - ES'}</div>
+                            <div className="font-bold text-[#111317] text-[9.5px] truncate">{formData.location || 'Vitória - ES'}</div>
                           </div>
 
                           {/* 2. Jornada */}
-                          <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
-                            <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                          <div className="bg-white rounded-lg p-1.5 shadow-xs border border-[#E2E8F0]">
+                            <div className="text-[7.5px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
                               <Clock className="w-2.5 h-2.5 text-[#1E81FE]" />
                               <span>{labelHoursText}</span>
                             </div>
-                            <div className="font-bold text-[#111317] text-[10px] truncate">{formData.schedule}</div>
+                            <div className="font-bold text-[#111317] text-[9.5px] truncate">{formData.schedule}</div>
                           </div>
 
                           {/* 3. Salário */}
-                          <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
-                            <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                          <div className="bg-white rounded-lg p-1.5 shadow-xs border border-[#E2E8F0]">
+                            <div className="text-[7.5px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
                               <Wallet className="w-2.5 h-2.5 text-[#1E81FE]" />
                               <span>{labelFinancialText}</span>
                             </div>
-                            <div className="font-extrabold text-[#1E81FE] text-[11px] truncate">{formData.salary}</div>
+                            <div className="font-extrabold text-[#1E81FE] text-[10px] truncate">{formData.salary}</div>
                           </div>
 
                           {/* 4. Benefícios */}
                           {!!formData.benefits && (
-                            <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
-                              <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                            <div className="bg-white rounded-lg p-1.5 shadow-xs border border-[#E2E8F0]">
+                              <div className="text-[7.5px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
                                 <Gift className="w-2.5 h-2.5 text-[#1E81FE]" />
                                 <span>BENEFÍCIOS</span>
                               </div>
-                              <div className="font-semibold text-[#111317] text-[9.5px] leading-tight line-clamp-2">{formData.benefits}</div>
+                              <div className="font-semibold text-[#111317] text-[9px] leading-tight line-clamp-2">{formData.benefits}</div>
                             </div>
                           )}
 
                           {/* 5. Requisitos (Pill Azul Clara #BFDBFE) */}
                           {formData.showRequirements && !!formData.requirementsList && (
-                            <div className={`bg-[#BFDBFE] border border-[#3B82F6] rounded-xl p-2 ${formData.previewFormat === 'whatsapp' ? 'col-span-2' : ''}`}>
-                              <div className="text-[8px] font-mono font-bold text-[#1D4ED8] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                            <div className={`bg-[#BFDBFE] border border-[#3B82F6] rounded-lg p-1.5 ${formData.previewFormat === 'whatsapp' ? 'col-span-2' : ''}`}>
+                              <div className="text-[7.5px] font-mono font-bold text-[#1D4ED8] uppercase tracking-wider flex items-center gap-1 mb-0.5">
                                 <ListChecks className="w-2.5 h-2.5 text-[#1D4ED8]" />
                                 <span>REQUISITOS</span>
                               </div>
-                              <div className="font-semibold text-[#1E293B] text-[9.5px] leading-tight line-clamp-2">{formData.requirementsList}</div>
+                              <div className="font-semibold text-[#1E293B] text-[9px] leading-tight line-clamp-2">{formData.requirementsList}</div>
                             </div>
                           )}
                         </div>
 
                         {/* Pill Tags Centralizadas Dinâmicas */}
-                        <div className="flex items-center justify-center gap-1 pt-1.5 flex-wrap">
-                          <span className="text-[8px] font-mono font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
+                        <div className="flex items-center justify-center gap-1 pt-1 pb-1 flex-wrap">
+                          <span className="text-[7.5px] font-mono font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-1.5 py-0.5 rounded-full">
                             {formData.modality || 'Presencial'}
                           </span>
-                          <span className="text-[8px] font-mono font-semibold text-[#475569] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                          <span className="text-[7.5px] font-mono font-semibold text-[#475569] bg-white border border-[#D7DEE7] px-1.5 py-0.5 rounded-full truncate max-w-[90px]">
                             {formData.location || 'Vitória / ES'}
                           </span>
-                          <span className="text-[8px] font-mono font-semibold text-[#475569] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                          <span className="text-[7.5px] font-mono font-semibold text-[#475569] bg-white border border-[#D7DEE7] px-1.5 py-0.5 rounded-full">
                             Vaga #{selectedVacancy.id}
                           </span>
                         </div>
@@ -1074,8 +1074,8 @@ export default function HomePage() {
                         const customLiveText = hasCustom ? (rawCustom.startsWith('👉') ? rawCustom : `👉 ${rawCustom}`) : '';
 
                         return (
-                          <div className="w-full relative z-10 -mx-4 -mb-4 w-[calc(100%+2rem)]">
-                            <div className="bg-[#111317] text-white py-2 px-3 text-center text-[10px] font-bold rounded-t-xl flex items-center justify-center gap-1">
+                          <div className="w-full relative z-10 -mx-3.5 mt-2 w-[calc(100%+1.75rem)]">
+                            <div className="bg-[#111317] text-white py-1.5 px-2 text-center text-[9.5px] font-bold rounded-t-xl flex items-center justify-center gap-1">
                               {hasCustom ? (
                                 <span className="truncate">{customLiveText}</span>
                               ) : formData.candidatureType === 'email' ? (
