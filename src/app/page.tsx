@@ -178,6 +178,17 @@ export default function HomePage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedVacancy, generating]);
 
+  useEffect(() => {
+    if (selectedVacancy || showSuccessModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedVacancy, showSuccessModal]);
+
   const handleConfirmAndGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVacancy || !formData.recipientEmail) return;
@@ -474,7 +485,7 @@ export default function HomePage() {
         {selectedVacancy && (
           <div
             onClick={closePreviewModal}
-            className="fixed inset-0 z-[100] bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden cursor-pointer"
+            className="fixed inset-0 z-[100] bg-[#111317]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden cursor-pointer overscroll-contain"
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -507,7 +518,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 flex-1 min-h-0 overflow-hidden">
                 
                 {/* LEFT COLUMN: EDIT FORM */}
-                <div className="lg:col-span-6 p-5 sm:p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white overflow-y-auto">
+                <div className="lg:col-span-6 p-5 sm:p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-[#D7DEE7] bg-white overflow-y-auto overscroll-contain">
                   <div className="flex items-center justify-between border-b border-[#EBF0F5] pb-2">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#1E81FE] flex items-center gap-1.5">
                       <Edit3 className="w-3.5 h-3.5" /> Campos Editáveis da Arte
@@ -939,7 +950,7 @@ export default function HomePage() {
                 </div>
 
                 {/* RIGHT COLUMN: LIVE CARD PREVIEW (STRICT ORDERED FLOW, ZERO OVERLAPPING) */}
-                <div className="lg:col-span-6 p-5 sm:p-6 bg-[#E5E9EE] flex flex-col justify-start items-center gap-4 overflow-y-auto">
+                <div className="lg:col-span-6 p-5 sm:p-6 bg-[#E5E9EE] flex flex-col justify-start items-center gap-4 overflow-y-auto overscroll-contain">
                   
                   {/* MULTI-FORMAT SELECTOR TABS (ALWAYS TOP, RELATIVE Z-10) */}
                   <div className="w-full space-y-2 shrink-0 relative z-10">
