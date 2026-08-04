@@ -88,9 +88,17 @@ export async function fetchCompanyVacancies(): Promise<AblerVacancyItem[]> {
       const firstCity = cities[0] || {};
       const cityName = firstCity.full_name || firstCity.name || 'Espírito Santo';
 
-      const workTypes = Array.isArray(attrs.work_type_formatted) && attrs.work_type_formatted.length > 0
-        ? attrs.work_type_formatted.join(' / ')
-        : 'Presencial';
+      const rawWorkType = [
+        ...(Array.isArray(attrs.work_type) ? attrs.work_type : [attrs.work_type]),
+        ...(Array.isArray(attrs.work_type_formatted) ? attrs.work_type_formatted : [attrs.work_type_formatted]),
+      ].filter(Boolean).join(' ');
+
+      let workTypes = 'Presencial';
+      if (/h[ií]brid/i.test(rawWorkType)) {
+        workTypes = 'Híbrido';
+      } else if (/remot|home\s*office/i.test(rawWorkType)) {
+        workTypes = 'Remoto';
+      }
 
       let salaryStr = 'Compatível com o mercado';
       if (attrs.salary_value) {
@@ -179,12 +187,16 @@ export async function fetchVacancyDetailsFromAbler(vacancyId: string): Promise<E
 
   const title = attrs.title || 'Vaga Sem Título';
   
-  // Modality mapping
+  // Modality mapping (handles "hibrida", "Hibrida", "remoto", etc.)
+  const rawWorkTypeStr = [
+    ...(Array.isArray(attrs.work_type) ? attrs.work_type : [attrs.work_type]),
+    ...(Array.isArray(attrs.work_type_formatted) ? attrs.work_type_formatted : [attrs.work_type_formatted]),
+  ].filter(Boolean).join(' ');
+
   let modality = 'Presencial';
-  const workTypeFormatted = Array.isArray(attrs.work_type_formatted) ? attrs.work_type_formatted.join(' ') : '';
-  if (/h[ií]brid/i.test(workTypeFormatted) || /h[ií]brid/i.test(attrs.work_type || '')) {
+  if (/h[ií]brid/i.test(rawWorkTypeStr)) {
     modality = 'Híbrido';
-  } else if (/remot|home\s*office/i.test(workTypeFormatted) || /remot/i.test(attrs.work_type || '')) {
+  } else if (/remot|home\s*office/i.test(rawWorkTypeStr)) {
     modality = 'Remoto';
   }
 

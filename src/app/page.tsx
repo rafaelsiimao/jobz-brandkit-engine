@@ -124,6 +124,7 @@ export default function HomePage() {
 
     let benefitsStr = Array.isArray(vacancy.benefits) && vacancy.benefits.length > 0 ? vacancy.benefits.join(' + ') : '';
     let autoRecipientEmail = savedEmail;
+    let autoModality = /h[ií]brid/i.test(vacancy.workType) ? 'Híbrido' : /remot|home\s*office/i.test(vacancy.workType) ? 'Remoto' : 'Presencial';
 
     try {
       const res = await fetch(`/api/vacancy-details?id=${vacancy.id}`);
@@ -131,6 +132,9 @@ export default function HomePage() {
         const details = await res.json();
         if (Array.isArray(details.benefits) && details.benefits.length > 0) {
           benefitsStr = details.benefits.join(' + ');
+        }
+        if (details.modality) {
+          autoModality = details.modality;
         }
         if (details.responsibleEmail) {
           autoRecipientEmail = details.responsibleEmail;
@@ -150,7 +154,7 @@ export default function HomePage() {
       schedule: isEstagio ? '6h diárias (30h semanais)' : 'Segunda a Sexta • 08h às 17:30h',
       salary: vacancy.salary || (isEstagio ? 'Bolsa a combinar' : 'Compatível com o mercado'),
       benefits: benefitsStr,
-      modality: vacancy.workType.includes('Remoto') ? 'Remoto' : vacancy.workType.includes('Híbrido') ? 'Híbrido' : 'Presencial',
+      modality: autoModality,
       location: vacancy.location || 'Vila Velha / ES',
       recipientEmail: autoRecipientEmail,
       candidatureType: 'platform',

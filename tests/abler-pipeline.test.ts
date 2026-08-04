@@ -13,4 +13,9 @@ describe('Abler Vacancy 383534 Full Pipeline Test', () => {
     expect(Array.isArray(copy.highlights)).toBe(true);
     expect(copy.highlights.length).toBeGreaterThan(0);
   }, 15000);
+
+  it('should correctly extract Híbrido modality for vacancy 381492 (ASSISTENTE FISCAL)', async () => {
+    const extracted = await fetchVacancyDetailsFromAbler('381492');
+    expect(extracted.modality).toBe('Híbrido');
+  }, 15000);
 });
