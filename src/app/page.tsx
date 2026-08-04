@@ -913,6 +913,28 @@ export default function HomePage() {
                           </div>
                         )}
                     </div>
+
+                    {/* Submit Button (At bottom of Form Column) */}
+                    <div className="w-full pt-4 shrink-0">
+                      <button
+                        type="button"
+                        onClick={handleConfirmAndGenerate}
+                        disabled={generating || !formData.recipientEmail}
+                        className="w-full bg-[#1E81FE] hover:bg-blue-600 text-white font-extrabold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-lg shadow-[#1E81FE]/30 flex items-center justify-center gap-2.5 disabled:opacity-50"
+                      >
+                        {generating ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Gerando artes instantaneamente...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-5 h-5" />
+                            🚀 Confirmar & Gerar Kit de Artes
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </form>
                 </div>
 
@@ -1096,28 +1118,6 @@ export default function HomePage() {
                       })()}
 
                     </div>
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="w-full pt-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={handleConfirmAndGenerate}
-                      disabled={generating || !formData.recipientEmail}
-                      className="w-full bg-[#1E81FE] hover:bg-blue-600 text-white font-extrabold text-sm py-3.5 px-6 rounded-2xl transition-all shadow-lg shadow-[#1E81FE]/30 flex items-center justify-center gap-2.5 disabled:opacity-50"
-                    >
-                      {generating ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Gerando artes instantaneamente...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5" />
-                          🚀 Confirmar & Gerar Kit de Artes
-                        </>
-                      )}
-                    </button>
                   </div>
                 </div>
 
