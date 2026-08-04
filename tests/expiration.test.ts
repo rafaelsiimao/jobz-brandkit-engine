@@ -20,12 +20,13 @@ describe('48-Hour Retention & Expiration Module', () => {
   });
 
   it('should run cleanExpiredJobs gracefully when database is accessible or empty', async () => {
-    const PromiseTimeout = new Promise<{ cleanedCount: number; errors: string[] }>((resolve) => {
-      setTimeout(() => resolve({ cleanedCount: 0, errors: [] }), 2000);
+    const PromiseTimeout = new Promise<{ cleanedCount: number; purgedDbCount: number; errors: string[] }>((resolve) => {
+      setTimeout(() => resolve({ cleanedCount: 0, purgedDbCount: 0, errors: [] }), 2000);
     });
 
     const result = await Promise.race([cleanExpiredJobs(), PromiseTimeout]);
     expect(result).toHaveProperty('cleanedCount');
+    expect(result).toHaveProperty('purgedDbCount');
     expect(result).toHaveProperty('errors');
   }, 10000);
 });

@@ -13,8 +13,9 @@ export async function GET(req: NextRequest) {
     const result = await cleanExpiredJobs();
     return NextResponse.json({
       success: true,
-      message: `Limpeza concluída! ${result.cleanedCount} vagas expiradas limpas do servidor.`,
+      message: `Limpeza concluída com sucesso! ${result.cleanedCount} artes (48h) e ${result.purgedDbCount} registros (30 dias) limpados.`,
       cleanedCount: result.cleanedCount,
+      purgedDbCount: result.purgedDbCount,
       errors: result.errors,
     });
   } catch (err: any) {
