@@ -8,7 +8,7 @@ describe('Generate BrandKit API Route', () => {
       body: JSON.stringify({ vacancyId: '383534' }),
     });
 
-    const res = await POST(reqWithoutEmail);
+    const res = await POST(reqWithoutEmail as any);
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toContain('E-mail de destino inválido');
@@ -20,7 +20,7 @@ describe('Generate BrandKit API Route', () => {
       body: JSON.stringify({ vacancyId: '', recipientEmail: 'test@jobz.com.br' }),
     });
 
-    const res = await POST(reqEmptyUrl);
+    const res = await POST(reqEmptyUrl as any);
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toContain('ID da vaga Abler é obrigatório');
@@ -32,7 +32,7 @@ describe('Generate BrandKit API Route', () => {
       body: JSON.stringify({ vacancyId: '383534', recipientEmail: 'usuario@gmail.com' }),
     });
 
-    const res = await POST(reqExternalEmail);
+    const res = await POST(reqExternalEmail as any);
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toContain('Apenas e-mails corporativos @jobz.com.br');

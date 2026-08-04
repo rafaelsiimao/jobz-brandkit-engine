@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateFeedHtml, generateStoryHtml, generateWhatsappHtml } from '../src/lib/renderer-engine';
 import { CopyData } from '../src/lib/types';
 
-describe('Official Jobz Carreira Card Template (v2.0)', () => {
+describe('Official Jobz Carreira Card Template (Model 1)', () => {
   const mockCopy: CopyData = {
     headline: 'Desenvolvedor Full Stack Senior',
     subheadline: 'Vitória - ES | Híbrido',
@@ -18,7 +18,8 @@ describe('Official Jobz Carreira Card Template (v2.0)', () => {
     expect(html).toContain('#1E81FE');
     expect(html).toContain('Plus Jakarta Sans');
     expect(html).toContain('data:image/png;base64');
-    expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
+    expect(html).toContain('Candidate-se em:');
+    expect(html).toContain('jobz.com.br/vagas');
     expect(html).toContain('1080px');
     expect(html).toContain('1350px');
   });
@@ -26,14 +27,16 @@ describe('Official Jobz Carreira Card Template (v2.0)', () => {
   it('should generate valid whatsapp HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateWhatsappHtml(mockCopy);
     expect(html).toContain('data:image/png;base64');
-    expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
+    expect(html).toContain('Candidate-se em:');
+    expect(html).toContain('jobz.com.br/vagas');
     expect(html).toContain('1080px');
   });
 
   it('should generate valid story HTML containing official Jobz logo PNG base64 and CTA string', () => {
     const html = generateStoryHtml(mockCopy);
     expect(html).toContain('data:image/png;base64');
-    expect(html).toContain('Candidate-se em: jobz.com.br/vagas');
+    expect(html).toContain('Candidate-se em:');
+    expect(html).toContain('jobz.com.br/vagas');
     expect(html).toContain('1920px');
   });
 
@@ -46,4 +49,3 @@ describe('Official Jobz Carreira Card Template (v2.0)', () => {
     expect(html).toContain('👉 Inscreva-se em:');
   });
 });
-

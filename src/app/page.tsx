@@ -623,15 +623,19 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Benefícios com Quick-Fill Presets */}
+                    {/* Benefícios com Quick-Fill Presets e Limite de Caracteres */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="text-xs font-bold text-[#5F6673] uppercase tracking-wider flex items-center gap-1">
-                          <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios (Quebra Automática)
+                          <Gift className="w-3.5 h-3.5 text-[#1E81FE]" /> Benefícios (Máx. 140 caracteres)
                         </label>
+                        <span className={`text-[10px] font-mono font-bold ${formData.benefits.length > 130 ? 'text-amber-600' : 'text-[#8A94A3]'}`}>
+                          {formData.benefits.length}/140
+                        </span>
                       </div>
                       <textarea
                         rows={2}
+                        maxLength={140}
                         required
                         value={formData.benefits}
                         onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
@@ -687,11 +691,17 @@ export default function HomePage() {
 
                       {formData.showRequirements && (
                         <div className="animate-in fade-in duration-150 pt-1">
-                          <label className="block text-[11px] font-bold text-[#5F6673] uppercase tracking-wider mb-1">
-                            Requisitos Essenciais (Quebra Automática de Linha)
-                          </label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[11px] font-bold text-[#5F6673] uppercase tracking-wider">
+                              Requisitos Essenciais (Máx. 160 caracteres)
+                            </label>
+                            <span className={`text-[10px] font-mono font-bold ${formData.requirementsList.length > 150 ? 'text-amber-600' : 'text-[#8A94A3]'}`}>
+                              {formData.requirementsList.length}/160
+                            </span>
+                          </div>
                           <textarea
                             rows={3}
+                            maxLength={160}
                             value={formData.requirementsList}
                             onChange={(e) => setFormData({ ...formData, requirementsList: e.target.value })}
                             disabled={generating}
@@ -963,126 +973,123 @@ export default function HomePage() {
 
                   {/* Simulated Dynamic Live Card Container (No cuts, zero overlapping, full multiline text) */}
                   <div className="w-full flex items-center justify-center py-2 shrink-0 my-auto relative z-0">
-                    <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
+                    <div className={`w-full bg-[#F1F4F7] border border-[#D7DEE7] shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
                       formData.previewFormat === 'story'
-                        ? 'max-w-[285px] aspect-[9/16] p-4 text-xs'
+                        ? 'max-w-[285px] aspect-[9/16] p-4 text-xs rounded-2xl'
                         : formData.previewFormat === 'whatsapp'
-                        ? 'max-w-[360px] aspect-square p-5 text-xs'
-                        : 'max-w-[370px] aspect-[1/1.25] p-5 text-xs'
+                        ? 'max-w-[340px] aspect-square p-4 text-xs rounded-2xl'
+                        : 'max-w-[340px] aspect-[1/1.25] p-4 text-xs rounded-2xl'
                     }`}>
                       
-                      {/* Top Right Blue Accent Corner — 25% do card */}
-                      <div className="absolute top-0 right-0 w-1/4 h-1/4 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
+                      {/* Top Right Blue Accent Corner */}
+                      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-[#1E81FE] rounded-bl-full pointer-events-none" />
 
-                      <div className="space-y-2.5">
+                      <div className="space-y-2 relative z-10">
                         {/* Logo PNG Oficial */}
                         <div className="flex items-center">
-                          <img src={JOBZ_LOGO_PNG_BASE64} className="h-6 w-auto" alt="Jobz Carreira" />
+                          <img src={JOBZ_LOGO_PNG_BASE64} className="h-5 w-auto" alt="Jobz Carreira" />
                         </div>
 
                         {/* Kicker */}
-                        <div className="text-[10px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
+                        <div className="text-[9px] font-mono font-bold text-[#1E81FE] uppercase tracking-wider">
                           {kickerText}
                         </div>
 
-                        {/* Title */}
-                        <div className="text-xl font-extrabold text-[#111317] leading-tight line-clamp-2">
+                        {/* Title — Mantém tamanho sem diminuir, quebrando linha */}
+                        <div className="text-base font-extrabold text-[#111317] leading-snug">
                           {formData.title || 'Título da Vaga'}
                         </div>
 
-                        {/* Modalidade Tag */}
-                        <div className="pt-0.5">
-                          <span className="text-[9px] font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full inline-block">
-                            {formData.modality || 'Presencial'}
-                          </span>
-                        </div>
+                        {/* Content Pills Stack */}
+                        <div className={`pt-1 ${formData.previewFormat === 'whatsapp' ? 'grid grid-cols-2 gap-1.5' : 'space-y-1.5'}`}>
+                          
+                          {/* 1. Local */}
+                          <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
+                            <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                              <MapPin className="w-2.5 h-2.5 text-[#1E81FE]" />
+                              <span>LOCAL</span>
+                            </div>
+                            <div className="font-bold text-[#111317] text-[10px] truncate">{formData.location || 'Vitória - ES'}</div>
+                          </div>
 
-                        {/* Content Rows with Vector Icons */}
-                        <div className="space-y-2.5 pt-0.5">
-                          <div>
-                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
-                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
-                                <Clock className="w-2.5 h-2.5 text-[#1E81FE]" />
-                              </div>
+                          {/* 2. Jornada */}
+                          <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
+                            <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                              <Clock className="w-2.5 h-2.5 text-[#1E81FE]" />
                               <span>{labelHoursText}</span>
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.schedule}</div>
+                            <div className="font-bold text-[#111317] text-[10px] truncate">{formData.schedule}</div>
                           </div>
 
-                          <div>
-                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
-                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
-                                <Wallet className="w-2.5 h-2.5 text-[#1E81FE]" />
-                              </div>
+                          {/* 3. Salário */}
+                          <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
+                            <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                              <Wallet className="w-2.5 h-2.5 text-[#1E81FE]" />
                               <span>{labelFinancialText}</span>
                             </div>
-                            <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.salary}</div>
+                            <div className="font-extrabold text-[#1E81FE] text-[11px] truncate">{formData.salary}</div>
                           </div>
 
-                          <div>
-                            <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
-                              <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
-                                <MapPin className="w-2.5 h-2.5 text-[#1E81FE]" />
-                              </div>
-                              <span>LOCALIZAÇÃO</span>
-                            </div>
-                            <div className="font-extrabold text-[#111317] pl-5 text-xs break-words">{formData.location}</div>
-                          </div>
-
+                          {/* 4. Benefícios */}
                           {!!formData.benefits && (
-                            <div>
-                              <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
-                                <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
-                                  <Gift className="w-2.5 h-2.5 text-[#1E81FE]" />
-                                </div>
+                            <div className="bg-white rounded-xl p-2 shadow-xs border border-[#E2E8F0]">
+                              <div className="text-[8px] font-mono font-bold text-[#66A9FF] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                                <Gift className="w-2.5 h-2.5 text-[#1E81FE]" />
                                 <span>BENEFÍCIOS</span>
                               </div>
-                              <div className="font-semibold text-[#111317] pl-5 text-xs break-words leading-snug">{formData.benefits}</div>
+                              <div className="font-semibold text-[#111317] text-[9.5px] leading-tight line-clamp-2">{formData.benefits}</div>
                             </div>
                           )}
 
-                          {formData.showRequirements && formData.requirementsList && (
-                            <div className="animate-in fade-in duration-150">
-                              <div className="font-bold text-[#717D8D] text-[9px] tracking-[0.12em] uppercase flex items-center gap-1.5 mb-0.5">
-                                <div className="w-4 h-4 rounded-md bg-[#EBF3FF] border border-[#D2E4FF] flex items-center justify-center shrink-0">
-                                  <ListChecks className="w-2.5 h-2.5 text-[#1E81FE]" />
-                                </div>
-                                <span>REQUISITOS ESSENCIAIS</span>
+                          {/* 5. Requisitos (Pill Azul Clara #BFDBFE) */}
+                          {formData.showRequirements && !!formData.requirementsList && (
+                            <div className={`bg-[#BFDBFE] border border-[#3B82F6] rounded-xl p-2 ${formData.previewFormat === 'whatsapp' ? 'col-span-2' : ''}`}>
+                              <div className="text-[8px] font-mono font-bold text-[#1D4ED8] uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                                <ListChecks className="w-2.5 h-2.5 text-[#1D4ED8]" />
+                                <span>REQUISITOS</span>
                               </div>
-                              <div className="font-semibold text-[#111317] pl-5 text-xs break-words leading-snug">{formData.requirementsList}</div>
+                              <div className="font-semibold text-[#1E293B] text-[9.5px] leading-tight line-clamp-2">{formData.requirementsList}</div>
                             </div>
                           )}
+                        </div>
+
+                        {/* Pill Tags Centralizadas Dinâmicas */}
+                        <div className="flex items-center justify-center gap-1 pt-1.5 flex-wrap">
+                          <span className="text-[8px] font-mono font-bold text-[#1E81FE] bg-[#EBF3FF] border border-[#B2D3FF] px-2 py-0.5 rounded-full">
+                            {formData.modality || 'Presencial'}
+                          </span>
+                          <span className="text-[8px] font-mono font-semibold text-[#475569] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                            {formData.location || 'Vitória / ES'}
+                          </span>
+                          <span className="text-[8px] font-mono font-semibold text-[#475569] bg-white border border-[#D7DEE7] px-2 py-0.5 rounded-full">
+                            Vaga #{selectedVacancy.id}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Card Footer Dynamic Banner */}
+                      {/* Bottom CTA Bar */}
                       {(() => {
                         const rawCustom = (formData.customCtaPrefix || '').trim();
                         const hasCustom = rawCustom.length > 0;
                         const customLiveText = hasCustom ? (rawCustom.startsWith('👉') ? rawCustom : `👉 ${rawCustom}`) : '';
 
                         return (
-                          <div className="w-full pt-2">
-                            {hasCustom ? (
-                              <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
+                          <div className="w-full relative z-10 -mx-4 -mb-4 w-[calc(100%+2rem)]">
+                            <div className="bg-[#111317] text-white py-2 px-3 text-center text-[10px] font-bold rounded-t-xl flex items-center justify-center gap-1">
+                              {hasCustom ? (
                                 <span className="truncate">{customLiveText}</span>
-                              </div>
-                            ) : formData.candidatureType === 'email' ? (
-                              <div className="space-y-0.5">
-                                <div className="bg-[#EBF3FF] border border-[#B2D3FF] text-[#1E81FE] text-[9px] font-bold py-0.5 px-1.5 rounded-md text-center">
-                                  📄 Aceitamos somente currículos em formato PDF
-                                </div>
-                                <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-1.5 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
-                                  <span>👉 Envie seu CV para:</span>
-                                  <span className="text-[#66A9FF] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="bg-[#111317] border border-white/15 text-white rounded-lg py-2 px-2.5 text-center text-[11px] font-bold flex items-center justify-center gap-1">
-                                <span>👉 Candidate-se em:</span>
-                                <span className="text-[#66A9FF]">jobz.com.br/vagas</span>
-                              </div>
-                            )}
+                              ) : formData.candidatureType === 'email' ? (
+                                <>
+                                  <span>Candidate-se em:</span>
+                                  <span className="text-[#38BDF8] truncate">{formData.candidatureEmail || 'vagas@jobz.com.br'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>Candidate-se em:</span>
+                                  <span className="text-[#38BDF8]">jobz.com.br/vagas</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         );
                       })()}

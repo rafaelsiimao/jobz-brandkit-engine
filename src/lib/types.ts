@@ -59,6 +59,8 @@ export interface CopyData {
   requirementsList?: string;
   customCtaPrefix?: string;
   contractType?: ContractType;
+  vacancyTag?: string;
+  sourcingProfile?: any;
 }
 
 export interface AssetUrls {
