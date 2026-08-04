@@ -987,7 +987,7 @@ export default function HomePage() {
                       <div className="space-y-1.5 relative z-10">
                         {/* Logo PNG Oficial */}
                         <div className="flex items-center">
-                          <img src={JOBZ_LOGO_PNG_BASE64} className="h-4.5 w-auto" alt="Jobz Carreira" />
+                          <img src={JOBZ_LOGO_PNG_BASE64} style={{ height: '20px', width: 'auto' }} alt="Jobz Carreira" />
                         </div>
 
                         {/* Kicker */}
